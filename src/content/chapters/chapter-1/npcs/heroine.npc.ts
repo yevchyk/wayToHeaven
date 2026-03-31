@@ -1,14 +1,18 @@
 import type { NarrativeCharacterData } from '@engine/types/narrative';
 
 import { chapter1PortraitIds } from '../assets';
+import { mirellaOutfits } from './mirellaOutfits';
 
 export const heroineNpc: NarrativeCharacterData = {
   id: 'heroine',
   chapterId: 'chapter-1',
   displayName: 'Heroine',
+  role: 'heroine',
   defaultEmotion: 'neutral',
   defaultPortraitId: chapter1PortraitIds.heroine.neutral,
   defaultSide: 'left',
+  defaultOutfitId: 'dress-pristine',
+  outfits: mirellaOutfits,
   portraitRefs: {
     neutral: chapter1PortraitIds.heroine.neutral,
     afraid: chapter1PortraitIds.heroine.afraid,

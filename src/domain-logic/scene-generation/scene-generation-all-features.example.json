@@ -1,0 +1,696 @@
+{
+  "id": "scene_generation_all_features",
+  "schemaVersion": 1,
+  "title": "Scene Generation — All Features Example",
+  "meta": {
+    "chapterId": "chapter-1",
+    "defaultBackgroundId": "chapter-1/backgrounds/prison-cell",
+    "defaultMusicId": "chapter-1/music/under-stone",
+    "defaultCgId": "chapter-1/cg/awakening-flash",
+    "defaultOverlayId": "chapter-1/overlays/dream-veil",
+    "defaultStage": {
+      "characters": [
+        {
+          "speakerId": "mirella",
+          "emotion": "afraid",
+          "portraitId": "chapter-1/portraits/mirella/afraid.webp"
+        },
+        {
+          "speakerId": "old-prisoner",
+          "emotion": "neutral",
+          "portraitId": "chapter-1/portraits/old-prisoner/neutral.webp"
+        },
+        {
+          "speakerId": "guard",
+          "emotion": "cold",
+          "portraitId": "chapter-1/portraits/guard/cold.webp"
+        }
+      ],
+      "focusCharacterId": "mirella"
+    }
+  },
+  "scenes": {
+    "scene_bootstrap": {
+      "id": "scene_bootstrap",
+      "mode": "sequence",
+      "title": "Bootstrap Scene",
+      "description": "Defaults, conditions, tags, choices, sceneChange patches, and scene-to-scene routing.",
+      "startNodeId": "intro",
+      "backgroundId": "chapter-1/backgrounds/prison-cell",
+      "cgId": "chapter-1/cg/awakening-flash",
+      "overlayId": "chapter-1/overlays/dream-veil",
+      "music": {
+        "action": "play",
+        "musicId": "chapter-1/music/under-stone",
+        "fadeMs": 900,
+        "loop": true
+      },
+      "tags": ["example", "sequence"],
+      "stage": {
+        "characters": [
+          {
+            "speakerId": "old-prisoner",
+            "emotion": "neutral",
+            "portraitId": "chapter-1/portraits/old-prisoner/neutral.webp"
+          },
+          {
+            "speakerId": "mirella",
+            "emotion": "afraid",
+            "portraitId": "chapter-1/portraits/mirella/afraid.webp"
+          },
+          {
+            "speakerId": "guard",
+            "emotion": "cold",
+            "portraitId": "chapter-1/portraits/guard/cold.webp"
+          }
+        ],
+        "focusCharacterId": "mirella"
+      },
+      "nodes": {
+        "intro": {
+          "id": "intro",
+          "type": "narration",
+          "text": "Scene-level defaults set the first background, music, CG, overlay, and stage. This opening node demonstrates SFX and bootstrap effects.",
+          "tags": ["bootstrap"],
+          "sfx": [
+            {
+              "sfxId": "chapter-1/sfx/heartbeat",
+              "volume": 0.7
+            },
+            {
+              "id": "chapter-1/sfx/chain-rattle",
+              "delayMs": 180
+            }
+          ],
+          "onEnterEffects": [
+            {
+              "type": "setFlag",
+              "flagId": "sceneGen.example.introSeen",
+              "value": true
+            },
+            {
+              "type": "setFlag",
+              "flagId": "sceneGen.example.rank",
+              "value": 2
+            },
+            {
+              "type": "setFlag",
+              "flagId": "sceneGen.example.stance",
+              "value": "cautious"
+            },
+            {
+              "type": "setCharacterOutfit",
+              "characterId": "mirella",
+              "outfitId": "dress-ripped"
+            },
+            {
+              "type": "unlockStat",
+              "key": "corruption"
+            }
+          ],
+          "nextNodeId": "voice"
+        },
+        "voice": {
+          "id": "voice",
+          "type": "dialogue",
+          "speakerId": "ner-azet",
+          "speakerSide": "left",
+          "emotion": "whisper",
+          "portraitId": "chapter-1/portraits/ner-azet/whisper.webp",
+          "cgId": "chapter-1/cg/awakening-flash",
+          "overlayId": "chapter-1/overlays/dream-veil",
+          "music": {
+            "action": "switch",
+            "musicId": "theme_parasite",
+            "fadeMs": 600,
+            "loop": true
+          },
+          "sfx": {
+            "sfxId": "chapter-1/sfx/whisper",
+            "volume": 0.55
+          },
+          "conditions": [
+            {
+              "type": "flagEquals",
+              "flagId": "sceneGen.example.introSeen",
+              "value": true
+            }
+          ],
+          "onConditionFail": {
+            "nextNodeId": "patch"
+          },
+          "text": "Node-level fields can override CG, overlay, music, SFX, and condition routing before any branching starts.",
+          "onExitEffects": [
+            {
+              "type": "playSfx",
+              "sfxId": "chapter-1/sfx/chain-rattle"
+            }
+          ],
+          "nextNodeId": "patch"
+        },
+        "patch": {
+          "id": "patch",
+          "type": "narration",
+          "backgroundId": "chapter-1/backgrounds/ancient-temple-black-river.webp",
+          "transition": {
+            "type": "dissolve",
+            "durationMs": 600
+          },
+          "text": "sceneChange applies a presentation patch to the running session instead of leaving the scene.",
+          "sceneChange": {
+            "stage": {
+              "characters": [
+                {
+                  "speakerId": "old-prisoner",
+                  "emotion": "soft",
+                  "portraitId": "chapter-1/portraits/old-prisoner/soft.webp"
+                },
+                {
+                  "speakerId": "mirella",
+                  "emotion": "trembling",
+                  "portraitId": "chapter-1/portraits/mirella/trembling.webp"
+                }
+              ],
+              "focusCharacterId": "mirella"
+            },
+            "background": {
+              "image": "chapter-1/backgrounds/ancient-temple-black-river.webp",
+              "transition": "fade",
+              "style": "mist-vignette"
+            },
+            "music": {
+              "action": "switch",
+              "musicId": "theme_parasite",
+              "fadeMs": 450,
+              "loop": true
+            },
+            "cgId": "chapter-1/cg/awakening-flash",
+            "overlayId": "chapter-1/overlays/dream-veil",
+            "sfx": [
+              {
+                "sfxId": "chapter-1/sfx/heartbeat",
+                "delayMs": 120
+              }
+            ]
+          },
+          "nextNodeId": "router"
+        },
+        "router": {
+          "id": "router",
+          "type": "event",
+          "text": "Event nodes can run scripts and redirect flow with jumpToNode.",
+          "onEnterEffects": [
+            {
+              "type": "runScript",
+              "scriptId": "chapter1.travel.forkedWhisper"
+            },
+            {
+              "type": "jumpToNode",
+              "nodeId": "conditions_hub"
+            }
+          ]
+        },
+        "conditions_hub": {
+          "id": "conditions_hub",
+          "type": "choice",
+          "speakerId": "mirella",
+          "speakerSide": "center",
+          "emotion": "thinking",
+          "portraitId": "chapter-1/portraits/mirella/thinking.webp",
+          "text": "Each option below demonstrates a supported condition bundle, tone, transition, or effect family.",
+          "choices": [
+            {
+              "id": "c_stats_and_inventory",
+              "tone": "social",
+              "text": "Flags, meta, stats, tags, items, and resource restoration.",
+              "conditions": [
+                {
+                  "type": "flagEquals",
+                  "flagId": "sceneGen.example.introSeen",
+                  "value": true
+                },
+                {
+                  "type": "flag",
+                  "flagId": "sceneGen.example.rank",
+                  "operator": "gte",
+                  "value": 2
+                }
+              ],
+              "effects": [
+                {
+                  "type": "changeStat",
+                  "key": "humanity",
+                  "delta": 1
+                },
+                {
+                  "type": "changeMeta",
+                  "key": "reputation",
+                  "delta": 1
+                },
+                {
+                  "type": "setStat",
+                  "key": "domination",
+                  "value": 2
+                },
+                {
+                  "type": "addTag",
+                  "tag": "shielded",
+                  "targetScope": "player"
+                },
+                {
+                  "type": "removeTag",
+                  "tag": "shielded",
+                  "targetScope": "player"
+                },
+                {
+                  "type": "giveItem",
+                  "itemId": "basic-potion",
+                  "quantity": 1
+                },
+                {
+                  "type": "removeItem",
+                  "itemId": "travel-ration",
+                  "quantity": 1
+                },
+                {
+                  "type": "restoreResource",
+                  "resource": "hp",
+                  "amount": 8,
+                  "targetScope": "player"
+                }
+              ],
+              "nextNodeId": "after_bundle"
+            },
+            {
+              "id": "c_presentation_fx",
+              "tone": "danger",
+              "text": "Explicit presentation effects mirror node fields.",
+              "conditions": [
+                {
+                  "type": "meta",
+                  "key": "morale",
+                  "operator": "gte",
+                  "value": 0
+                }
+              ],
+              "effects": [
+                {
+                  "type": "setBackground",
+                  "backgroundId": "chapter-1/backgrounds/city-gate"
+                },
+                {
+                  "type": "playMusic",
+                  "musicId": "theme_estate"
+                },
+                {
+                  "type": "playSfx",
+                  "sfxId": "chapter-1/sfx/heartbeat"
+                },
+                {
+                  "type": "showCG",
+                  "cgId": "chapter-1/cg/awakening-flash"
+                },
+                {
+                  "type": "hideCG"
+                },
+                {
+                  "type": "setOverlay",
+                  "overlayId": "chapter-1/overlays/dream-veil"
+                },
+                {
+                  "type": "clearOverlay"
+                },
+                {
+                  "type": "stopMusic"
+                }
+              ],
+              "nextNodeId": "after_bundle"
+            },
+            {
+              "id": "c_runtime_handoffs",
+              "tone": "travel",
+              "text": "Battle, travel, world, screen, modal, and scene handoffs.",
+              "conditions": [
+                {
+                  "type": "tag",
+                  "tag": "living",
+                  "operator": "has",
+                  "targetScope": "player"
+                }
+              ],
+              "effects": [
+                {
+                  "type": "startBattle",
+                  "battleTemplateId": "guard-battle"
+                },
+                {
+                  "type": "startTravelBoard",
+                  "boardId": "chapter-1/travel/underground-route",
+                  "startNodeId": "forked-passage"
+                },
+                {
+                  "type": "changeLocation",
+                  "locationId": "pilgrim-road",
+                  "nodeId": "city-gate"
+                },
+                {
+                  "type": "openScreen",
+                  "screenId": "world"
+                },
+                {
+                  "type": "openModal",
+                  "modalId": "inventory"
+                }
+              ],
+              "nextSceneId": "scene_travel_transition"
+            },
+            {
+              "id": "c_open_other_flow",
+              "tone": "info",
+              "text": "openSceneFlowId can launch another runtime flow directly.",
+              "openSceneFlowId": "chapter-1/scene/awakening"
+            },
+            {
+              "id": "c_jump",
+              "tone": "neutral",
+              "text": "jumpToNode can route from a choice without direct next targets.",
+              "effects": [
+                {
+                  "type": "jumpToNode",
+                  "nodeId": "jump_landing"
+                }
+              ]
+            }
+          ]
+        },
+        "jump_landing": {
+          "id": "jump_landing",
+          "type": "narration",
+          "backgroundId": "chapter-1/backgrounds/holding-point-before-bridge.webp",
+          "text": "This node exists only to prove effect-driven routing within the same scene.",
+          "onEnterEffects": [
+            {
+              "type": "changeMeta",
+              "key": "morale",
+              "delta": 1
+            }
+          ],
+          "nextNodeId": "after_bundle"
+        },
+        "after_bundle": {
+          "id": "after_bundle",
+          "type": "dialogue",
+          "speakerId": "old-prisoner",
+          "speakerSide": "left",
+          "emotion": "soft",
+          "portraitId": "chapter-1/portraits/old-prisoner/soft.webp",
+          "text": "Shared continuation nodes let many branches reconverge before the next scene transition.",
+          "onExitEffects": [
+            {
+              "type": "setFlag",
+              "flagId": "sceneGen.example.afterBundleSeen",
+              "value": true
+            }
+          ],
+          "nextNodeId": "scene_exit"
+        },
+        "scene_exit": {
+          "id": "scene_exit",
+          "type": "narration",
+          "text": "A normal node can hand off to another scene with nextSceneId.",
+          "nextSceneId": "scene_travel_transition"
+        }
+      }
+    },
+    "scene_travel_transition": {
+      "id": "scene_travel_transition",
+      "mode": "sequence",
+      "title": "Travel Transition",
+      "startNodeId": "t_intro",
+      "backgroundId": "chapter-1/backgrounds/ancient-temple-black-river.webp",
+      "cgId": "chapter-1/cg/awakening-flash",
+      "overlayId": "chapter-1/overlays/dream-veil",
+      "music": {
+        "action": "switch",
+        "musicId": "theme_parasite",
+        "fadeMs": 500,
+        "loop": true
+      },
+      "stage": {
+        "characters": [
+          {
+            "speakerId": "ner-azet",
+            "emotion": "hunger",
+            "portraitId": "chapter-1/portraits/ner-azet/hunger.webp"
+          },
+          {
+            "speakerId": "mirella",
+            "emotion": "broken",
+            "portraitId": "chapter-1/portraits/mirella/broken.webp"
+          }
+        ],
+        "focusCharacterId": "mirella"
+      },
+      "nodes": {
+        "t_intro": {
+          "id": "t_intro",
+          "type": "narration",
+          "text": "A second scene can reuse the same format for transition content.",
+          "nextNodeId": "t_patch"
+        },
+        "t_patch": {
+          "id": "t_patch",
+          "type": "narration",
+          "text": "This patch clears CG and overlay while shifting the background and music for the route handoff.",
+          "sceneChange": {
+            "stage": {
+              "characters": [
+                {
+                  "speakerId": "ner-azet",
+                  "emotion": "invasion",
+                  "portraitId": "chapter-1/portraits/ner-azet/invasion.webp"
+                },
+                {
+                  "speakerId": "mirella",
+                  "emotion": "defiant",
+                  "portraitId": "chapter-1/portraits/mirella/defiant.webp"
+                },
+                {
+                  "speakerId": "guard",
+                  "emotion": "cold",
+                  "portraitId": "chapter-1/portraits/guard/cold.webp"
+                }
+              ],
+              "focusCharacterId": "mirella"
+            },
+            "background": {
+              "image": "chapter-1/backgrounds/chain-bridge-black-river.webp",
+              "transition": "flash",
+              "style": "bridge-shiver"
+            },
+            "music": {
+              "action": "stop",
+              "fadeMs": 250
+            },
+            "cgId": null,
+            "overlayId": null,
+            "sfx": {
+              "sfxId": "chapter-1/sfx/whisper",
+              "delayMs": 80
+            }
+          },
+          "nextNodeId": "t_choice"
+        },
+        "t_choice": {
+          "id": "t_choice",
+          "type": "choice",
+          "speakerId": "mirella",
+          "speakerSide": "center",
+          "emotion": "defiant",
+          "portraitId": "chapter-1/portraits/mirella/defiant.webp",
+          "text": "Choices can either continue to another node or transfer to a completely new scene.",
+          "choices": [
+            {
+              "id": "t_choice_continue",
+              "tone": "travel",
+              "text": "Continue straight into the hub scene.",
+              "nextSceneId": "scene_city_hub"
+            },
+            {
+              "id": "t_choice_note",
+              "tone": "info",
+              "text": "Stay for one more explanatory node before leaving this scene.",
+              "effects": [
+                {
+                  "type": "changeMeta",
+                  "key": "morale",
+                  "delta": 1
+                }
+              ],
+              "nextNodeId": "t_note"
+            }
+          ]
+        },
+        "t_note": {
+          "id": "t_note",
+          "type": "narration",
+          "text": "Intermediate explanation nodes are still useful in transition-heavy flows.",
+          "nextSceneId": "scene_city_hub"
+        }
+      }
+    },
+    "scene_route_board": {
+      "id": "scene_route_board",
+      "mode": "route",
+      "title": "Route Board",
+      "description": "Route-mode authoring uses the same document but adds routeRules, route coordinates, and encounter payloads.",
+      "startNodeId": "r_start",
+      "backgroundId": "chapter-1/backgrounds/ancient-temple-black-river.webp",
+      "routeRules": {
+        "rollRange": {
+          "min": 2,
+          "max": 4
+        },
+        "scoutCharges": 2,
+        "scoutDepth": 3,
+        "revealNonHiddenAtStart": false
+      },
+      "nodes": {
+        "r_start": {
+          "id": "r_start",
+          "type": "event",
+          "title": "Forked Passage",
+          "text": "Route nodes still live in the same authoring format, but movement is driven by route coordinates and encounters.",
+          "route": {
+            "x": 12,
+            "y": 58
+          },
+          "nextNodeId": "r_cache"
+        },
+        "r_cache": {
+          "id": "r_cache",
+          "type": "event",
+          "title": "Flooded Cache",
+          "route": {
+            "x": 46,
+            "y": 46
+          },
+          "encounter": {
+            "kind": "loot",
+            "itemId": "basic-potion",
+            "itemQuantity": 1,
+            "effects": [
+              {
+                "type": "changeMeta",
+                "key": "morale",
+                "delta": 1
+              }
+            ]
+          },
+          "nextNodeId": "r_story"
+        },
+        "r_story": {
+          "id": "r_story",
+          "type": "event",
+          "title": "Whisper Turn",
+          "route": {
+            "x": 72,
+            "y": 34,
+            "hidden": true
+          },
+          "encounter": {
+            "kind": "dialogue",
+            "openSceneFlowId": "scene_city_hub"
+          },
+          "nextNodeId": "r_exit"
+        },
+        "r_exit": {
+          "id": "r_exit",
+          "type": "event",
+          "title": "Exit Shaft",
+          "route": {
+            "x": 88,
+            "y": 22,
+            "oneTime": true
+          },
+          "encounter": {
+            "kind": "exit",
+            "completesFlow": true
+          },
+          "isEnd": true
+        }
+      }
+    },
+    "scene_city_hub": {
+      "id": "scene_city_hub",
+      "mode": "hub",
+      "title": "City Hub",
+      "backgroundId": "chapter-1/backgrounds/city-gate",
+      "music": {
+        "action": "play",
+        "musicId": "theme_estate",
+        "fadeMs": 400,
+        "loop": true
+      },
+      "stage": {
+        "characters": [
+          {
+            "speakerId": "gate-guard",
+            "emotion": "neutral",
+            "portraitId": "chapter-1/portraits/gate-guard/neutral"
+          },
+          {
+            "speakerId": "mirella",
+            "emotion": "neutral",
+            "portraitId": "chapter-1/portraits/mirella/neutral.webp"
+          }
+        ],
+        "focusCharacterId": "mirella"
+      },
+      "startNodeId": "h_intro",
+      "nodes": {
+        "h_intro": {
+          "id": "h_intro",
+          "type": "choice",
+          "speakerId": "gate-guard",
+          "speakerSide": "left",
+          "emotion": "neutral",
+          "portraitId": "chapter-1/portraits/gate-guard/neutral",
+          "text": "A hub scene can use the same scene-generation structure as dialogue content, but transitions behave like city actions.",
+          "choices": [
+            {
+              "id": "h_city_dialogue",
+              "tone": "info",
+              "text": "Open another dialogue flow.",
+                  "openSceneFlowId": "chapter-1/scene/city-gate"
+            },
+            {
+              "id": "h_city_world",
+              "tone": "travel",
+              "text": "Update the world and end the example.",
+              "effects": [
+                {
+                  "type": "changeLocation",
+                  "locationId": "pilgrim-road",
+                  "nodeId": "road-entry"
+                },
+                {
+                  "type": "setFlag",
+                  "flagId": "sceneGen.example.finished",
+                  "value": true
+                }
+              ],
+              "nextNodeId": "h_end"
+            }
+          ]
+        },
+        "h_end": {
+          "id": "h_end",
+          "type": "narration",
+          "text": "End of the all-features scene-generation example.",
+          "isEnd": true
+        }
+      }
+    }
+  }
+}

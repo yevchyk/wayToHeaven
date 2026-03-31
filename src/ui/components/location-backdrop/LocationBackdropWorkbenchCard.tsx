@@ -11,6 +11,7 @@ function buildBackdropVisual(entry: LocationBackdropWorkbenchEntry) {
   const url = resolveContentImageUrl(entry.backgroundId);
 
   return {
+    type: 'asset' as const,
     assetId: entry.backgroundId,
     kind: 'background' as const,
     label: entry.title,

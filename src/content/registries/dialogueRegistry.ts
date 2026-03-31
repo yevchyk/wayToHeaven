@@ -1,20 +1,30 @@
 import type { DialogueData } from '@engine/types/dialogue';
 
-import { chapter1AwakeningDialogue } from '@content/chapters/chapter-1/scenes/awakening/awakening.dialogue';
-import { chapter1CityGateDialogue } from '@content/chapters/chapter-1/scenes/city-gate/city-gate.dialogue';
-import { chapter1IntroDialogue } from '@content/chapters/chapter-1/scenes/intro/intro.dialogue';
 import { chapterRegistry } from '@content/registries/chapterRegistry';
 import { sceneRegistry } from '@content/registries/sceneRegistry';
+import { adaptSceneFlowToDialogueView } from '@engine/systems/scenes/sceneFlowViewAdapters';
 
-export const dialogueContentRegistry: Record<string, DialogueData> = {
-  [chapter1IntroDialogue.id]: chapter1IntroDialogue,
-  [chapter1AwakeningDialogue.id]: chapter1AwakeningDialogue,
-  [chapter1CityGateDialogue.id]: chapter1CityGateDialogue,
-};
+import { sceneFlowRegistry } from './sceneFlowRegistry';
+
+export const dialogueContentRegistry: Record<string, DialogueData> = Object.fromEntries(
+  Object.values(sceneFlowRegistry)
+    .filter((sceneFlow) => sceneFlow.mode === 'sequence')
+    .map((sceneFlow): [string, DialogueData] => {
+      const dialogue = adaptSceneFlowToDialogueView(sceneFlow);
+
+      if (!dialogue) {
+        throw new Error(`Expected sequence scene flow "${sceneFlow.id}" to adapt into dialogue view.`);
+      }
+
+      return [sceneFlow.id, dialogue];
+    }),
+);
 
 export const sceneDialogueRegistry = Object.values(sceneRegistry).reduce<Record<string, string>>(
   (registry, sceneMeta) => {
-    registry[sceneMeta.id] = sceneMeta.mainDialogueId;
+    if (sceneMeta.mainSceneFlowId && dialogueContentRegistry[sceneMeta.mainSceneFlowId]) {
+      registry[sceneMeta.id] = sceneMeta.mainSceneFlowId;
+    }
 
     return registry;
   },

@@ -167,4 +167,64 @@ describe('BattleStore runtime', () => {
     expect(rootStore.flags.getBooleanFlag('guardBattleLost')).toBe(true);
     expect(rootStore.party.activeUnits[0]?.currentHp).toBe(0);
   });
+
+  it('runs intro scene flow before starting a battle template that declares introSceneFlowId', () => {
+    const rootStore = new GameRootStore();
+    const templateId = 'guard-battle-with-intro';
+    const baseTemplate = rootStore.battleRegistry['guard-battle'];
+
+    if (!baseTemplate) {
+      throw new Error('Expected guard-battle template to exist.');
+    }
+
+    rootStore.battleRegistry[templateId] = {
+      ...baseTemplate,
+      id: templateId,
+      introSceneFlowId: 'chapter-1/scene/city-gate',
+    };
+
+    try {
+      rootStore.battle.startBattle(templateId);
+
+      expect(rootStore.battle.hasActiveBattle).toBe(false);
+      expect(rootStore.battle.hasPendingBattle).toBe(true);
+      expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/scene/city-gate');
+      expect(rootStore.ui.activeScreen).toBe('dialogue');
+
+      rootStore.dialogue.endDialogue();
+
+      expect(rootStore.battle.activeBattleRef).toBe(templateId);
+      expect(rootStore.battle.hasPendingBattle).toBe(false);
+      expect(rootStore.ui.activeScreen).toBe('battle');
+    } finally {
+      delete rootStore.battleRegistry[templateId];
+    }
+  });
+
+  it('falls back to introDialogueId when introSceneFlowId is absent', () => {
+    const rootStore = new GameRootStore();
+    const templateId = 'guard-battle-with-legacy-intro';
+    const baseTemplate = rootStore.battleRegistry['guard-battle'];
+
+    if (!baseTemplate) {
+      throw new Error('Expected guard-battle template to exist.');
+    }
+
+    rootStore.battleRegistry[templateId] = {
+      ...baseTemplate,
+      id: templateId,
+      introDialogueId: 'chapter-1/scene/city-gate',
+    };
+
+    try {
+      rootStore.battle.startBattle(templateId);
+
+      expect(rootStore.battle.hasActiveBattle).toBe(false);
+      expect(rootStore.battle.hasPendingBattle).toBe(true);
+      expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/scene/city-gate');
+      expect(rootStore.ui.activeScreen).toBe('dialogue');
+    } finally {
+      delete rootStore.battleRegistry[templateId];
+    }
+  });
 });

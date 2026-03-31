@@ -3,14 +3,19 @@ import { Box, Stack } from '@mui/material';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
 import { AppShell } from '@ui/layouts/AppShell';
+import { BacklogModal } from '@ui/modals/BacklogModal';
 import { CharacterMenuModal } from '@ui/modals/CharacterMenuModal';
+import { PreferencesModal } from '@ui/modals/PreferencesModal';
 import { MetaHud } from '@ui/components/MetaHud';
 import { ScreenRenderer } from '@ui/components/ScreenRenderer';
 
 const App = observer(function App() {
   const rootStore = useGameRootStore();
   const activeRuntimeLayer = rootStore.activeRuntimeLayer;
-  const isImmersiveLayer = activeRuntimeLayer === 'dialogue' || activeRuntimeLayer === 'city';
+  const isImmersiveLayer =
+    activeRuntimeLayer === 'dialogue' ||
+    activeRuntimeLayer === 'city' ||
+    activeRuntimeLayer === 'travelBoard';
   const shouldOverlayHud = activeRuntimeLayer === 'city';
 
   return (
@@ -41,6 +46,8 @@ const App = observer(function App() {
         )}
       </AppShell>
       <CharacterMenuModal />
+      <BacklogModal />
+      <PreferencesModal />
     </>
   );
 });

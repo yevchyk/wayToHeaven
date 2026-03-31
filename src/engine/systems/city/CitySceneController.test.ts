@@ -33,7 +33,7 @@ describe('CitySceneController', () => {
     rootStore.citySceneController.startScene('chapter-1/city/temple-exit');
     rootStore.citySceneController.chooseAction('talk-warden');
 
-    expect(rootStore.dialogue.activeDialogueId).toBe('intro-dialogue');
+    expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/scene/city-gate');
 
     rootStore.dialogue.endDialogue();
     rootStore.citySceneController.chooseAction('descend-underpass');

@@ -81,15 +81,17 @@ export interface StageSlotCharacter {
   speakerId: string;
   emotion?: CharacterEmotion;
   portraitId?: string;
+  outfitId?: string;
 }
 
 export interface StageCharacter {
-  id: string;
   speakerId: string;
-  side: SpeakerSide;
   portraitId?: string;
   emotion?: CharacterEmotion;
+  outfitId?: string;
   isVisible?: boolean;
+  id?: string;
+  side?: SpeakerSide;
 }
 
 export interface StageState {
@@ -146,6 +148,7 @@ export interface DialogueChoice {
   conditions?: Condition[];
   effects?: DialogueEffect[];
   nextNodeId?: string;
+  nextSceneId?: string;
 }
 
 export interface DialogueNodeBase {
@@ -169,6 +172,7 @@ export interface DialogueNodeBase {
   onEnterEffects?: DialogueEffect[];
   onExitEffects?: DialogueEffect[];
   nextNodeId?: string;
+  nextSceneId?: string;
 }
 
 export interface DialogueTextNode extends DialogueNodeBase {

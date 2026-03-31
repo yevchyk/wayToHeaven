@@ -53,8 +53,8 @@ export const firstLocation: LocationData = {
       description: 'The checkpoint where the city guard challenges newcomers.',
       connectedNodeIds: ['road-entry', 'clearing'],
       interaction: {
-        type: 'dialogue',
-        dialogueId: 'intro-dialogue',
+        type: 'sceneFlow',
+        sceneFlowId: 'chapter-1/scene/city-gate',
       },
     },
     clearing: {

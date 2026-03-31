@@ -126,7 +126,7 @@ describe('TravelBoardController', () => {
     expect(rootStore.meta.morale).toBe(0);
 
     rootStore.travelBoardController.rollDice();
-    expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/dialogues/awakening');
+    expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/scene/awakening');
     expect(rootStore.ui.activeScreen).toBe('dialogue');
 
     rootStore.dialogue.endDialogue();

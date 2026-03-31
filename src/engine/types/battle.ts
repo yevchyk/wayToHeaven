@@ -40,6 +40,7 @@ export interface BattleTemplate {
   allyUnitIds?: string[];
   enemyUnitIds: string[];
   backgroundId?: string;
+  introSceneFlowId?: string;
   introDialogueId?: string;
   victoryEffects?: GameEffect[];
   defeatEffects?: GameEffect[];

@@ -7,7 +7,7 @@ describe('DialogueStore runtime', () => {
     rootStore.ui.setScreen('world');
     rootStore.dialogue.startScene('chapter-1/scene/intro');
 
-    expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/dialogues/prologue-001');
+    expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/scene/intro');
     expect(rootStore.dialogue.activeSceneId).toBe('chapter-1/scene/intro');
     expect(rootStore.dialogue.currentNodeId).toBe('n1');
     expect(rootStore.dialogue.currentSpeakerId).toBeNull();
@@ -24,6 +24,7 @@ describe('DialogueStore runtime', () => {
 
     expect(rootStore.dialogue.currentText).toContain('Ранок у домі Торнів завжди починався красиво.');
     expect(rootStore.flags.getBooleanFlag('chapter1.prologue.seen')).toBe(true);
+    expect(rootStore.appearance.getCurrentOutfitId('mirella')).toBe('dress-pristine');
     expect(rootStore.dialogue.currentMusicId).toBe('theme_estate');
   });
 
@@ -44,7 +45,7 @@ describe('DialogueStore runtime', () => {
   it('hides choices when their conditions are not met', () => {
     const hiddenChoiceStore = new GameRootStore();
 
-    hiddenChoiceStore.dialogue.startDialogue('intro-dialogue');
+    hiddenChoiceStore.dialogue.startDialogue('chapter-1/scene/city-gate');
 
     expect(
       hiddenChoiceStore.dialogue.getVisibleChoices().some((choice) => choice.id === 'show-pass'),
@@ -53,7 +54,7 @@ describe('DialogueStore runtime', () => {
     const visibleChoiceStore = new GameRootStore();
 
     visibleChoiceStore.flags.setBooleanFlag('hasGatePass', true);
-    visibleChoiceStore.dialogue.startDialogue('intro-dialogue');
+    visibleChoiceStore.dialogue.startDialogue('chapter-1/scene/city-gate');
 
     expect(
       visibleChoiceStore.dialogue.getVisibleChoices().some((choice) => choice.id === 'show-pass'),
@@ -92,6 +93,19 @@ describe('DialogueStore runtime', () => {
     expect(rootStore.flags.getBooleanFlag('oldManNotPureMonster')).toBe(true);
   });
 
+  it('tracks Mirella outfit state through the prologue', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.dialogue.startScene('chapter-1/scene/intro');
+    expect(rootStore.appearance.getCurrentOutfitId('mirella')).toBe('dress-pristine');
+
+    rootStore.dialogue.moveToNode('n87');
+    expect(rootStore.appearance.getCurrentOutfitId('mirella')).toBe('dress-torn');
+
+    rootStore.dialogue.moveToNode('n111');
+    expect(rootStore.appearance.getCurrentOutfitId('mirella')).toBe('dress-ripped');
+  });
+
   it('ends the dialogue cleanly when it reaches a terminal node', () => {
     const rootStore = new GameRootStore();
 
@@ -99,12 +113,13 @@ describe('DialogueStore runtime', () => {
     rootStore.dialogue.startScene('chapter-1/scene/intro');
     rootStore.dialogue.moveToNode('n120');
 
-    expect(rootStore.dialogue.next()).toBe(false);
+    expect(rootStore.dialogue.next()).toBe(true);
     expect(rootStore.dialogue.isOpen).toBe(false);
     expect(rootStore.dialogue.activeDialogueId).toBeNull();
     expect(rootStore.dialogue.currentNodeId).toBeNull();
     expect(rootStore.flags.getBooleanFlag('prologueFinished')).toBe(true);
     expect(rootStore.flags.getBooleanFlag('chapter1.undergroundAwakeningQueued')).toBe(true);
+    expect(rootStore.travelBoard.activeBoardId).toBe('chapter-1/travel/underground-route');
     expect(rootStore.ui.activeScreen).toBe('travelBoard');
   });
 });

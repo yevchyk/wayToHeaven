@@ -9,101 +9,25 @@ export class CitySceneController {
   }
 
   startScene(sceneId: string) {
-    const scene = this.requireScene(sceneId);
-
-    this.rootStore.citySceneValidator.assertValid(scene);
-    this.rootStore.city.setScene(sceneId);
-    this.rootStore.ui.setScreen('city');
-
-    if (scene.onEnterEffects?.length) {
-      this.rootStore.executeEffects(scene.onEnterEffects);
-    }
-
-    return scene;
+    return this.rootStore.sceneFlowController.startCityScene(sceneId);
   }
 
   getVisibleActions() {
-    const scene = this.requireCurrentScene();
+    const scene = this.rootStore.city.currentScene;
+    const visibleTransitionIds = new Set(this.rootStore.sceneFlow.visibleTransitionIds);
 
-    return scene.actions.filter((action) => this.isActionAvailable(action));
+    if (!scene) {
+      return [];
+    }
+
+    return scene.actions.filter((action) => visibleTransitionIds.has(action.id));
   }
 
   chooseAction(actionId: string) {
-    const scene = this.requireCurrentScene();
-    const action = this.getVisibleActions().find((entry) => entry.id === actionId);
-
-    if (!action) {
-      return false;
-    }
-
-    if (action.effects?.length) {
-      this.rootStore.executeEffects(action.effects);
-    }
-
-    if (action.once) {
-      this.rootStore.city.markActionTriggered(scene.id, action.id);
-    }
-
-    if (action.nextSceneId) {
-      this.startScene(action.nextSceneId);
-
-      return true;
-    }
-
-    if (action.dialogueId) {
-      this.rootStore.dialogue.startDialogue(action.dialogueId);
-
-      return true;
-    }
-
-    if (action.battleTemplateId) {
-      this.rootStore.executeEffect({
-        type: 'startBattle',
-        battleTemplateId: action.battleTemplateId,
-      });
-
-      return true;
-    }
-
-    if (action.travelBoardId) {
-      this.rootStore.executeEffect({
-        type: 'startTravelBoard',
-        boardId: action.travelBoardId,
-      });
-
-      return true;
-    }
-
-    return true;
+    return this.rootStore.sceneFlowController.chooseTransition(actionId);
   }
 
   isActionAvailable(action: CitySceneAction) {
-    const scene = this.requireCurrentScene();
-
-    if (action.once && this.rootStore.city.hasTriggeredAction(scene.id, action.id)) {
-      return false;
-    }
-
-    return this.rootStore.dialogueConditionEvaluator.evaluateAll(action.conditions);
-  }
-
-  private requireCurrentScene() {
-    const scene = this.rootStore.city.currentScene;
-
-    if (!scene) {
-      throw new Error('No active city scene is selected.');
-    }
-
-    return scene;
-  }
-
-  private requireScene(sceneId: string) {
-    const scene = this.rootStore.getCitySceneById(sceneId);
-
-    if (!scene) {
-      throw new Error(`City scene "${sceneId}" was not found.`);
-    }
-
-    return scene;
+    return this.getVisibleActions().some((visibleAction) => visibleAction.id === action.id);
   }
 }

@@ -82,8 +82,8 @@ describe('core domain types', () => {
           type: 'landmark',
           connectedNodeIds: ['road'],
           interaction: {
-            type: 'dialogue',
-            dialogueId: dialogue.id,
+            type: 'sceneFlow',
+            sceneFlowId: 'intro-flow',
           },
         },
       },
@@ -252,7 +252,7 @@ describe('core domain types', () => {
     const gateNode = location.nodes.gate;
 
     expect(introNode?.choices?.[0]?.conditions?.[0]).toEqual(condition);
-    expect(gateNode?.interaction?.type).toBe('dialogue');
+    expect(gateNode?.interaction?.type).toBe('sceneFlow');
     expect(battleRuntime.combatLog[0]).toEqual(logEntry);
     expect(item.effects?.[0]).toEqual({
       type: 'changeMeta',

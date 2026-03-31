@@ -30,7 +30,7 @@ describe('App bootstrap', () => {
     );
 
     expect(screen.getByRole('heading', { name: /wey to heaven/i })).toBeInTheDocument();
-    expect(screen.getByText(/main menu/i)).toBeInTheDocument();
+    expect(screen.getByText(/головне меню/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Грати' })).toBeInTheDocument();
   });
 

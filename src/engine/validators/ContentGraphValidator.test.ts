@@ -1,7 +1,7 @@
 import { battleContentRegistry } from '@content/battles';
 import { dialogueContentRegistry } from '@content/dialogues';
 import { itemContentRegistry } from '@content/items';
-import { locationContentRegistry } from '@content/locations';
+import { locationContentRegistry } from '@content/registries/locationRegistry';
 import { citySceneRegistry } from '@content/registries/citySceneRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 import {
@@ -20,6 +20,7 @@ import { DialogueValidator } from '@engine/validators/DialogueValidator';
 import { EffectReferenceValidator } from '@engine/validators/EffectReferenceValidator';
 import { ItemContentValidator } from '@engine/validators/ItemContentValidator';
 import { LocationGraphValidator } from '@engine/validators/LocationGraphValidator';
+import { SceneFlowValidator } from '@engine/validators/SceneFlowValidator';
 import { TravelBoardValidator } from '@engine/validators/TravelBoardValidator';
 import {
   createContentReferenceLookup,
@@ -34,7 +35,7 @@ describe('ContentGraphValidator', () => {
       id: 'broken-battle',
       enemyUnitIds: ['missing-enemy-template'],
       allyUnitIds: ['missing-character-instance'],
-      introDialogueId: 'missing-dialogue',
+      introSceneFlowId: 'missing-scene-flow',
       victoryEffects: [
         {
           type: 'startBattle',
@@ -112,6 +113,7 @@ describe('ContentGraphValidator', () => {
       cityScenes: citySceneRegistry,
       travelBoards: travelBoardRegistry,
       dialogues: dialogueContentRegistry,
+      sceneFlows: {},
       items: {
         ...itemContentRegistry,
         [brokenItem.id]: brokenItem,
@@ -140,6 +142,7 @@ describe('ContentGraphValidator', () => {
       new CitySceneValidator(effectReferenceValidator),
       new LocationGraphValidator(referenceLookup, effectReferenceValidator),
       new TravelBoardValidator(referenceLookup, effectReferenceValidator),
+      new SceneFlowValidator(),
       new BattleTemplateValidator(referenceLookup, effectReferenceValidator),
       new ItemContentValidator(effectReferenceValidator),
       new UnitContentValidator(referenceLookup, effectReferenceValidator),
@@ -150,7 +153,7 @@ describe('ContentGraphValidator', () => {
 
     expect(issueCodes.has('missingEnemyTemplateReference')).toBe(true);
     expect(issueCodes.has('missingCharacterInstanceReference')).toBe(true);
-    expect(issueCodes.has('missingDialogueReference')).toBe(true);
+    expect(issueCodes.has('missingSceneFlowReference')).toBe(true);
     expect(issueCodes.has('missingBattleReference')).toBe(true);
     expect(issueCodes.has('missingItemReference')).toBe(true);
     expect(issueCodes.has('missingScriptReference')).toBe(true);

@@ -25,6 +25,7 @@ describe('LocationGraphValidator', () => {
       cityScenes: {},
       travelBoards: {},
       dialogues: {},
+      sceneFlows: {},
       items: {},
       locations: {
         [existingLocation.id]: existingLocation,
@@ -59,8 +60,8 @@ describe('LocationGraphValidator', () => {
             },
           ],
           interaction: {
-            type: 'dialogue',
-            dialogueId: 'missing-dialogue',
+            type: 'sceneFlow',
+            sceneFlowId: 'missing-scene-flow',
           },
         },
       },
@@ -71,7 +72,7 @@ describe('LocationGraphValidator', () => {
     expect(issues.some((issue) => issue.code === 'missingStartNode')).toBe(true);
     expect(issues.some((issue) => issue.code === 'invalidNodeId')).toBe(true);
     expect(issues.some((issue) => issue.code === 'missingConnectionReference')).toBe(true);
-    expect(issues.some((issue) => issue.code === 'missingDialogueReference')).toBe(true);
+    expect(issues.some((issue) => issue.code === 'missingSceneFlowReference')).toBe(true);
     expect(issues.some((issue) => issue.code === 'missingLocationNodeReference')).toBe(true);
   });
 });

@@ -28,6 +28,7 @@ export class BattleStore {
 
   battleRuntime: BattleRuntime | null = null;
   returnScreenId: ScreenId | null = null;
+  pendingBattleTemplateId: string | null = null;
 
   constructor(rootStore: GameRootStore) {
     this.rootStore = rootStore;
@@ -75,6 +76,10 @@ export class BattleStore {
     return this.battleRuntime !== null;
   }
 
+  get hasPendingBattle() {
+    return this.pendingBattleTemplateId !== null;
+  }
+
   get allies() {
     return this.battleRuntime?.allies ?? [];
   }
@@ -109,8 +114,32 @@ export class BattleStore {
     return this.phase === 'enemyThinking';
   }
 
-  startBattle(templateId: string) {
+  startBattle(templateId: string, options: { skipIntro?: boolean } = {}) {
     this.rootStore.assertBattleTemplateValid(templateId);
+    const template = this.rootStore.getBattleTemplateById(templateId);
+
+    if (!template) {
+      throw new Error(`Battle template "${templateId}" was not found.`);
+    }
+
+    const introSceneFlowId = template.introSceneFlowId;
+    const introDialogueId = template.introDialogueId;
+
+    if (!options.skipIntro && introSceneFlowId) {
+      this.pendingBattleTemplateId = templateId;
+      this.rootStore.sceneFlowController.startSceneFlow(introSceneFlowId);
+
+      return null;
+    }
+
+    if (!options.skipIntro && introDialogueId) {
+      this.pendingBattleTemplateId = templateId;
+      this.rootStore.dialogue.startDialogue(introDialogueId);
+
+      return null;
+    }
+
+    this.pendingBattleTemplateId = null;
     this.returnScreenId = this.rootStore.ui.activeScreen === 'battle' ? null : this.rootStore.ui.activeScreen;
     this.rootStore.combatLogBuilder.reset();
     this.battleRuntime = cloneBattleRuntime(this.rootStore.battleResolver.createBattleRuntime(templateId));
@@ -118,6 +147,16 @@ export class BattleStore {
     this.beginCurrentTurn();
 
     return this.battleRuntime;
+  }
+
+  resumePendingBattle() {
+    if (!this.pendingBattleTemplateId) {
+      return null;
+    }
+
+    const templateId = this.pendingBattleTemplateId;
+
+    return this.startBattle(templateId, { skipIntro: true });
   }
 
   selectAction(
@@ -304,6 +343,7 @@ export class BattleStore {
   reset() {
     this.battleRuntime = null;
     this.returnScreenId = null;
+    this.pendingBattleTemplateId = null;
   }
 
   private resolveAndAdvance(selection: BattleActionSelection) {

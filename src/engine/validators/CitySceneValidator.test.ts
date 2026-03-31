@@ -10,6 +10,7 @@ describe('CitySceneValidator', () => {
       cityScenes: {},
       travelBoards: {},
       dialogues: {},
+      sceneFlows: {},
       items: {},
       locations: {},
       characterTemplates: {},

@@ -11,6 +11,7 @@ export type BattleTemplateValidationIssueCode =
   | 'missingEnemyTemplateReference'
   | 'missingCharacterInstanceReference'
   | 'missingDialogueReference'
+  | 'missingSceneFlowReference'
   | EffectReferenceValidationIssueCode;
 
 export interface BattleTemplateValidationIssue {
@@ -56,6 +57,15 @@ export class BattleTemplateValidator {
         });
       }
     });
+
+    if (template.introSceneFlowId && !this.lookup.hasSceneFlow(template.introSceneFlowId)) {
+      issues.push({
+        code: 'missingSceneFlowReference',
+        message: `Battle template references missing intro scene flow "${template.introSceneFlowId}".`,
+        path: 'introSceneFlowId',
+        targetId: template.introSceneFlowId,
+      });
+    }
 
     if (template.introDialogueId && !this.lookup.hasDialogue(template.introDialogueId)) {
       issues.push({

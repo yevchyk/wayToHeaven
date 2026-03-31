@@ -100,6 +100,7 @@ describe('GameRootStore runtime backbone', () => {
     expect(rootStore.meta.rootStore).toBe(rootStore);
     expect(rootStore.stats.rootStore).toBe(rootStore);
     expect(rootStore.flags.rootStore).toBe(rootStore);
+    expect(rootStore.appearance.rootStore).toBe(rootStore);
     expect(rootStore.travelBoard.rootStore).toBe(rootStore);
   });
 
@@ -108,5 +109,20 @@ describe('GameRootStore runtime backbone', () => {
 
     expect(rootStore.validateContentGraph()).toEqual([]);
     expect(() => rootStore.assertContentGraphValid()).not.toThrow();
+  });
+
+  it('starts a new game in the prologue without preloading the city fallback', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.startNewGame();
+
+    expect(rootStore.ui.activeScreen).toBe('dialogue');
+    expect(rootStore.dialogue.isActive).toBe(true);
+    expect(rootStore.city.currentScene).toBeNull();
+
+    rootStore.dialogue.endDialogue();
+
+    expect(rootStore.ui.activeScreen).toBe('home');
+    expect(rootStore.city.currentScene).toBeNull();
   });
 });

@@ -3,6 +3,7 @@ import { CitySceneValidator } from '@engine/validators/CitySceneValidator';
 import { DialogueValidator } from '@engine/validators/DialogueValidator';
 import { ItemContentValidator } from '@engine/validators/ItemContentValidator';
 import { LocationGraphValidator } from '@engine/validators/LocationGraphValidator';
+import { SceneFlowValidator } from '@engine/validators/SceneFlowValidator';
 import { TravelBoardValidator } from '@engine/validators/TravelBoardValidator';
 import type { ContentRegistrySnapshot } from '@engine/validators/contentReferenceLookup';
 import { UnitContentValidator } from '@engine/validators/UnitContentValidator';
@@ -14,6 +15,7 @@ export type ContentGraphSourceType =
   | 'item'
   | 'location'
   | 'travelBoard'
+  | 'sceneFlow'
   | 'characterTemplate'
   | 'characterInstance'
   | 'enemyTemplate'
@@ -34,6 +36,7 @@ export class ContentGraphValidator {
   private readonly citySceneValidator: CitySceneValidator;
   private readonly locationGraphValidator: LocationGraphValidator;
   private readonly travelBoardValidator: TravelBoardValidator;
+  private readonly sceneFlowValidator: SceneFlowValidator;
   private readonly battleTemplateValidator: BattleTemplateValidator;
   private readonly itemContentValidator: ItemContentValidator;
   private readonly unitContentValidator: UnitContentValidator;
@@ -44,6 +47,7 @@ export class ContentGraphValidator {
     citySceneValidator: CitySceneValidator,
     locationGraphValidator: LocationGraphValidator,
     travelBoardValidator: TravelBoardValidator,
+    sceneFlowValidator: SceneFlowValidator,
     battleTemplateValidator: BattleTemplateValidator,
     itemContentValidator: ItemContentValidator,
     unitContentValidator: UnitContentValidator,
@@ -53,6 +57,7 @@ export class ContentGraphValidator {
     this.citySceneValidator = citySceneValidator;
     this.locationGraphValidator = locationGraphValidator;
     this.travelBoardValidator = travelBoardValidator;
+    this.sceneFlowValidator = sceneFlowValidator;
     this.battleTemplateValidator = battleTemplateValidator;
     this.itemContentValidator = itemContentValidator;
     this.unitContentValidator = unitContentValidator;
@@ -105,6 +110,19 @@ export class ContentGraphValidator {
         ...this.travelBoardValidator.validate(board).map((issue) => ({
           sourceType: 'travelBoard' as const,
           sourceId: board.id,
+          code: issue.code,
+          message: issue.message,
+          ...(issue.path ? { path: issue.path } : {}),
+          ...(issue.targetId ? { targetId: issue.targetId } : {}),
+        })),
+      );
+    });
+
+    Object.values(this.snapshot.sceneFlows).forEach((sceneFlow) => {
+      issues.push(
+        ...this.sceneFlowValidator.validate(sceneFlow).map((issue) => ({
+          sourceType: 'sceneFlow' as const,
+          sourceId: sceneFlow.id,
           code: issue.code,
           message: issue.message,
           ...(issue.path ? { path: issue.path } : {}),

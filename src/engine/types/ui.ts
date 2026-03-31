@@ -8,7 +8,14 @@ export type ScreenId =
   | 'travelBoard'
   | (string & {});
 
-export type ModalId = 'character-menu' | 'inventory' | 'party' | 'unit-details' | (string & {});
+export type ModalId =
+  | 'character-menu'
+  | 'inventory'
+  | 'party'
+  | 'unit-details'
+  | 'backlog'
+  | 'preferences'
+  | (string & {});
 
 export type OverlayId = 'loading' | 'battle-hud' | (string & {});
 

@@ -1,6 +1,7 @@
 export {
   chapter1CharacterCompositeRegistry,
-  chapter1HeroineBaseTransforms,
+  chapter1CharacterCompositeStage,
+  chapter1HeroineBasePlacements,
   chapter1HeroineCompositeDefinition,
   chapter1HeroineWeaponPosePresets,
   chapter1NpcCompositeTweaks,

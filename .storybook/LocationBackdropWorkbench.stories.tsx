@@ -53,8 +53,8 @@ function WorkbenchGuide() {
       <Stack spacing={0.5}>
         <Typography variant="h4">Fast Background Workflow</Typography>
         <Typography color="text.secondary" variant="body2">
-          Drop the `.webp`, refresh Storybook, then decide whether the problem is the image, the chosen `backgroundId`,
-          or the scene content around it.
+          Drop the `.png` or `.webp`, refresh Storybook, then decide whether the problem is the image, the chosen
+          `backgroundId`, or the scene content around it.
         </Typography>
       </Stack>
 
@@ -78,7 +78,8 @@ function WorkbenchGuide() {
             1. Куди кидати background
           </Typography>
           <Typography variant="body2">
-            Шлях завжди такий: <CodeInline>{'src/content/chapters/chapter-1/images/backgrounds/<name>.webp'}</CodeInline>
+            Шлях завжди такий: <CodeInline>{'src/content/chapters/chapter-1/images/backgrounds/<name>.png'}</CodeInline>{' '}
+            або <CodeInline>{'src/content/chapters/chapter-1/images/backgrounds/<name>.webp'}</CodeInline>
           </Typography>
           <Typography variant="body2">
             Якщо `backgroundId` уже правильний, достатньо просто підкласти файл у цей path.
@@ -124,7 +125,7 @@ function WorkbenchGuide() {
             3. Як швидко зрозуміти, що саме слабке
           </Typography>
           <Typography variant="body2">
-            Якщо сам кадр слабкий, міняй `.webp`.
+            Якщо сам кадр слабкий, міняй сам файл картинки: `.png` або `.webp`.
           </Typography>
           <Typography variant="body2">
             Якщо кадр добрий, але не підходить місцю, міняй `backgroundId`.

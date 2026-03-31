@@ -1,32 +1,30 @@
 import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
-import { applyEffects } from '@engine/systems/dialogue/applyEffects';
 import type {
   DialogueChoice,
   DialogueData,
-  DialogueEffect,
   DialogueNode,
   StageState,
 } from '@engine/types/dialogue';
+import type { DialogueSkipMode } from '@engine/types/playerShell';
+import type { SceneFlowNode } from '@engine/types/sceneFlow';
 import type { ScreenId } from '@engine/types/ui';
+
+function isSequenceSourceType(sourceType: string | null) {
+  return sourceType === 'dialogue' || sourceType === 'sceneGeneration';
+}
 
 export class DialogueStore {
   readonly rootStore: GameRootStore;
 
-  activeDialogueId: string | null = null;
-  activeSceneId: string | null = null;
-  currentNodeId: string | null = null;
-  visibleChoiceIds: string[] = [];
-  visitedNodeIds: string[] = [];
-  returnScreenId: ScreenId | null = null;
-  backgroundId: string | null = null;
-  musicId: string | null = null;
-  cgId: string | null = null;
-  overlayId: string | null = null;
-  lastSfxId: string | null = null;
-  currentStage: StageState | null = null;
-  pendingJumpNodeId: string | null = null;
+  revealedCharacterCount = 0;
+  autoModeEnabled = false;
+  skipMode: DialogueSkipMode = 'off';
+  currentNodeWasSeenOnEnter = false;
+
+  private revealTimerId: ReturnType<typeof setTimeout> | null = null;
+  private advanceTimerId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(rootStore: GameRootStore) {
     this.rootStore = rootStore;
@@ -35,7 +33,73 @@ export class DialogueStore {
   }
 
   get isActive() {
-    return this.activeDialogueId !== null && this.currentNodeId !== null;
+    return this.rootStore.sceneFlow.activeMode === 'sequence' && this.currentNodeId !== null;
+  }
+
+  get activeDialogueId() {
+    return this.rootStore.sceneFlow.activeMode === 'sequence' &&
+      isSequenceSourceType(this.rootStore.sceneFlow.activeSourceType)
+      ? this.rootStore.sceneFlow.activeFlowId
+      : null;
+  }
+
+  get activeSceneId() {
+    return this.rootStore.sceneFlow.activeMode === 'sequence' &&
+      isSequenceSourceType(this.rootStore.sceneFlow.activeSourceType)
+      ? this.rootStore.sceneFlow.activeSceneId
+      : null;
+  }
+
+  get currentNodeId() {
+    return this.rootStore.sceneFlow.activeMode === 'sequence'
+      ? this.rootStore.sceneFlow.currentNodeId
+      : null;
+  }
+
+  get visibleChoiceIds() {
+    return this.rootStore.sceneFlow.activeMode === 'sequence'
+      ? this.rootStore.sceneFlow.visibleTransitionIds
+      : [];
+  }
+
+  get visitedNodeIds() {
+    return this.rootStore.sceneFlow.activeMode === 'sequence'
+      ? this.rootStore.sceneFlow.visitedNodeIds
+      : [];
+  }
+
+  get returnScreenId(): ScreenId | null {
+    return this.rootStore.sceneFlow.activeMode === 'sequence'
+      ? this.rootStore.sceneFlow.activeSession?.returnScreenId ?? null
+      : null;
+  }
+
+  get backgroundId() {
+    return this.rootStore.sceneFlow.currentBackgroundId;
+  }
+
+  get musicId() {
+    return this.rootStore.sceneFlow.currentMusicId;
+  }
+
+  get cgId() {
+    return this.rootStore.sceneFlow.currentCgId;
+  }
+
+  get overlayId() {
+    return this.rootStore.sceneFlow.currentOverlayId;
+  }
+
+  get lastSfxId() {
+    return this.rootStore.sceneFlow.lastSfxId;
+  }
+
+  get currentStage(): StageState | null {
+    return this.rootStore.sceneFlow.currentStage;
+  }
+
+  get pendingJumpNodeId() {
+    return this.rootStore.sceneFlow.pendingJumpNodeId;
   }
 
   get activeNodeId() {
@@ -43,45 +107,58 @@ export class DialogueStore {
   }
 
   get activeDialogue(): DialogueData | null {
-    if (!this.activeDialogueId) {
-      return null;
-    }
+    return this.activeDialogueId ? this.rootStore.getDialogueById(this.activeDialogueId) ?? null : null;
+  }
 
-    return this.rootStore.getDialogueById(this.activeDialogueId) ?? null;
+  get activeSequenceFlow() {
+    return this.rootStore.sceneFlow.activeMode === 'sequence'
+      ? this.rootStore.sceneFlow.currentFlow
+      : null;
+  }
+
+  get currentSceneFlowNode(): SceneFlowNode | null {
+    return this.rootStore.sceneFlow.activeMode === 'sequence'
+      ? this.rootStore.sceneFlow.currentNode
+      : null;
   }
 
   get currentNode(): DialogueNode | null {
-    if (!this.activeDialogue || !this.currentNodeId) {
+    const dialogue = this.activeDialogue;
+    const nodeId = this.currentNodeId;
+
+    if (!dialogue || !nodeId) {
       return null;
     }
 
-    return this.activeDialogue.nodes[this.currentNodeId] ?? null;
+    return dialogue.nodes[nodeId] ?? null;
   }
 
   get currentSpeakerId() {
-    return this.currentNode?.speakerId ?? null;
+    return this.currentNode?.speakerId ?? this.currentSceneFlowNode?.speakerId ?? null;
   }
 
   get currentSpeakerName() {
     const speakerId = this.currentSpeakerId;
 
-    if (!speakerId) {
-      return null;
-    }
-
-    return this.rootStore.getNarrativeCharacterById(speakerId)?.displayName ?? null;
+    return speakerId ? this.rootStore.getNarrativeCharacterById(speakerId)?.displayName ?? null : null;
   }
 
   get currentText() {
-    return this.currentNode?.text ?? null;
+    return this.currentNode?.text ?? this.currentSceneFlowNode?.text ?? null;
+  }
+
+  get displayedText() {
+    const text = this.currentText ?? '';
+
+    return text.slice(0, this.revealedCharacterCount);
   }
 
   get currentEmotion() {
-    return this.currentNode?.emotion ?? null;
+    return this.currentNode?.emotion ?? this.currentSceneFlowNode?.emotion ?? null;
   }
 
   get currentPortraitId() {
-    return this.currentNode?.portraitId ?? null;
+    return this.currentNode?.portraitId ?? this.currentSceneFlowNode?.portraitId ?? null;
   }
 
   get currentBackgroundId() {
@@ -101,7 +178,7 @@ export class DialogueStore {
   }
 
   get currentSpeakerSide() {
-    return this.currentNode?.speakerSide ?? null;
+    return this.currentNode?.speakerSide ?? this.currentSceneFlowNode?.speakerSide ?? null;
   }
 
   get currentAdultMarker() {
@@ -109,11 +186,11 @@ export class DialogueStore {
   }
 
   get currentSceneTitle() {
-    return this.activeDialogue?.meta?.sceneTitle ?? null;
+    return this.activeDialogue?.meta?.sceneTitle ?? this.activeSequenceFlow?.title ?? null;
   }
 
   get currentNodeType() {
-    return this.currentNode?.type ?? null;
+    return this.currentNode?.type ?? this.currentSceneFlowNode?.sourceNodeType ?? null;
   }
 
   get isOpen() {
@@ -124,283 +201,345 @@ export class DialogueStore {
     return this.getVisibleChoices().length > 0;
   }
 
-  startScene(sceneId: string) {
-    const scene = this.rootStore.getSceneById(sceneId);
+  get isTextFullyRevealed() {
+    const text = this.currentText ?? '';
 
-    if (!scene) {
-      throw new Error(`Scene "${sceneId}" was not found.`);
-    }
-
-    this.startDialogue(scene.mainDialogueId, { sceneId });
+    return text.length === 0 || this.revealedCharacterCount >= text.length;
   }
 
-  startDialogue(dialogueId: string, options: { sceneId?: string } = {}) {
-    const dialogue = this.rootStore.getDialogueById(dialogueId);
-
-    if (!dialogue) {
-      throw new Error(`Dialogue "${dialogueId}" was not found.`);
-    }
-
-    this.rootStore.dialogueValidator.assertValid(dialogue);
-
-    this.activeDialogueId = dialogueId;
-    this.activeSceneId = options.sceneId ?? dialogue.meta?.sceneId ?? null;
-    this.currentNodeId = null;
-    this.visibleChoiceIds = [];
-    this.visitedNodeIds = [];
-    this.pendingJumpNodeId = null;
-    this.returnScreenId =
-      this.rootStore.ui.activeScreen === 'dialogue' ? null : this.rootStore.ui.activeScreen;
-    this.backgroundId = dialogue.meta?.defaultBackgroundId ?? null;
-    this.musicId = dialogue.meta?.defaultMusicId ?? null;
-    this.cgId = dialogue.meta?.defaultCgId ?? null;
-    this.overlayId = dialogue.meta?.defaultOverlayId ?? null;
-    this.lastSfxId = null;
-    this.currentStage = null;
-
-    this.rootStore.ui.setScreen('dialogue');
-    this.moveToNode(dialogue.startNodeId);
+  get isCurrentNodeSeen() {
+    return this.currentNodeWasSeenOnEnter;
   }
 
-  moveToNode(nodeId: string) {
-    const previousNode = this.currentNode;
-
-    if (previousNode && previousNode.id !== nodeId) {
-      this.applyDialogueEffects(previousNode.onExitEffects);
-
-      const exitJumpTarget = this.consumePendingJumpNodeId();
-
-      if (exitJumpTarget && exitJumpTarget !== nodeId) {
-        nodeId = exitJumpTarget;
-      }
-    }
-
-    const dialogue = this.requireActiveDialogue();
-    const node = dialogue.nodes[nodeId];
-
-    if (!node) {
-      throw new Error(`Dialogue node "${nodeId}" does not exist in "${dialogue.id}".`);
-    }
-
-    this.currentNodeId = nodeId;
-
-    if (!this.visitedNodeIds.includes(nodeId)) {
-      this.visitedNodeIds.push(nodeId);
-    }
-
-    this.syncPresentationFromNode(node);
-    this.applyDialogueEffects(node.onEnterEffects);
-
-    const jumpTarget = this.consumePendingJumpNodeId();
-
-    if (jumpTarget && jumpTarget !== nodeId) {
-      this.moveToNode(jumpTarget);
-
-      return;
-    }
-
-    this.refreshVisibleChoices();
+  get activeFlowId() {
+    return this.activeSequenceFlow?.id ?? null;
   }
 
-  getVisibleChoices() {
-    return this.rootStore.dialogueConditionEvaluator.getVisibleChoices(this.currentNode?.choices);
-  }
-
-  chooseChoice(choiceId: string) {
-    const choice = this.getVisibleChoices().find((entry) => entry.id === choiceId);
-
-    if (!choice) {
-      throw new Error(`Choice "${choiceId}" is not available in the current dialogue state.`);
-    }
-
-    this.applyDialogueEffects(choice.effects);
-
-    const jumpTarget = this.consumePendingJumpNodeId();
-
-    if (jumpTarget) {
-      this.moveToNode(jumpTarget);
-
-      return true;
-    }
-
-    if (choice.nextNodeId) {
-      this.moveToNode(choice.nextNodeId);
-
-      return true;
-    }
-
-    this.endDialogue();
-
-    return false;
-  }
-
-  next() {
-    const node = this.requireCurrentNode();
-
-    if ((node.choices?.length ?? 0) > 0) {
+  get canSkipCurrentNode() {
+    if (!this.isActive || this.hasChoices) {
       return false;
     }
 
-    if (node.nextNodeId) {
-      this.moveToNode(node.nextNodeId);
+    return this.rootStore.preferences.skipUnread || this.currentNodeWasSeenOnEnter;
+  }
+
+  get isUiHidden() {
+    return this.rootStore.preferences.hideUi;
+  }
+
+  get currentFontScale() {
+    return this.rootStore.preferences.fontScale;
+  }
+
+  startScene(sceneId: string) {
+    this.resetPlaybackState();
+
+    return this.rootStore.sceneFlowController.startScene(sceneId);
+  }
+
+  startDialogue(dialogueId: string, options: { sceneId?: string } = {}) {
+    this.resetPlaybackState();
+
+    return this.rootStore.sceneFlowController.startDialogue(dialogueId, options);
+  }
+
+  moveToNode(nodeId: string) {
+    return this.rootStore.sceneFlowController.moveToNode(nodeId);
+  }
+
+  getVisibleChoices() {
+    if (this.currentNode?.choices) {
+      return (this.currentNode.choices ?? []).filter((choice) =>
+        this.visibleChoiceIds.includes(choice.id),
+      ) as DialogueChoice[];
+    }
+
+    if (!this.currentSceneFlowNode || this.currentSceneFlowNode.kind !== 'choice') {
+      return [];
+    }
+
+    return this.currentSceneFlowNode.transitions
+      .filter((transition) => this.visibleChoiceIds.includes(transition.id))
+      .map(
+        (transition): DialogueChoice => ({
+          id: transition.id,
+          text: transition.label ?? transition.description ?? transition.id,
+          ...(transition.tone ? { tone: transition.tone } : {}),
+          ...(transition.conditions ? { conditions: [...transition.conditions] } : {}),
+          ...(transition.effects ? { effects: [...transition.effects] } : {}),
+          ...(transition.nextNodeId ? { nextNodeId: transition.nextNodeId } : {}),
+          ...(transition.nextSceneId ? { nextSceneId: transition.nextSceneId } : {}),
+        }),
+      );
+  }
+
+  chooseChoice(choiceId: string) {
+    const selectedChoice = this.getVisibleChoices().find((choice) => choice.id === choiceId) ?? null;
+
+    if (selectedChoice) {
+      this.rootStore.backlog.appendEntry({
+        kind: 'choice',
+        flowId: this.activeFlowId,
+        nodeId: this.currentNodeId,
+        speakerId: null,
+        speakerName: null,
+        text: selectedChoice.text,
+      });
+    }
+
+    this.clearAdvanceTimer();
+
+    return this.rootStore.sceneFlowController.chooseTransition(choiceId);
+  }
+
+  next() {
+    this.clearAdvanceTimer();
+
+    return this.rootStore.sceneFlowController.advanceSequence();
+  }
+
+  advanceOrReveal() {
+    if (this.isUiHidden) {
+      this.rootStore.preferences.setHideUi(false);
 
       return true;
     }
 
-    this.endDialogue();
+    if (!this.isTextFullyRevealed) {
+      this.revealCurrentLine();
 
-    return false;
+      return true;
+    }
+
+    if (this.hasChoices) {
+      return false;
+    }
+
+    return this.next();
+  }
+
+  revealCurrentLine() {
+    const text = this.currentText ?? '';
+
+    this.clearRevealTimer();
+    this.revealedCharacterCount = text.length;
+    this.scheduleAdvanceIfNeeded();
+  }
+
+  setAutoMode(enabled: boolean) {
+    this.autoModeEnabled = enabled;
+
+    if (enabled) {
+      this.skipMode = 'off';
+    }
+
+    this.handlePlaybackPreferenceChanged();
+  }
+
+  toggleAutoMode() {
+    this.setAutoMode(!this.autoModeEnabled);
+  }
+
+  setSkipMode(mode: DialogueSkipMode) {
+    this.skipMode = mode;
+
+    if (mode !== 'off') {
+      this.autoModeEnabled = false;
+    }
+
+    this.handlePlaybackPreferenceChanged();
+  }
+
+  toggleSkipMode() {
+    this.setSkipMode(this.skipMode === 'off' ? 'skip' : 'off');
   }
 
   endDialogue() {
-    if (this.currentNode?.onExitEffects?.length) {
-      this.applyDialogueEffects(this.currentNode.onExitEffects);
+    this.resetPlaybackState();
 
-      const jumpTarget = this.consumePendingJumpNodeId();
-
-      if (jumpTarget) {
-        this.moveToNode(jumpTarget);
-
-        return;
-      }
-    }
-
-    const shouldRestoreScreen = this.rootStore.ui.activeScreen === 'dialogue';
-    const returnScreenId = this.returnScreenId;
-
-    this.activeDialogueId = null;
-    this.activeSceneId = null;
-    this.currentNodeId = null;
-    this.visibleChoiceIds = [];
-    this.visitedNodeIds = [];
-    this.returnScreenId = null;
-    this.pendingJumpNodeId = null;
-    this.backgroundId = null;
-    this.musicId = null;
-    this.cgId = null;
-    this.overlayId = null;
-    this.lastSfxId = null;
-    this.currentStage = null;
-
-    if (shouldRestoreScreen) {
-      this.rootStore.ui.setScreen(returnScreenId ?? 'world');
+    if (this.isActive) {
+      this.rootStore.sceneFlowController.endActiveFlow();
     }
   }
 
   setBackground(backgroundId: string | null) {
-    this.backgroundId = backgroundId;
+    this.rootStore.sceneFlowController.setBackground(backgroundId);
   }
 
   playMusic(musicId: string) {
-    this.musicId = musicId;
+    this.rootStore.sceneFlowController.playMusic(musicId);
   }
 
   stopMusic() {
-    this.musicId = null;
+    this.rootStore.sceneFlowController.stopMusic();
   }
 
   showCg(cgId: string) {
-    this.cgId = cgId;
+    this.rootStore.sceneFlowController.showCg(cgId);
   }
 
   hideCg() {
-    this.cgId = null;
+    this.rootStore.sceneFlowController.hideCg();
   }
 
   setOverlay(overlayId: string | null) {
-    this.overlayId = overlayId;
+    this.rootStore.sceneFlowController.setOverlay(overlayId);
   }
 
   playSfx(sfxId: string) {
-    this.lastSfxId = sfxId;
+    this.rootStore.sceneFlowController.playSfx(sfxId);
   }
 
   queueJumpToNode(nodeId: string) {
-    this.pendingJumpNodeId = nodeId;
+    this.rootStore.sceneFlowController.queueJumpToNode(nodeId);
   }
 
-  private requireActiveDialogue() {
-    if (!this.activeDialogue) {
-      throw new Error('No active dialogue is currently running.');
+  handleNodeEntered(flowId: string, nodeId: string) {
+    this.clearRevealTimer();
+    this.clearAdvanceTimer();
+
+    this.currentNodeWasSeenOnEnter = this.rootStore.seenContent.hasSeenNode(flowId, nodeId);
+    this.rootStore.seenContent.markFlowSeen(flowId);
+    this.rootStore.seenContent.markNodeSeen(flowId, nodeId);
+
+    this.appendCurrentNodeToBacklog();
+
+    const text = this.currentText ?? '';
+    this.revealedCharacterCount = this.shouldSkipCurrentNodeInstantly() ? text.length : 0;
+
+    if (!this.shouldSkipCurrentNodeInstantly()) {
+      this.scheduleRevealTick();
     }
 
-    return this.activeDialogue;
+    this.scheduleAdvanceIfNeeded();
   }
 
-  private requireCurrentNode() {
-    if (!this.currentNode) {
-      throw new Error('Dialogue has no active node.');
+  handleFlowExited() {
+    this.clearRevealTimer();
+    this.clearAdvanceTimer();
+    this.revealedCharacterCount = 0;
+    this.currentNodeWasSeenOnEnter = false;
+  }
+
+  handlePlaybackPreferenceChanged() {
+    if (!this.isActive) {
+      return;
     }
 
-    return this.currentNode;
+    this.clearRevealTimer();
+    this.clearAdvanceTimer();
+
+    if (!this.isTextFullyRevealed && !this.shouldSkipCurrentNodeInstantly()) {
+      this.scheduleRevealTick();
+    }
+
+    if (this.shouldSkipCurrentNodeInstantly()) {
+      this.revealCurrentLine();
+
+      return;
+    }
+
+    this.scheduleAdvanceIfNeeded();
   }
 
-  private refreshVisibleChoices() {
-    this.visibleChoiceIds = this.getVisibleChoices().map((choice: DialogueChoice) => choice.id);
+  reset() {
+    this.resetPlaybackState();
   }
 
-  private applyDialogueEffects(effects: readonly DialogueEffect[] | undefined) {
-    return applyEffects(effects, {
-      executeEffect: (effect) => this.rootStore.executeEffect(effect),
+  private shouldSkipCurrentNodeInstantly() {
+    return this.skipMode === 'skip' && this.canSkipCurrentNode;
+  }
+
+  private appendCurrentNodeToBacklog() {
+    const text = this.currentText ?? '';
+
+    if (!text) {
+      return;
+    }
+
+    this.rootStore.backlog.appendEntry({
+      kind: 'line',
+      flowId: this.activeFlowId,
+      nodeId: this.currentNodeId,
+      speakerId: this.currentSpeakerId,
+      speakerName: this.currentSpeakerName,
+      text,
     });
   }
 
-  private syncPresentationFromNode(node: DialogueNode) {
-    if (node.stage) {
-      this.currentStage = node.stage;
+  private scheduleRevealTick() {
+    const text = this.currentText ?? '';
+
+    if (!text || this.isTextFullyRevealed || this.hasChoices) {
+      return;
     }
 
-    if (node.backgroundId) {
-      this.backgroundId = node.backgroundId;
-    }
+    const stepDelayMs = Math.max(10, Math.floor(1000 / this.rootStore.preferences.textSpeed));
 
-    if (node.stage?.backgroundId) {
-      this.backgroundId = node.stage.backgroundId;
-    }
+    this.revealTimerId = globalThis.setTimeout(() => {
+      this.revealedCharacterCount = Math.min(text.length, this.revealedCharacterCount + 1);
 
-    if (node.cgId) {
-      this.cgId = node.cgId;
-    }
+      if (this.isTextFullyRevealed) {
+        this.clearRevealTimer();
+        this.scheduleAdvanceIfNeeded();
 
-    if (node.stage?.cgId) {
-      this.cgId = node.stage.cgId;
-    }
-
-    if (node.overlayId) {
-      this.overlayId = node.overlayId;
-    }
-
-    if (node.stage?.overlayId) {
-      this.overlayId = node.stage.overlayId;
-    }
-
-    if (node.music) {
-      const musicMode = node.music.mode ?? node.music.action;
-
-      if ((musicMode === 'play' || musicMode === 'switch') && node.music.musicId) {
-        this.musicId = node.music.musicId;
+        return;
       }
 
-      if (musicMode === 'stop') {
-        this.musicId = null;
-      }
-    }
-
-    const sfxEntries = Array.isArray(node.sfx) ? node.sfx : node.sfx ? [node.sfx] : [];
-    const lastSfx = [...sfxEntries]
-      .reverse()
-      .find((entry) => entry.sfxId || entry.id);
-
-    if (lastSfx) {
-      this.lastSfxId = lastSfx.sfxId ?? lastSfx.id ?? null;
-    }
+      this.scheduleRevealTick();
+    }, stepDelayMs);
   }
 
-  private consumePendingJumpNodeId() {
-    const nodeId = this.pendingJumpNodeId;
+  private scheduleAdvanceIfNeeded() {
+    this.clearAdvanceTimer();
 
-    this.pendingJumpNodeId = null;
+    if (!this.isActive || this.hasChoices || !this.isTextFullyRevealed) {
+      return;
+    }
 
-    return nodeId;
+    const delayMs = this.shouldSkipCurrentNodeInstantly()
+      ? 35
+      : this.autoModeEnabled
+        ? this.rootStore.preferences.autoDelayMs
+        : null;
+
+    if (!delayMs) {
+      return;
+    }
+
+    this.advanceTimerId = globalThis.setTimeout(() => {
+      if (!this.isActive || this.hasChoices) {
+        return;
+      }
+
+      this.next();
+    }, delayMs);
+  }
+
+  private resetPlaybackState() {
+    this.clearRevealTimer();
+    this.clearAdvanceTimer();
+    this.revealedCharacterCount = 0;
+    this.autoModeEnabled = false;
+    this.skipMode = 'off';
+    this.currentNodeWasSeenOnEnter = false;
+  }
+
+  private clearRevealTimer() {
+    if (!this.revealTimerId) {
+      return;
+    }
+
+    clearTimeout(this.revealTimerId);
+    this.revealTimerId = null;
+  }
+
+  private clearAdvanceTimer() {
+    if (!this.advanceTimerId) {
+      return;
+    }
+
+    clearTimeout(this.advanceTimerId);
+    this.advanceTimerId = null;
   }
 }

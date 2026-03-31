@@ -4,6 +4,7 @@ import TravelExploreRoundedIcon from '@mui/icons-material/TravelExploreRounded';
 import { Box, Button, Chip, Stack, Typography } from '@mui/material';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
+import type { NodeInteraction } from '@engine/types/world';
 import { SectionCard } from '@ui/components/SectionCard';
 
 function normalize(value: number, min: number, max: number) {
@@ -12,6 +13,44 @@ function normalize(value: number, min: number, max: number) {
   }
 
   return 10 + ((value - min) / (max - min)) * 80;
+}
+
+function getInteractionLabel(
+  interaction: NonNullable<ReturnType<typeof getInteractionOrNone>>,
+  getSceneFlowMode: (sceneFlowId: string) => string | null,
+) {
+  switch (interaction.type) {
+    case 'battle':
+      return 'Trigger battle';
+    case 'dialogue':
+      return 'Trigger dialogue';
+    case 'sceneFlow': {
+      const mode = getSceneFlowMode(interaction.sceneFlowId);
+
+      if (mode === 'sequence') {
+        return 'Trigger dialogue';
+      }
+
+      if (mode === 'hub') {
+        return 'Open hub';
+      }
+
+      if (mode === 'route') {
+        return 'Open route';
+      }
+
+      return 'Open scene';
+    }
+    case 'none':
+    default:
+      return 'No Interaction';
+  }
+}
+
+function getInteractionOrNone(
+  interaction: NodeInteraction | undefined,
+) {
+  return interaction ?? { type: 'none' as const };
 }
 
 export const WorldScreen = observer(function WorldScreen() {
@@ -41,6 +80,11 @@ export const WorldScreen = observer(function WorldScreen() {
   const maxX = Math.max(...nodes.map((node) => node.x));
   const minY = Math.min(...nodes.map((node) => node.y));
   const maxY = Math.max(...nodes.map((node) => node.y));
+  const currentInteraction = getInteractionOrNone(currentNode.interaction);
+  const interactionLabel = getInteractionLabel(
+    currentInteraction,
+    (sceneFlowId) => rootStore.getSceneFlowById(sceneFlowId)?.mode ?? null,
+  );
 
   return (
     <Stack spacing={3}>
@@ -111,14 +155,12 @@ export const WorldScreen = observer(function WorldScreen() {
         >
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <Button
-              disabled={(currentNode.interaction?.type ?? 'none') === 'none'}
+              disabled={currentInteraction.type === 'none'}
               onClick={() => rootStore.worldController.triggerNodeInteraction()}
               startIcon={<TravelExploreRoundedIcon />}
               variant="contained"
             >
-              {(currentNode.interaction?.type ?? 'none') === 'none'
-                ? 'No Interaction'
-                : `Trigger ${currentNode.interaction?.type}`}
+              {interactionLabel}
             </Button>
             <Button onClick={() => rootStore.openCharacterMenu()} variant="outlined">
               Open Character Menu

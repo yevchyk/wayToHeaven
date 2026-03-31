@@ -11,6 +11,7 @@ export type LocationGraphValidationIssueCode =
   | 'missingConnectionReference'
   | 'isolatedNode'
   | 'missingDialogueReference'
+  | 'missingSceneFlowReference'
   | EffectReferenceValidationIssueCode;
 
 export interface LocationGraphValidationIssue {
@@ -100,6 +101,18 @@ export class LocationGraphValidator {
             nodeId,
             targetId: node.interaction.dialogueId,
             path: `nodes.${nodeId}.interaction.dialogueId`,
+          });
+        }
+      }
+
+      if (node.interaction?.type === 'sceneFlow' && this.referenceLookup) {
+        if (!this.referenceLookup.hasSceneFlow(node.interaction.sceneFlowId)) {
+          issues.push({
+            code: 'missingSceneFlowReference',
+            message: `Node "${nodeId}" references missing scene flow "${node.interaction.sceneFlowId}".`,
+            nodeId,
+            targetId: node.interaction.sceneFlowId,
+            path: `nodes.${nodeId}.interaction.sceneFlowId`,
           });
         }
       }

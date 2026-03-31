@@ -7,7 +7,6 @@ export const chapter1PrisonFallSceneMeta: SceneMeta = {
   title: 'Prison Fall',
   chapterId: 'chapter-1',
   sceneOrder: 3,
-  mainDialogueId: 'chapter-1/dialogues/prison-fall',
   description: 'Reserved for a future branching prison collapse scene.',
   defaultBackgroundId: chapter1BackgroundIds.introRoom,
 };

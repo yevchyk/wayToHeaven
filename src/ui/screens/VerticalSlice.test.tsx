@@ -18,7 +18,17 @@ describe('First vertical slice', () => {
     expect(screen.getByText(/Ранок у домі Торнів завжди починався красиво\./i)).toBeInTheDocument();
     expect(rootStore.flags.getBooleanFlag('chapter1.prologue.seen')).toBe(true);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Покинути діалог' }));
+    act(() => {
+      rootStore.dialogue.endDialogue();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Грати' })).toBeInTheDocument();
+    });
+
+    act(() => {
+      rootStore.citySceneController.startScene('chapter-1/city/temple-exit');
+    });
 
     await waitFor(() => {
       expect(screen.getAllByRole('heading', { name: 'Temple Exit Plaza' }).length).toBeGreaterThan(0);
@@ -44,7 +54,7 @@ describe('First vertical slice', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
     expect(screen.getByText('Do not cause trouble inside the walls.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Закрити діалог' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Move to Dusty Clearing' }));
 
@@ -60,18 +70,20 @@ describe('First vertical slice', () => {
       expect(screen.getByRole('heading', { name: 'guard-battle' })).toBeInTheDocument();
     });
 
-    runInAction(() => {
-      const runtime = rootStore.battle.battleRuntime;
-      const enemy = rootStore.battle.enemies[0];
+    act(() => {
+      runInAction(() => {
+        const runtime = rootStore.battle.battleRuntime;
+        const enemy = rootStore.battle.enemies[0];
 
-      if (!runtime || !enemy) {
-        throw new Error('Expected a battle runtime with one enemy.');
-      }
+        if (!runtime || !enemy) {
+          throw new Error('Expected a battle runtime with one enemy.');
+        }
 
-      rootStore.battle.battleRuntime = {
-        ...runtime,
-        enemies: [{ ...enemy, currentHp: 1 }],
-      };
+        rootStore.battle.battleRuntime = {
+          ...runtime,
+          enemies: [{ ...enemy, currentHp: 1 }],
+        };
+      });
     });
 
     act(() => {

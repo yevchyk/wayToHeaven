@@ -25,6 +25,7 @@ export type DialogueValidationErrorCode =
   | 'missingCgReference'
   | 'missingOverlayReference'
   | 'missingJumpNodeReference'
+  | 'missingSceneFlowReference'
   | 'missingBattleReference'
   | 'missingItemReference'
   | 'missingTravelBoardReference'
@@ -47,6 +48,7 @@ export type DialogueValidationIssue = DialogueValidationError;
 interface DialogueValidatorOptions {
   hasSpeakerId?: (speakerId: string) => boolean;
   hasAssetOfKind?: (assetId: string, kind: NarrativeAssetKind) => boolean;
+  hasSceneFlowId?: (sceneFlowId: string) => boolean;
 }
 
 function hasChoices(node: DialogueNode) {
@@ -64,14 +66,16 @@ export class DialogueValidator {
   private readonly effectReferenceValidator: EffectReferenceValidator;
   private readonly hasSpeakerId: DialogueValidatorOptions['hasSpeakerId'];
   private readonly hasAssetOfKind: DialogueValidatorOptions['hasAssetOfKind'];
+  private readonly hasSceneFlowId: DialogueValidatorOptions['hasSceneFlowId'];
 
   constructor(
     effectReferenceValidator: EffectReferenceValidator = new EffectReferenceValidator(),
     options: DialogueValidatorOptions = {},
-  ) {
+    ) {
     this.effectReferenceValidator = effectReferenceValidator;
     this.hasSpeakerId = options.hasSpeakerId;
     this.hasAssetOfKind = options.hasAssetOfKind;
+    this.hasSceneFlowId = options.hasSceneFlowId;
   }
 
   validate(dialogue: DialogueData) {
@@ -141,12 +145,24 @@ export class DialogueValidator {
       }
 
       const nodeHasChoices = hasChoices(node);
-      const nodeHasNext = node.nextNodeId !== undefined;
+      const nodeTransitionTargetCount =
+        (node.nextNodeId ? 1 : 0) +
+        (node.nextSceneId ? 1 : 0);
+      const nodeHasDirectTransition = nodeTransitionTargetCount > 0;
 
-      if (nodeHasChoices && nodeHasNext) {
+      if (nodeHasChoices && nodeHasDirectTransition) {
         issues.push({
           code: 'invalidNodeFlow',
-          message: 'Dialogue node cannot define both choices and nextNodeId.',
+          message: 'Dialogue node cannot define both choices and a direct transition target.',
+          nodeId,
+          path: `nodes.${nodeId}`,
+        });
+      }
+
+      if (nodeTransitionTargetCount > 1) {
+        issues.push({
+          code: 'invalidNodeFlow',
+          message: 'Dialogue node cannot define multiple direct transition targets.',
           nodeId,
           path: `nodes.${nodeId}`,
         });
@@ -161,10 +177,10 @@ export class DialogueValidator {
         });
       }
 
-      if (!nodeHasChoices && !nodeHasNext && !node.isEnd && !hasJumpToNodeEffect(node)) {
+      if (!nodeHasChoices && !nodeHasDirectTransition && !node.isEnd && !hasJumpToNodeEffect(node)) {
         issues.push({
           code: 'invalidNodeFlow',
-          message: 'Dialogue node must define choices, nextNodeId, jumpToNode effect, or isEnd.',
+          message: 'Dialogue node must define choices, a direct transition target, jumpToNode effect, or isEnd.',
           nodeId,
           path: `nodes.${nodeId}`,
         });
@@ -177,6 +193,16 @@ export class DialogueValidator {
           nodeId,
           targetId: node.nextNodeId,
           path: `nodes.${nodeId}.nextNodeId`,
+        });
+      }
+
+      if (node.nextSceneId && this.hasSceneFlowId && !this.hasSceneFlowId(node.nextSceneId)) {
+        issues.push({
+          code: 'missingSceneFlowReference',
+          message: `Dialogue node references missing nextSceneId "${node.nextSceneId}".`,
+          nodeId,
+          targetId: node.nextSceneId,
+          path: `nodes.${nodeId}.nextSceneId`,
         });
       }
 
@@ -231,6 +257,20 @@ export class DialogueValidator {
 
         choiceIds.add(choice.id);
 
+        const choiceTransitionTargetCount =
+          (choice.nextNodeId ? 1 : 0) +
+          (choice.nextSceneId ? 1 : 0);
+
+        if (choiceTransitionTargetCount > 1) {
+          issues.push({
+            code: 'invalidNodeFlow',
+            message: `Choice "${choice.id}" cannot define multiple direct transition targets.`,
+            nodeId,
+            choiceId: choice.id,
+            path: `nodes.${nodeId}.choices.${choice.id}`,
+          });
+        }
+
         if (choice.nextNodeId && !dialogue.nodes[choice.nextNodeId]) {
           issues.push({
             code: 'missingNodeReference',
@@ -239,6 +279,17 @@ export class DialogueValidator {
             choiceId: choice.id,
             targetId: choice.nextNodeId,
             path: `nodes.${nodeId}.choices.${choice.id}.nextNodeId`,
+          });
+        }
+
+        if (choice.nextSceneId && this.hasSceneFlowId && !this.hasSceneFlowId(choice.nextSceneId)) {
+          issues.push({
+            code: 'missingSceneFlowReference',
+            message: `Choice "${choice.id}" references missing nextSceneId "${choice.nextSceneId}".`,
+            nodeId,
+            choiceId: choice.id,
+            targetId: choice.nextSceneId,
+            path: `nodes.${nodeId}.choices.${choice.id}.nextSceneId`,
           });
         }
 

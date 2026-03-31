@@ -80,6 +80,14 @@ export class EffectRunner {
           status: 'applied',
         };
       },
+      setCharacterOutfit: (effect) => {
+        this.rootStore.appearance.setCharacterOutfit(effect.characterId, effect.outfitId);
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
       changeMeta: (effect) => {
         this.rootStore.meta.changeMeta(effect.key, effect.delta);
 
@@ -266,6 +274,22 @@ export class EffectRunner {
       },
       hideCG: (effect) => {
         this.rootStore.dialogue.hideCg();
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      setOverlay: (effect) => {
+        this.rootStore.dialogue.setOverlay(effect.overlayId);
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      clearOverlay: (effect) => {
+        this.rootStore.dialogue.setOverlay(null);
 
         return {
           effect,

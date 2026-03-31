@@ -10,7 +10,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "validate:content": "vitest run src/engine/validators/ContentSmoke.test.ts"
   },
   "dependencies": {
     "@emotion/react": "latest",

@@ -16,6 +16,12 @@ export interface SetFlagEffect {
   value: FlagValue;
 }
 
+export interface SetCharacterOutfitEffect {
+  type: 'setCharacterOutfit';
+  characterId: string;
+  outfitId: string;
+}
+
 export interface ChangeMetaEffect {
   type: 'changeMeta';
   key: MetaKey;
@@ -118,6 +124,15 @@ export interface HideCgEffect {
   type: 'hideCG';
 }
 
+export interface SetOverlayEffect {
+  type: 'setOverlay';
+  overlayId: string;
+}
+
+export interface ClearOverlayEffect {
+  type: 'clearOverlay';
+}
+
 export interface OpenScreenEffect {
   type: 'openScreen';
   screenId: ScreenId;
@@ -142,6 +157,7 @@ export interface JumpToNodeEffect {
 
 export type GameEffect =
   | SetFlagEffect
+  | SetCharacterOutfitEffect
   | ChangeMetaEffect
   | ChangeStatEffect
   | SetStatEffect
@@ -160,6 +176,8 @@ export type GameEffect =
   | PlaySfxEffect
   | ShowCgEffect
   | HideCgEffect
+  | SetOverlayEffect
+  | ClearOverlayEffect
   | OpenScreenEffect
   | OpenModalEffect
   | RunScriptEffect

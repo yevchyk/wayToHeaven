@@ -72,6 +72,18 @@ describe('EffectRunner', () => {
     expect(rootStore.flags.getFlag('gate-open')).toBe(true);
   });
 
+  it('executes setCharacterOutfit effects', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.executeEffect({
+      type: 'setCharacterOutfit',
+      characterId: 'mirella',
+      outfitId: 'dress-torn',
+    });
+
+    expect(rootStore.appearance.getCurrentOutfitId('mirella')).toBe('dress-torn');
+  });
+
   it('executes changeMeta effects', () => {
     const rootStore = new GameRootStore();
 
@@ -237,6 +249,10 @@ describe('EffectRunner', () => {
       cgId: 'chapter-1/cg/awakening-flash',
     });
     rootStore.executeEffect({
+      type: 'setOverlay',
+      overlayId: 'chapter-1/overlays/dream-veil',
+    });
+    rootStore.executeEffect({
       type: 'playSfx',
       sfxId: 'chapter-1/sfx/heartbeat',
     });
@@ -244,16 +260,21 @@ describe('EffectRunner', () => {
     expect(rootStore.dialogue.currentBackgroundId).toBe('chapter-1/backgrounds/prison-cell');
     expect(rootStore.dialogue.currentMusicId).toBe('chapter-1/music/under-stone');
     expect(rootStore.dialogue.currentCgId).toBe('chapter-1/cg/awakening-flash');
+    expect(rootStore.dialogue.currentOverlayId).toBe('chapter-1/overlays/dream-veil');
     expect(rootStore.dialogue.lastSfxId).toBe('chapter-1/sfx/heartbeat');
 
     rootStore.executeEffect({
       type: 'hideCG',
     });
     rootStore.executeEffect({
+      type: 'clearOverlay',
+    });
+    rootStore.executeEffect({
       type: 'stopMusic',
     });
 
     expect(rootStore.dialogue.currentCgId).toBeNull();
+    expect(rootStore.dialogue.currentOverlayId).toBeNull();
     expect(rootStore.dialogue.currentMusicId).toBeNull();
   });
 
@@ -401,7 +422,7 @@ describe('EffectRunner', () => {
   it('queues jumpToNode effects while a dialogue is active', () => {
     const rootStore = new GameRootStore();
 
-    rootStore.dialogue.startDialogue('intro-dialogue');
+    rootStore.dialogue.startDialogue('chapter-1/scene/city-gate');
 
     const result = rootStore.executeEffect({
       type: 'jumpToNode',

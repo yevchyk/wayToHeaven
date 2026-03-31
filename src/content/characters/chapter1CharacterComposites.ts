@@ -1,7 +1,8 @@
 import type {
   CharacterCompositeAssetDefinition,
   CharacterCompositeDefinition,
-  CharacterCompositeTransform,
+  CharacterCompositePlacementPatch,
+  CharacterCompositeStageDefinition,
 } from '@engine/types/characterComposite';
 import type { NarrativeCharacterData } from '@engine/types/narrative';
 
@@ -17,7 +18,7 @@ function buildChapterCharacterAssetId(characterId: string, layerFolder: string, 
 function buildEmotionHeadDefinitions(
   characterId: string,
   character: NarrativeCharacterData,
-  emotionTransforms?: Partial<Record<string, CharacterCompositeTransform>>,
+  emotionPlacements?: Partial<Record<string, CharacterCompositePlacementPatch>>,
 ): Record<string, CharacterCompositeAssetDefinition> {
   const emotions = Object.keys(character.portraitRefs);
   const fallbackEmotion = character.defaultEmotion ?? emotions[0] ?? 'neutral';
@@ -27,7 +28,7 @@ function buildEmotionHeadDefinitions(
     result[emotion] = {
       assetId: buildChapterCharacterAssetId(characterId, 'head', emotion),
       label: `${character.displayName} ${emotion}`,
-      ...(emotionTransforms?.[emotion] ? { transform: emotionTransforms[emotion] } : {}),
+      ...(emotionPlacements?.[emotion] ? { placement: emotionPlacements[emotion] } : {}),
     };
 
     return result;
@@ -35,39 +36,90 @@ function buildEmotionHeadDefinitions(
 }
 
 interface ChapterNpcCompositeTweakSet {
-  transforms?: CharacterCompositeDefinition['transforms'];
-  headEmotionTransforms?: Partial<Record<string, CharacterCompositeTransform>>;
+  placements?: CharacterCompositeDefinition['placements'];
+  headEmotionPlacements?: Partial<Record<string, CharacterCompositePlacementPatch>>;
 }
+
+export const chapter1CharacterCompositeStage: CharacterCompositeStageDefinition = {
+  width: 1000,
+  height: 1400,
+  safeArea: {
+    x: 90,
+    y: 98,
+    width: 820,
+    height: 1204,
+  },
+};
 
 export const chapter1NpcCompositeTweaks: Partial<Record<string, ChapterNpcCompositeTweakSet>> = {};
 
-export const chapter1HeroineBaseTransforms: NonNullable<CharacterCompositeDefinition['transforms']> = {
+export const chapter1HeroineBasePlacements: NonNullable<CharacterCompositeDefinition['placements']> = {
   head: {
-    x: 50,
-    y: 18,
-    width: 30,
+    anchor: {
+      x: 500,
+      y: 308,
+    },
+    size: {
+      width: 300,
+    },
+    assetAnchor: {
+      x: 0.5,
+      y: 0.82,
+    },
   },
   hair: {
-    x: 50,
-    y: 14,
-    width: 36,
+    anchor: {
+      x: 500,
+      y: 248,
+    },
+    size: {
+      width: 360,
+    },
+    assetAnchor: {
+      x: 0.5,
+      y: 0.76,
+    },
   },
   leftHand: {
-    x: 39,
-    y: 60,
-    width: 18,
+    anchor: {
+      x: 390,
+      y: 840,
+    },
+    size: {
+      width: 180,
+    },
+    assetAnchor: {
+      x: 0.56,
+      y: 0.2,
+    },
     rotate: -10,
   },
   weapon: {
-    x: 58,
-    y: 54,
-    width: 24,
+    anchor: {
+      x: 580,
+      y: 756,
+    },
+    size: {
+      width: 240,
+    },
+    assetAnchor: {
+      x: 0.34,
+      y: 0.8,
+    },
     rotate: -8,
   },
   rightHand: {
-    x: 65,
-    y: 60,
-    width: 18,
+    anchor: {
+      x: 650,
+      y: 840,
+    },
+    size: {
+      width: 180,
+    },
+    assetAnchor: {
+      x: 0.46,
+      y: 0.2,
+    },
     rotate: 12,
   },
 };
@@ -77,55 +129,79 @@ export const chapter1HeroineWeaponPosePresets: NonNullable<
 > = {
   'pose-1': {
     leftHand: {
-      x: 44,
-      y: 59,
+      anchor: {
+        x: 440,
+        y: 826,
+      },
       rotate: -22,
     },
     weapon: {
-      x: 52,
-      y: 48,
-      width: 24,
+      anchor: {
+        x: 520,
+        y: 672,
+      },
+      size: {
+        width: 240,
+      },
       rotate: -14,
     },
     rightHand: {
-      x: 58,
-      y: 56,
+      anchor: {
+        x: 580,
+        y: 784,
+      },
       rotate: 16,
     },
   },
   'pose-2': {
     leftHand: {
-      x: 34,
-      y: 61,
+      anchor: {
+        x: 340,
+        y: 854,
+      },
       rotate: -18,
     },
     weapon: {
-      x: 54,
-      y: 56,
-      width: 26,
+      anchor: {
+        x: 540,
+        y: 784,
+      },
+      size: {
+        width: 260,
+      },
       rotate: 6,
     },
     rightHand: {
-      x: 69,
-      y: 59,
+      anchor: {
+        x: 690,
+        y: 826,
+      },
       rotate: 20,
     },
   },
   'pose-3': {
     leftHand: {
-      x: 43,
-      y: 57,
+      anchor: {
+        x: 430,
+        y: 798,
+      },
       rotate: -28,
     },
     weapon: {
-      x: 66,
-      y: 43,
-      width: 21,
+      anchor: {
+        x: 660,
+        y: 602,
+      },
+      size: {
+        width: 210,
+      },
       rotate: 22,
     },
     rightHand: {
-      x: 58,
-      y: 58,
+      anchor: {
+        x: 580,
+        y: 812,
+      },
       rotate: 10,
     },
   },
@@ -140,6 +216,7 @@ function createNpcCompositeDefinition(
     chapterId: character.chapterId,
     displayName: character.displayName,
     kind: 'npc',
+    stage: chapter1CharacterCompositeStage,
     defaultEmotion: character.defaultEmotion ?? Object.keys(character.portraitRefs)[0] ?? 'neutral',
     assets: {
       body: {
@@ -153,16 +230,24 @@ function createNpcCompositeDefinition(
       headByEmotion: buildEmotionHeadDefinitions(
         character.id,
         character,
-        tweakSet?.headEmotionTransforms,
+        tweakSet?.headEmotionPlacements,
       ),
     },
-    transforms: {
+    placements: {
       head: {
-        x: 50,
-        y: 18,
-        width: 30,
+        anchor: {
+          x: 500,
+          y: 308,
+        },
+        size: {
+          width: 300,
+        },
+        assetAnchor: {
+          x: 0.5,
+          y: 0.82,
+        },
       },
-      ...tweakSet?.transforms,
+      ...tweakSet?.placements,
     },
   };
 }
@@ -182,6 +267,7 @@ export const chapter1HeroineCompositeDefinition: CharacterCompositeDefinition = 
   chapterId: heroineNpc.chapterId,
   displayName: heroineNpc.displayName,
   kind: 'heroine',
+  stage: chapter1CharacterCompositeStage,
   defaultEmotion: heroineNpc.defaultEmotion ?? 'neutral',
   defaultWeaponPosePreset: 'pose-2',
   assets: {
@@ -213,7 +299,7 @@ export const chapter1HeroineCompositeDefinition: CharacterCompositeDefinition = 
       label: `${heroineNpc.displayName} weapon`,
     },
   },
-  transforms: chapter1HeroineBaseTransforms,
+  placements: chapter1HeroineBasePlacements,
   weaponPosePresets: chapter1HeroineWeaponPosePresets,
 };
 

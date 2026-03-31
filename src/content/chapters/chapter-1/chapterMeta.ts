@@ -8,6 +8,5 @@ export const chapter1Meta: ChapterMeta = {
   order: 1,
   startSceneId: 'chapter-1/scene/intro',
   description: 'A long visual-novel prologue that introduces Mirella, the Thorne household, collapse, captivity, and the first contact with the parasitic force below.',
-  startDialogueId: 'chapter-1/dialogues/prologue-001',
   startingBackgroundId: 'chapter-1/backgrounds/mansion-dining-hall.webp',
 };

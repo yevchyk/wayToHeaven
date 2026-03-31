@@ -43,14 +43,15 @@ describe('WorldController', () => {
     expect(rootStore.meta.morale).toBe(2);
   });
 
-  it('launches dialogue interactions', () => {
+  it('launches scene flow interactions from world nodes', () => {
     const rootStore = new GameRootStore();
 
     rootStore.worldController.loadLocation('pilgrim-road');
     rootStore.worldController.moveToNode('city-gate');
 
     expect(rootStore.worldController.triggerNodeInteraction()).toBe(true);
-    expect(rootStore.dialogue.activeDialogueId).toBe('intro-dialogue');
+    expect(rootStore.sceneFlow.activeFlowId).toBe('chapter-1/scene/city-gate');
+    expect(rootStore.dialogue.activeDialogueId).toBe('chapter-1/scene/city-gate');
     expect(rootStore.ui.activeScreen).toBe('dialogue');
   });
 
@@ -67,4 +68,3 @@ describe('WorldController', () => {
     expect(rootStore.ui.activeScreen).toBe('battle');
   });
 });
-

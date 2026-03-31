@@ -1,0 +1,221 @@
+{
+  "id": "chapter1_prologue_001",
+  "schemaVersion": 1,
+  "title": "Пролог — Над містом, під землею",
+  "meta": {
+    "chapterId": "chapter-1",
+    "defaultBackgroundId": "chapter-1/backgrounds/mansion-dining-hall.webp",
+    "defaultMusicId": "theme_estate"
+  },
+  "scenes": {
+    "scene1": {
+      "id": "scene1",
+      "mode": "sequence",
+      "startNodeId": "n1",
+      "backgroundId": "chapter-1/backgrounds/mansion-dining-hall.webp",
+      "music": {
+        "action": "play",
+        "musicId": "theme_estate",
+        "fadeMs": 900,
+        "loop": true
+      },
+      "stage": {
+        "characters": [
+          {
+            "speakerId": "lady-sera",
+            "emotion": "soft",
+            "portraitId": "chapter-1/portraits/lady-sera/soft.webp"
+          },
+          {
+            "speakerId": "mirella",
+            "emotion": "neutral",
+            "portraitId": "chapter-1/portraits/mirella/neutral.webp"
+          },
+          {
+            "speakerId": "kael",
+            "emotion": "playful",
+            "portraitId": "chapter-1/portraits/kael/playful.webp"
+          },
+          {
+            "speakerId": "sir-raust",
+            "emotion": "stern",
+            "portraitId": "chapter-1/portraits/sir-raust/stern.webp"
+          }
+        ],
+        "focusCharacterId": "mirella"
+      },
+      "nodes": {
+        "n1": {
+          "id": "n1",
+          "type": "narration",
+          "text": "Ранковий стіл дому Торнів виглядає спокійним, але в розмові вже відчувається тиск родини.",
+          "nextNodeId": "n5"
+        },
+        "n5": {
+          "id": "n5",
+          "type": "choice",
+          "speakerId": "mirella",
+          "speakerSide": "center",
+          "emotion": "thinking",
+          "portraitId": "chapter-1/portraits/mirella/thinking.webp",
+          "text": "Мірелла переводить погляд між леді Серою, Каелем і Раустом, намагаючись зрозуміти, хто тут справді має рацію.",
+          "choices": [
+            {
+              "id": "n5_c1",
+              "text": "Підтримати Рауста про честь.",
+              "effects": [
+                {
+                  "type": "changeStat",
+                  "key": "humanity",
+                  "delta": 1
+                }
+              ],
+              "nextNodeId": "n6"
+            },
+            {
+              "id": "n5_c2",
+              "text": "Промовчати й придивитися.",
+              "effects": [
+                {
+                  "type": "changeStat",
+                  "key": "restraint",
+                  "delta": 1
+                }
+              ],
+              "nextNodeId": "n7"
+            }
+          ]
+        },
+        "n6": {
+          "id": "n6",
+          "type": "dialogue",
+          "speakerId": "mirella",
+          "speakerSide": "center",
+          "emotion": "angry",
+          "portraitId": "chapter-1/portraits/mirella/thinking.webp",
+          "sceneChange": {
+            "stage": {
+              "characters": [
+                {
+                  "speakerId": "lady-sera",
+                  "emotion": "afraid",
+                  "portraitId": "chapter-1/portraits/lady-sera/afraid.webp"
+                },
+                {
+                  "speakerId": "mirella",
+                  "emotion": "angry",
+                  "portraitId": "chapter-1/portraits/mirella/thinking.webp"
+                },
+                {
+                  "speakerId": "kael",
+                  "emotion": "nervous",
+                  "portraitId": "chapter-1/portraits/kael/nervous.webp"
+                }
+              ],
+              "focusCharacterId": "mirella"
+            },
+            "background": {
+              "transition": "fade",
+              "style": "dark-borders",
+              "image": "chapter-1/backgrounds/mansion-dining-hall.webp"
+            }
+          },
+          "text": "Якщо влада тримається тільки на страху, то в ній уже є тріщина.",
+          "nextNodeId": "n8"
+        },
+        "n7": {
+          "id": "n7",
+          "type": "narration",
+          "text": "Мірелла вирішує нічого не казати вголос і просто запам'ятати, як кожен із них реагує.",
+          "nextNodeId": "n8"
+        },
+        "n8": {
+          "id": "n8",
+          "type": "narration",
+          "text": "Сніданок закінчується, але напруга не зникає. Наступний епізод починається вже в її кімнаті.",
+          "nextSceneId": "scene2"
+        }
+      }
+    },
+    "scene2": {
+      "id": "scene2",
+      "mode": "sequence",
+      "startNodeId": "n9",
+      "backgroundId": "chapter-1/backgrounds/mirella-room-morning.webp",
+      "stage": {
+        "characters": [
+          {
+            "speakerId": "servant-lyna",
+            "emotion": "soft",
+            "portraitId": "chapter-1/portraits/servant-lyna/soft.webp"
+          },
+          {
+            "speakerId": "mirella",
+            "emotion": "neutral",
+            "portraitId": "chapter-1/portraits/mirella/neutral.webp"
+          }
+        ],
+        "focusCharacterId": "mirella"
+      },
+      "nodes": {
+        "n9": {
+          "id": "n9",
+          "type": "dialogue",
+          "speakerId": "servant-lyna",
+          "speakerSide": "left",
+          "emotion": "soft",
+          "portraitId": "chapter-1/portraits/servant-lyna/soft.webp",
+          "text": "Пані, я приготувала одяг до виїзду. Якщо хочете, я ще раз перевірю застібки.",
+          "nextNodeId": "n10"
+        },
+        "n10": {
+          "id": "n10",
+          "type": "choice",
+          "speakerId": "mirella",
+          "speakerSide": "right",
+          "emotion": "thinking",
+          "portraitId": "chapter-1/portraits/mirella/thinking.webp",
+          "text": "Ліна нахиляється ближче, а Мірелла вирішує, як відповісти на цю турботу.",
+          "choices": [
+            {
+              "id": "n10_c1",
+              "text": "Подякувати й дозволити допомогти.",
+              "effects": [
+                {
+                  "type": "changeStat",
+                  "key": "altruism",
+                  "delta": 1
+                }
+              ],
+              "nextNodeId": "n11"
+            },
+            {
+              "id": "n10_c2",
+              "text": "Холодно сказати, що впораєшся сама.",
+              "effects": [
+                {
+                  "type": "changeStat",
+                  "key": "egoism",
+                  "delta": 1
+                }
+              ],
+              "nextNodeId": "n12"
+            }
+          ]
+        },
+        "n11": {
+          "id": "n11",
+          "type": "narration",
+          "text": "Ліна посміхається й обережно поправляє тканину на плечах. Мірелла відчуває коротку, незручну теплоту.",
+          "isEnd": true
+        },
+        "n12": {
+          "id": "n12",
+          "type": "narration",
+          "text": "Ліна мовчки відступає на крок. У кімнаті стає холодніше, ніж було мить тому.",
+          "isEnd": true
+        }
+      }
+    }
+  }
+}

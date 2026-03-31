@@ -12,7 +12,8 @@ export type EffectReferenceValidationIssueCode =
   | 'missingBackgroundReference'
   | 'missingMusicReference'
   | 'missingSfxReference'
-  | 'missingCgReference';
+  | 'missingCgReference'
+  | 'missingOverlayReference';
 
 export interface EffectReferenceValidationIssue {
   code: EffectReferenceValidationIssueCode;
@@ -126,6 +127,8 @@ export class EffectReferenceValidator {
         return this.validateAssetRef(effect.sfxId, 'sfx', 'missingSfxReference', path);
       case 'showCG':
         return this.validateAssetRef(effect.cgId, 'cg', 'missingCgReference', path);
+      case 'setOverlay':
+        return this.validateAssetRef(effect.overlayId, 'overlay', 'missingOverlayReference', path);
       default:
         return [];
     }
@@ -136,7 +139,11 @@ export class EffectReferenceValidator {
     kind: NarrativeAssetKind,
     code: Extract<
       EffectReferenceValidationIssueCode,
-      'missingBackgroundReference' | 'missingMusicReference' | 'missingSfxReference' | 'missingCgReference'
+      | 'missingBackgroundReference'
+      | 'missingMusicReference'
+      | 'missingSfxReference'
+      | 'missingCgReference'
+      | 'missingOverlayReference'
     >,
     path: string,
   ) {

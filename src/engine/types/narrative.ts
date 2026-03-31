@@ -17,14 +17,29 @@ export interface NarrativeAssetDefinition {
   sourcePath?: string;
 }
 
+export type NarrativeCharacterRole = 'heroine' | 'npc';
+
+export type PortraitPlaceholderPreset = 'default' | 'dress' | 'dress-torn' | 'dress-ripped';
+
+export interface NarrativeCharacterOutfitDefinition {
+  id: string;
+  label: string;
+  defaultPortraitId?: string;
+  portraitRefs?: Partial<Record<CharacterEmotion, string>>;
+  placeholderPreset?: PortraitPlaceholderPreset;
+}
+
 export interface NarrativeCharacterData {
   id: string;
   chapterId: string;
   displayName: string;
+  role?: NarrativeCharacterRole;
   portraitRefs: Partial<Record<CharacterEmotion, string>>;
   defaultEmotion?: CharacterEmotion;
   defaultPortraitId?: string;
   defaultSide?: SpeakerSide;
+  defaultOutfitId?: string;
+  outfits?: Record<string, NarrativeCharacterOutfitDefinition>;
   description?: string;
 }
 
@@ -34,7 +49,6 @@ export interface ChapterMeta {
   order: number;
   startSceneId: string;
   description?: string;
-  startDialogueId?: string;
   startingBackgroundId?: string;
 }
 
@@ -43,7 +57,7 @@ export interface SceneMeta {
   title: string;
   chapterId: string;
   sceneOrder: number;
-  mainDialogueId: string;
+  mainSceneFlowId?: string;
   description?: string;
   defaultBackgroundId?: string;
   defaultMusicId?: string;

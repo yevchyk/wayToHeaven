@@ -1,10 +1,6 @@
-import type { LocationData } from '@engine/types/world';
-
 import { firstLocation } from './firstLocation';
 
-export const locationContentRegistry: Record<string, LocationData> = {
-  [firstLocation.id]: firstLocation,
-};
+export { locationContentRegistry } from '@content/registries/locationRegistry';
 
 export { firstLocation };
 export {

@@ -1,5 +1,10 @@
 import type { GameRootStore } from '@engine/stores/GameRootStore';
-import type { BattleNodeInteraction, DialogueNodeInteraction, LocationNode } from '@engine/types/world';
+import type {
+  BattleNodeInteraction,
+  DialogueNodeInteraction,
+  LocationNode,
+  SceneFlowNodeInteraction,
+} from '@engine/types/world';
 
 export class WorldController {
   readonly rootStore: GameRootStore;
@@ -77,7 +82,9 @@ export class WorldController {
       return false;
     }
 
-    if (interaction.type === 'dialogue') {
+    if (interaction.type === 'sceneFlow') {
+      this.triggerSceneFlowInteraction(interaction);
+    } else if (interaction.type === 'dialogue') {
       this.triggerDialogueInteraction(interaction);
     } else {
       this.triggerBattleInteraction(interaction);
@@ -98,6 +105,10 @@ export class WorldController {
     }
 
     return this.rootStore.executeEffects(node.onEnterEffects);
+  }
+
+  private triggerSceneFlowInteraction(interaction: SceneFlowNodeInteraction) {
+    this.rootStore.sceneFlowController.startSceneFlow(interaction.sceneFlowId);
   }
 
   private triggerDialogueInteraction(interaction: DialogueNodeInteraction) {

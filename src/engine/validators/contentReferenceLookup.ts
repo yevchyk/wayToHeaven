@@ -2,6 +2,7 @@ import type { BattleTemplate } from '@engine/types/battle';
 import type { CitySceneData } from '@engine/types/city';
 import type { DialogueData } from '@engine/types/dialogue';
 import type { ItemData } from '@engine/types/item';
+import type { SceneFlowData } from '@engine/types/sceneFlow';
 import type { StatusDefinition, StatusType } from '@engine/types/status';
 import type { TravelBoardData } from '@engine/types/travel';
 import type { CharacterInstance, CharacterTemplate, EnemyTemplate } from '@engine/types/unit';
@@ -12,6 +13,7 @@ export interface ContentReferenceLookup {
   hasCityScene(sceneId: string): boolean;
   hasTravelBoard(boardId: string): boolean;
   hasDialogue(dialogueId: string): boolean;
+  hasSceneFlow(sceneFlowId: string): boolean;
   hasItem(itemId: string): boolean;
   hasLocation(locationId: string): boolean;
   hasLocationNode(locationId: string, nodeId: string): boolean;
@@ -27,6 +29,7 @@ export interface ContentRegistrySnapshot {
   cityScenes: Record<string, CitySceneData>;
   travelBoards: Record<string, TravelBoardData>;
   dialogues: Record<string, DialogueData>;
+  sceneFlows: Record<string, SceneFlowData>;
   items: Record<string, ItemData>;
   locations: Record<string, LocationData>;
   characterTemplates: Record<string, CharacterTemplate>;
@@ -42,11 +45,15 @@ export function createContentReferenceLookup(
     hasScript?: (scriptId: string) => boolean;
   } = {},
 ): ContentReferenceLookup {
+  const hasSceneFlowOfMode = (sceneFlowId: string, mode: SceneFlowData['mode']) =>
+    snapshot.sceneFlows[sceneFlowId]?.mode === mode;
+
   return {
     hasBattle: (battleTemplateId) => battleTemplateId in snapshot.battles,
-    hasCityScene: (sceneId) => sceneId in snapshot.cityScenes,
-    hasTravelBoard: (boardId) => boardId in snapshot.travelBoards,
-    hasDialogue: (dialogueId) => dialogueId in snapshot.dialogues,
+    hasCityScene: (sceneId) => sceneId in snapshot.cityScenes || hasSceneFlowOfMode(sceneId, 'hub'),
+    hasTravelBoard: (boardId) => boardId in snapshot.travelBoards || hasSceneFlowOfMode(boardId, 'route'),
+    hasDialogue: (dialogueId) => dialogueId in snapshot.dialogues || hasSceneFlowOfMode(dialogueId, 'sequence'),
+    hasSceneFlow: (sceneFlowId) => sceneFlowId in snapshot.sceneFlows,
     hasItem: (itemId) => itemId in snapshot.items,
     hasLocation: (locationId) => locationId in snapshot.locations,
     hasLocationNode: (locationId, nodeId) => Boolean(snapshot.locations[locationId]?.nodes[nodeId]),

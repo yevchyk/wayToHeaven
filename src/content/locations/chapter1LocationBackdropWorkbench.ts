@@ -2,15 +2,12 @@ import type { CitySceneData } from '@engine/types/city';
 import type { SceneMeta } from '@engine/types/narrative';
 import type { TravelBoardData } from '@engine/types/travel';
 
-import { chapter1MarketLaneScene } from '@content/chapters/chapter-1/city/market-lane.scene';
-import { chapter1ShrineCourtScene } from '@content/chapters/chapter-1/city/shrine-court.scene';
-import { chapter1SiltBarScene } from '@content/chapters/chapter-1/city/silt-bar.scene';
-import { chapter1TempleExitScene } from '@content/chapters/chapter-1/city/temple-exit.scene';
 import { chapter1AwakeningSceneMeta } from '@content/chapters/chapter-1/scenes/awakening/awakening.meta';
 import { chapter1CityGateSceneMeta } from '@content/chapters/chapter-1/scenes/city-gate/city-gate.meta';
 import { chapter1IntroSceneMeta } from '@content/chapters/chapter-1/scenes/intro/intro.meta';
 import { chapter1PrisonFallSceneMeta } from '@content/chapters/chapter-1/scenes/prison-fall/prison-fall.meta';
-import { chapter1UndergroundRouteBoard } from '@content/chapters/chapter-1/travel/underground-route.board';
+import { citySceneRegistry } from '@content/registries/citySceneRegistry';
+import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 
 export type LocationBackdropWorkbenchKind = 'cityScene' | 'travelBoard' | 'sceneMeta';
 
@@ -65,7 +62,7 @@ function buildTravelBoardEntry(board: TravelBoardData, contentFilePath: string):
 function buildSceneMetaEntry(
   sceneMeta: SceneMeta,
   contentFilePath: string,
-  mainDialogueFilePath: string,
+  mainFlowFilePath: string,
 ): LocationBackdropWorkbenchEntry {
   return {
     id: sceneMeta.id,
@@ -77,36 +74,42 @@ function buildSceneMetaEntry(
     contentFilePath,
     assetFieldPath: 'defaultBackgroundId',
     improvementHints: [
-      'Це default background для всієї сцени; якщо окремі діалогові вузли мають інші фони, прав їх у dialogue файлі.',
-      `Main dialogue file: ${mainDialogueFilePath}`,
+      'Це default background для всієї сцени; якщо окремі вузли мають інші фони, прав їх у scene-generation пакеті.',
+      `Main scene-flow source: ${mainFlowFilePath}`,
       'Якщо хочеш підсилити staging, міняй не тільки фон, а й `title` / `description` сцени.',
     ],
   };
 }
 
+const chapter1TempleExitScene = citySceneRegistry['chapter-1/city/temple-exit'] as CitySceneData;
+const chapter1MarketLaneScene = citySceneRegistry['chapter-1/city/market-lane'] as CitySceneData;
+const chapter1SiltBarScene = citySceneRegistry['chapter-1/city/silt-bar'] as CitySceneData;
+const chapter1ShrineCourtScene = citySceneRegistry['chapter-1/city/shrine-court'] as CitySceneData;
+const chapter1UndergroundRouteBoard = travelBoardRegistry['chapter-1/travel/underground-route'] as TravelBoardData;
+
 export const chapter1CityLocationBackdropEntries: LocationBackdropWorkbenchEntry[] = [
   buildCitySceneEntry(
     chapter1TempleExitScene,
-    'src/content/chapters/chapter-1/city/temple-exit.scene.ts',
+    'src/content/chapters/chapter-1/city/city-hubs.scene-generation.ts',
   ),
   buildCitySceneEntry(
     chapter1MarketLaneScene,
-    'src/content/chapters/chapter-1/city/market-lane.scene.ts',
+    'src/content/chapters/chapter-1/city/city-hubs.scene-generation.ts',
   ),
   buildCitySceneEntry(
     chapter1SiltBarScene,
-    'src/content/chapters/chapter-1/city/silt-bar.scene.ts',
+    'src/content/chapters/chapter-1/city/city-hubs.scene-generation.ts',
   ),
   buildCitySceneEntry(
     chapter1ShrineCourtScene,
-    'src/content/chapters/chapter-1/city/shrine-court.scene.ts',
+    'src/content/chapters/chapter-1/city/city-hubs.scene-generation.ts',
   ),
 ];
 
 export const chapter1TravelBackdropEntries: LocationBackdropWorkbenchEntry[] = [
   buildTravelBoardEntry(
     chapter1UndergroundRouteBoard,
-    'src/content/chapters/chapter-1/travel/underground-route.board.ts',
+    'src/content/chapters/chapter-1/travel/underground-route.scene-generation.ts',
   ),
 ];
 
@@ -114,21 +117,21 @@ export const chapter1SceneMetaBackdropEntries: LocationBackdropWorkbenchEntry[] 
   buildSceneMetaEntry(
     chapter1IntroSceneMeta,
     'src/content/chapters/chapter-1/scenes/intro/intro.meta.ts',
-    'src/content/chapters/chapter-1/scenes/intro/intro.dialogue.ts',
+    'src/content/chapters/chapter-1/scenes/intro/intro.scene-generation.ts',
   ),
   buildSceneMetaEntry(
     chapter1AwakeningSceneMeta,
     'src/content/chapters/chapter-1/scenes/awakening/awakening.meta.ts',
-    'src/content/chapters/chapter-1/scenes/awakening/awakening.dialogue.ts',
+    'src/content/chapters/chapter-1/scenes/awakening/awakening.scene-generation.ts',
   ),
   buildSceneMetaEntry(
     chapter1PrisonFallSceneMeta,
     'src/content/chapters/chapter-1/scenes/prison-fall/prison-fall.meta.ts',
-    'src/content/dialogues/introDialogue.ts',
+    'scene flow not authored yet',
   ),
   buildSceneMetaEntry(
     chapter1CityGateSceneMeta,
     'src/content/chapters/chapter-1/scenes/city-gate/city-gate.meta.ts',
-    'src/content/chapters/chapter-1/scenes/city-gate/city-gate.dialogue.ts',
+    'src/content/chapters/chapter-1/scenes/city-gate/city-gate.scene-generation.ts',
   ),
 ];

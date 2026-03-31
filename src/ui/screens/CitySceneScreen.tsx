@@ -10,13 +10,17 @@ import type { CitySceneAction, CitySceneData } from '@engine/types/city';
 import { getCityActionToneStyle } from '@ui/components/city/cityActionToneStyles';
 import {
   formatSpeakerLabel,
+  resolveNarrativePortraitVisual,
   resolveNarrativeVisualAsset,
+  type DialoguePortraitVisual,
   type DialogueVisualAsset,
 } from '@ui/components/dialogue/dialoguePresentation';
 import {
   buildNarrativeBackdropBackground,
   renderNarrativeBackdropArchitectureLayer,
 } from '@ui/components/narrative/narrativeBackdrop';
+import { NarrativePortraitFigure } from '@ui/components/narrative/NarrativePortraitFigure';
+import { SceneFlowPresentationShell } from '@ui/components/scene-flow/SceneFlowPresentationShell';
 import { SectionCard } from '@ui/components/SectionCard';
 
 const HEROINE_SPEAKER_ID = 'mirella';
@@ -26,7 +30,7 @@ const HIDDEN_PREVIEW_SPEAKER_IDS = new Set(['mirella', 'heroine']);
 interface PreviewCharacter {
   id: string;
   name: string;
-  portrait: DialogueVisualAsset;
+  portrait: DialoguePortraitVisual;
 }
 
 interface ActionPreview {
@@ -100,11 +104,15 @@ function resolvePreviewCharacters(rootStore: ReturnType<typeof useGameRootStore>
     return {
       id: speakerId,
       name,
-      portrait: resolveNarrativeVisualAsset(
+      portrait: resolveNarrativePortraitVisual(
         rootStore,
-        character?.defaultPortraitId ?? null,
-        'portrait',
-        name,
+        {
+          speakerId,
+          emotion: character?.defaultEmotion ?? null,
+          portraitId: null,
+          outfitId: rootStore.appearance.getCurrentOutfitId(speakerId),
+          fallbackLabel: name,
+        },
       ),
     };
   });
@@ -182,18 +190,21 @@ export const CitySceneScreen = observer(function CitySceneScreen() {
     );
   }
 
-  const backdrop = resolveNarrativeVisualAsset(rootStore, scene.backgroundId ?? null, 'background', scene.locationName);
   const sceneMetaLine = buildSceneMetaLine(scene);
   const navigationActions = actions.filter((action) => Boolean(action.nextSceneId));
   const localActions = actions.filter((action) => !action.nextSceneId);
   const previewAction = previewActionId ? actions.find((action) => action.id === previewActionId) ?? null : null;
   const activePreview = previewAction ? resolveActionPreview(rootStore, scene, previewAction) : null;
   const heroineCharacter = rootStore.getNarrativeCharacterById(HEROINE_SPEAKER_ID);
-  const heroinePortrait = resolveNarrativeVisualAsset(
+  const heroinePortrait = resolveNarrativePortraitVisual(
     rootStore,
-    heroineCharacter?.defaultPortraitId ?? null,
-    'portrait',
-    heroineCharacter?.displayName ?? 'Героїня',
+    {
+      speakerId: HEROINE_SPEAKER_ID,
+      emotion: heroineCharacter?.defaultEmotion ?? null,
+      portraitId: null,
+      outfitId: rootStore.appearance.getCurrentOutfitId(HEROINE_SPEAKER_ID),
+      fallbackLabel: heroineCharacter?.displayName ?? 'Героїня',
+    },
   );
   const heroineUnit =
     rootStore.party.getUnit(HEROINE_RUNTIME_UNIT_ID) ??
@@ -217,17 +228,7 @@ export const CitySceneScreen = observer(function CitySceneScreen() {
   });
 
   return (
-    <Box
-      aria-label={`City background ${scene.locationName}`}
-      sx={{
-        position: 'relative',
-        minHeight: '100svh',
-        overflow: 'hidden',
-        background: buildNarrativeBackdropBackground(backdrop),
-      }}
-    >
-      {renderNarrativeBackdropArchitectureLayer(backdrop)}
-
+    <SceneFlowPresentationShell>
       <Box
         sx={{
           position: 'absolute',
@@ -247,10 +248,10 @@ export const CitySceneScreen = observer(function CitySceneScreen() {
       />
 
       <Stack
+        aria-label={`City background ${scene.locationName}`}
         spacing={{ xs: 2.5, lg: 3 }}
         sx={{
           position: 'relative',
-          zIndex: 1,
           minHeight: '100svh',
           px: { xs: 2, sm: 3, md: 4, xl: 6 },
           pt: { xs: 12, md: 14 },
@@ -371,7 +372,7 @@ export const CitySceneScreen = observer(function CitySceneScreen() {
           </Box>
         ) : null}
       </Stack>
-    </Box>
+    </SceneFlowPresentationShell>
   );
 });
 
@@ -380,7 +381,7 @@ function HeroinePanel({
   heroineUnit,
   heroineName,
 }: {
-  heroinePortrait: DialogueVisualAsset;
+  heroinePortrait: DialoguePortraitVisual;
   heroineUnit: { currentHp: number; currentMana: number; derivedStats: { maxHp: number; maxMana: number } } | null;
   heroineName: string;
 }) {
@@ -410,33 +411,28 @@ function HeroinePanel({
           }}
         />
 
-        {heroinePortrait.url ? (
-          <Box
-            alt=""
-            component="img"
-            src={heroinePortrait.url}
-            sx={{
-              position: 'absolute',
-              inset: '6% 4% 0',
-              width: '92%',
-              height: '94%',
-              objectFit: 'contain',
-              objectPosition: 'center bottom',
-              filter: 'drop-shadow(0 28px 30px rgba(0, 0, 0, 0.38))',
-              userSelect: 'none',
-            }}
-          />
-        ) : (
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: '12% 14% 0',
-              borderRadius: '999px 999px 26px 26px',
-              background:
-                'linear-gradient(180deg, rgba(255, 229, 179, 0.18) 0%, rgba(132, 144, 165, 0.24) 16%, rgba(22, 27, 34, 0.94) 68%, rgba(7, 9, 12, 1) 100%)',
-            }}
-          />
-        )}
+        <NarrativePortraitFigure
+          portrait={heroinePortrait}
+          sx={{
+            position: 'absolute',
+            inset: '6% 4% 0',
+            width: '92%',
+            height: '94%',
+            filter: 'drop-shadow(0 28px 30px rgba(0, 0, 0, 0.38))',
+            userSelect: 'none',
+          }}
+          renderPlaceholder={() => (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: '12% 14% 0',
+                borderRadius: '999px 999px 26px 26px',
+                background:
+                  'linear-gradient(180deg, rgba(255, 229, 179, 0.18) 0%, rgba(132, 144, 165, 0.24) 16%, rgba(22, 27, 34, 0.94) 68%, rgba(7, 9, 12, 1) 100%)',
+              }}
+            />
+          )}
+        />
       </Box>
 
       <Stack spacing={1.1} sx={{ p: 2 }}>
@@ -698,18 +694,14 @@ function ActionPreviewPanel({ preview }: { preview: ActionPreview | null }) {
         }}
       />
 
-      {mainCharacter?.portrait.url ? (
-        <Box
-          alt=""
-          component="img"
-          src={mainCharacter.portrait.url}
+      {mainCharacter ? (
+        <NarrativePortraitFigure
+          portrait={mainCharacter.portrait}
           sx={{
             position: 'absolute',
             inset: '8% 6% 0',
             width: '88%',
             height: '86%',
-            objectFit: 'contain',
-            objectPosition: 'center bottom',
             filter: 'drop-shadow(0 24px 28px rgba(0, 0, 0, 0.38))',
             userSelect: 'none',
           }}

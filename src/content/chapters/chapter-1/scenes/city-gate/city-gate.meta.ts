@@ -7,7 +7,7 @@ export const chapter1CityGateSceneMeta: SceneMeta = {
   title: 'Gate Check',
   chapterId: 'chapter-1',
   sceneOrder: 4,
-  mainDialogueId: 'intro-dialogue',
+  mainSceneFlowId: 'chapter-1/scene/city-gate',
   description: 'The guard tests the player’s composure at the city checkpoint.',
   defaultBackgroundId: chapter1BackgroundIds.cityGate,
 };

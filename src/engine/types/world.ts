@@ -8,6 +8,12 @@ export interface DialogueNodeInteraction {
   once?: boolean;
 }
 
+export interface SceneFlowNodeInteraction {
+  type: 'sceneFlow';
+  sceneFlowId: string;
+  once?: boolean;
+}
+
 export interface BattleNodeInteraction {
   type: 'battle';
   battleTemplateId: string;
@@ -20,6 +26,7 @@ export interface EmptyNodeInteraction {
 
 export type NodeInteraction =
   | DialogueNodeInteraction
+  | SceneFlowNodeInteraction
   | BattleNodeInteraction
   | EmptyNodeInteraction;
 
@@ -49,4 +56,3 @@ export interface WorldVisit {
   locationId: string;
   nodeId: string;
 }
-

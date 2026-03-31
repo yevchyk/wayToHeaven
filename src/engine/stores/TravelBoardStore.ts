@@ -1,24 +1,15 @@
 import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import { adaptSceneFlowToTravelBoardView } from '@engine/systems/scenes/sceneFlowViewAdapters';
 import type {
-  TravelBoardPhase,
   TravelBoardRuntime,
   TravelLogEntry,
-  TravelLogEntryType,
   TravelNode,
 } from '@engine/types/travel';
 
-function uniqueValues(values: readonly string[]) {
-  return Array.from(new Set(values));
-}
-
 export class TravelBoardStore {
   readonly rootStore: GameRootStore;
-
-  boardRuntime: TravelBoardRuntime | null = null;
-
-  private logSequence = 0;
 
   constructor(rootStore: GameRootStore) {
     this.rootStore = rootStore;
@@ -27,203 +18,123 @@ export class TravelBoardStore {
   }
 
   get hasActiveBoard() {
-    return this.boardRuntime !== null;
+    return this.rootStore.sceneFlow.activeMode === 'route';
   }
 
   get activeBoardId() {
-    return this.boardRuntime?.boardId ?? null;
+    return this.hasActiveBoard ? this.rootStore.sceneFlow.activeFlowId : null;
   }
 
-  get phase(): TravelBoardPhase {
-    return this.boardRuntime?.phase ?? 'idle';
+  get boardRuntime(): TravelBoardRuntime | null {
+    const session = this.rootStore.sceneFlow.activeSession;
+    const routeRuntime = this.rootStore.sceneFlow.routeRuntime;
+
+    if (!session || session.mode !== 'route' || !routeRuntime) {
+      return null;
+    }
+
+    return {
+      boardId: session.flowId,
+      phase: routeRuntime.phase,
+      currentNodeId: session.currentNodeId,
+      revealedNodeIds: [...routeRuntime.revealedNodeIds],
+      visitedNodeIds: [...routeRuntime.visitedNodeIds],
+      resolvedNodeIds: [...routeRuntime.resolvedNodeIds],
+      remainingSteps: routeRuntime.remainingSteps,
+      lastRoll: routeRuntime.lastRoll,
+      scoutCharges: routeRuntime.scoutCharges,
+      scoutDepth: routeRuntime.scoutDepth,
+      eventLog: [...routeRuntime.eventLog],
+      returnScreenId: session.returnScreenId,
+    };
+  }
+
+  get phase() {
+    return this.rootStore.sceneFlow.routePhase;
   }
 
   get remainingSteps() {
-    return this.boardRuntime?.remainingSteps ?? 0;
+    return this.rootStore.sceneFlow.remainingSteps;
   }
 
   get lastRoll() {
-    return this.boardRuntime?.lastRoll ?? null;
+    return this.rootStore.sceneFlow.lastRoll;
   }
 
   get scoutCharges() {
-    return this.boardRuntime?.scoutCharges ?? 0;
+    return this.rootStore.sceneFlow.scoutCharges;
   }
 
   get scoutDepth() {
-    return this.boardRuntime?.scoutDepth ?? 0;
+    return this.rootStore.sceneFlow.scoutDepth;
   }
 
   get eventLog(): TravelLogEntry[] {
-    return this.boardRuntime?.eventLog ?? [];
+    return this.rootStore.sceneFlow.routeEventLog;
   }
 
   get currentBoard() {
-    return this.activeBoardId ? this.rootStore.getTravelBoardById(this.activeBoardId) ?? null : null;
+    if (!this.activeBoardId) {
+      return null;
+    }
+
+    if (this.rootStore.sceneFlow.activeSourceType === 'travelBoard') {
+      return this.rootStore.getTravelBoardById(this.activeBoardId) ?? null;
+    }
+
+    if (this.rootStore.sceneFlow.activeSourceType !== 'sceneGeneration') {
+      return null;
+    }
+
+    const currentFlow = this.rootStore.sceneFlow.currentFlow;
+
+    return currentFlow ? adaptSceneFlowToTravelBoardView(currentFlow) : null;
   }
 
   get currentNodeId() {
-    return this.boardRuntime?.currentNodeId ?? null;
+    return this.hasActiveBoard ? this.rootStore.sceneFlow.currentNodeId : null;
   }
 
   get currentNode(): TravelNode | null {
-    if (!this.currentBoard || !this.currentNodeId) {
+    const board = this.currentBoard;
+    const nodeId = this.currentNodeId;
+
+    if (!board || !nodeId) {
       return null;
     }
 
-    return this.currentBoard.nodes[this.currentNodeId] ?? null;
+    return board.nodes[nodeId] ?? null;
   }
 
   get revealedNodeIds() {
-    return this.boardRuntime?.revealedNodeIds ?? [];
+    return this.rootStore.sceneFlow.revealedNodeIds;
   }
 
   get visitedNodeIds() {
-    return this.boardRuntime?.visitedNodeIds ?? [];
+    return this.rootStore.sceneFlow.routeVisitedNodeIds;
   }
 
   get resolvedNodeIds() {
-    return this.boardRuntime?.resolvedNodeIds ?? [];
+    return this.rootStore.sceneFlow.resolvedNodeIds;
   }
 
   get isAwaitingRoll() {
-    return this.phase === 'awaitingRoll';
+    return this.rootStore.sceneFlow.isAwaitingRoll;
   }
 
   get isAwaitingDirection() {
-    return this.phase === 'awaitingDirection';
+    return this.rootStore.sceneFlow.isAwaitingDirection;
   }
 
   get availableDirectionNodeIds() {
-    const currentNode = this.currentNode;
-
-    if (!currentNode) {
-      return [];
-    }
-
-    return currentNode.nextNodeIds.filter((nodeId) => !this.visitedNodeIds.includes(nodeId));
-  }
-
-  initialize(runtime: TravelBoardRuntime) {
-    this.boardRuntime = {
-      ...runtime,
-      revealedNodeIds: [...runtime.revealedNodeIds],
-      visitedNodeIds: [...runtime.visitedNodeIds],
-      resolvedNodeIds: [...runtime.resolvedNodeIds],
-      eventLog: [...runtime.eventLog],
-    };
-    this.logSequence = runtime.eventLog.length;
-  }
-
-  setPhase(phase: TravelBoardPhase) {
-    if (!this.boardRuntime) {
-      return;
-    }
-
-    this.boardRuntime.phase = phase;
-  }
-
-  setRemainingSteps(steps: number) {
-    if (!this.boardRuntime) {
-      return;
-    }
-
-    this.boardRuntime.remainingSteps = Math.max(steps, 0);
-  }
-
-  consumeStep() {
-    if (!this.boardRuntime) {
-      return;
-    }
-
-    this.boardRuntime.remainingSteps = Math.max(0, this.boardRuntime.remainingSteps - 1);
-  }
-
-  setLastRoll(roll: number | null) {
-    if (!this.boardRuntime) {
-      return;
-    }
-
-    this.boardRuntime.lastRoll = roll;
-  }
-
-  moveToNode(nodeId: string) {
-    if (!this.boardRuntime) {
-      return;
-    }
-
-    this.boardRuntime.currentNodeId = nodeId;
-    this.revealNodes([nodeId]);
-
-    if (!this.boardRuntime.visitedNodeIds.includes(nodeId)) {
-      this.boardRuntime.visitedNodeIds.push(nodeId);
-    }
-  }
-
-  revealNodes(nodeIds: readonly string[]) {
-    if (!this.boardRuntime || nodeIds.length === 0) {
-      return;
-    }
-
-    this.boardRuntime.revealedNodeIds = uniqueValues([
-      ...this.boardRuntime.revealedNodeIds,
-      ...nodeIds,
-    ]);
-  }
-
-  markResolved(nodeId: string) {
-    if (!this.boardRuntime) {
-      return;
-    }
-
-    if (!this.boardRuntime.resolvedNodeIds.includes(nodeId)) {
-      this.boardRuntime.resolvedNodeIds.push(nodeId);
-    }
-  }
-
-  consumeScoutCharge() {
-    if (!this.boardRuntime || this.boardRuntime.scoutCharges <= 0) {
-      return false;
-    }
-
-    this.boardRuntime.scoutCharges -= 1;
-
-    return true;
-  }
-
-  pushLog(type: TravelLogEntryType, message: string, nodeId?: string) {
-    if (!this.boardRuntime) {
-      return null;
-    }
-
-    this.logSequence += 1;
-
-    const entry: TravelLogEntry = {
-      id: `travel-log-${this.logSequence}`,
-      type,
-      message,
-      ...(nodeId ? { nodeId } : {}),
-    };
-
-    this.boardRuntime.eventLog = [...this.boardRuntime.eventLog, entry];
-
-    return entry;
-  }
-
-  endBoard() {
-    const shouldRestoreScreen = this.rootStore.ui.activeScreen === 'travelBoard';
-    const returnScreenId = this.boardRuntime?.returnScreenId ?? null;
-
-    this.boardRuntime = null;
-    this.logSequence = 0;
-
-    if (shouldRestoreScreen) {
-      this.rootStore.ui.setScreen(returnScreenId ?? (this.rootStore.world.hasActiveLocation ? 'world' : 'home'));
-    }
+    return this.rootStore.sceneFlowController
+      .getAvailableRouteNodes()
+      .map((node) => node.id);
   }
 
   reset() {
-    this.boardRuntime = null;
-    this.logSequence = 0;
+    if (this.hasActiveBoard) {
+      this.rootStore.sceneFlow.reset();
+    }
   }
 }

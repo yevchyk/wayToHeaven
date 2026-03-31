@@ -1,7 +1,7 @@
 import { battleContentRegistry } from '@content/battles';
 import { dialogueContentRegistry } from '@content/dialogues';
 import { itemContentRegistry } from '@content/items';
-import { locationContentRegistry } from '@content/locations';
+import { locationContentRegistry } from '@content/registries/locationRegistry';
 import { citySceneRegistry } from '@content/registries/citySceneRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 import {
@@ -47,6 +47,7 @@ describe('TravelBoardValidator', () => {
       cityScenes: citySceneRegistry,
       travelBoards: travelBoardRegistry,
       dialogues: dialogueContentRegistry,
+      sceneFlows: {},
       items: itemContentRegistry,
       locations: locationContentRegistry,
       characterTemplates: characterTemplateRegistry,

@@ -7,7 +7,7 @@ export const chapter1AwakeningSceneMeta: SceneMeta = {
   title: 'Awakening',
   chapterId: 'chapter-1',
   sceneOrder: 2,
-  mainDialogueId: 'chapter-1/dialogues/awakening',
+  mainSceneFlowId: 'chapter-1/scene/awakening',
   description: 'Reserved for the first post-intro prison sequence if Chapter 1 remains pure novel longer.',
   defaultBackgroundId: chapter1BackgroundIds.prisonCell,
 };

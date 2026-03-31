@@ -1,11 +1,16 @@
 import type {
   CharacterCompositeAssetDefinition,
   CharacterCompositeBuildOptions,
+  CharacterCompositeBuildResult,
   CharacterCompositeDefinition,
   CharacterCompositeLayer,
   CharacterCompositeLayerId,
-  CharacterCompositeTransform,
-  NormalizedCharacterCompositeTransform,
+  CharacterCompositePlacement,
+  CharacterCompositePlacementPatch,
+  CharacterCompositeStageDefinition,
+  CharacterCompositeStageRect,
+  NormalizedCharacterCompositePlacement,
+  NormalizedCharacterCompositeStage,
   WeaponPosePresetId,
 } from '@engine/types/characterComposite';
 
@@ -19,108 +24,183 @@ const LAYER_ORDER: CharacterCompositeLayerId[] = [
   'rightHand',
 ];
 
-const DEFAULT_TRANSFORMS: Record<CharacterCompositeLayerId, CharacterCompositeTransform> = {
-  body: {
-    x: 50,
-    y: 60,
-    width: 70,
-    scale: 1,
-    rotate: 0,
-    opacity: 1,
-    z: 10,
-    transformOrigin: 'center top',
-  },
-  clothes: {
-    x: 50,
-    y: 60,
-    width: 70,
-    scale: 1,
-    rotate: 0,
-    opacity: 1,
-    z: 20,
-    transformOrigin: 'center top',
-  },
-  head: {
-    x: 50,
-    y: 18,
-    width: 28,
-    scale: 1,
-    rotate: 0,
-    opacity: 1,
-    z: 30,
-    transformOrigin: 'center top',
-  },
-  hair: {
-    x: 50,
-    y: 15,
-    width: 36,
-    scale: 1,
-    rotate: 0,
-    opacity: 1,
-    z: 40,
-    transformOrigin: 'center top',
-  },
-  leftHand: {
-    x: 36,
-    y: 61,
-    width: 18,
-    scale: 1,
-    rotate: -8,
-    opacity: 1,
-    z: 50,
-    transformOrigin: 'center top',
-  },
-  weapon: {
-    x: 60,
-    y: 55,
-    width: 22,
-    scale: 1,
-    rotate: -6,
-    opacity: 1,
-    z: 60,
-    transformOrigin: 'center top',
-  },
-  rightHand: {
-    x: 66,
-    y: 60,
-    width: 18,
-    scale: 1,
-    rotate: 10,
-    opacity: 1,
-    z: 70,
-    transformOrigin: 'center top',
-  },
-};
+const DEFAULT_SAFE_AREA_RATIOS = {
+  x: 0.09,
+  y: 0.07,
+  width: 0.82,
+  height: 0.86,
+} as const;
 
 function uniqueValues(values: string[]) {
   return Array.from(new Set(values));
 }
 
-function normalizeTransform(
-  layerId: CharacterCompositeLayerId,
-  ...overrides: Array<CharacterCompositeTransform | undefined>
-): NormalizedCharacterCompositeTransform {
-  const merged = overrides.reduce<CharacterCompositeTransform>(
-    (result, transform) => ({ ...result, ...transform }),
-    DEFAULT_TRANSFORMS[layerId],
-  );
-  const normalized: NormalizedCharacterCompositeTransform = {
-    x: merged.x ?? DEFAULT_TRANSFORMS[layerId].x ?? 50,
-    y: merged.y ?? DEFAULT_TRANSFORMS[layerId].y ?? 50,
-    width: merged.width ?? DEFAULT_TRANSFORMS[layerId].width ?? 100,
-    scale: merged.scale ?? DEFAULT_TRANSFORMS[layerId].scale ?? 1,
-    rotate: merged.rotate ?? DEFAULT_TRANSFORMS[layerId].rotate ?? 0,
-    opacity: merged.opacity ?? DEFAULT_TRANSFORMS[layerId].opacity ?? 1,
-    z: merged.z ?? DEFAULT_TRANSFORMS[layerId].z ?? 0,
-    transformOrigin:
-      merged.transformOrigin ?? DEFAULT_TRANSFORMS[layerId].transformOrigin ?? 'center center',
-  };
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
-  if (merged.height !== undefined) {
-    normalized.height = merged.height;
+function roundStageUnit(value: number) {
+  return Math.round(value * 1000) / 1000;
+}
+
+function createDefaultPlacement(
+  stage: CharacterCompositeStageDefinition,
+  layerId: CharacterCompositeLayerId,
+): CharacterCompositePlacement {
+  switch (layerId) {
+    case 'body':
+      return {
+        anchor: { x: stage.width * 0.5, y: stage.height * 0.5 },
+        size: { width: stage.width * 0.84 },
+        assetAnchor: { x: 0.5, y: 0.5 },
+        scale: 1,
+        rotate: 0,
+        opacity: 1,
+        z: 10,
+      };
+    case 'clothes':
+      return {
+        anchor: { x: stage.width * 0.5, y: stage.height * 0.5 },
+        size: { width: stage.width * 0.84 },
+        assetAnchor: { x: 0.5, y: 0.5 },
+        scale: 1,
+        rotate: 0,
+        opacity: 1,
+        z: 20,
+      };
+    case 'head':
+      return {
+        anchor: { x: stage.width * 0.5, y: stage.height * 0.18 },
+        size: { width: stage.width * 0.28 },
+        assetAnchor: { x: 0.5, y: 0.5 },
+        scale: 1,
+        rotate: 0,
+        opacity: 1,
+        z: 30,
+      };
+    case 'hair':
+      return {
+        anchor: { x: stage.width * 0.5, y: stage.height * 0.15 },
+        size: { width: stage.width * 0.36 },
+        assetAnchor: { x: 0.5, y: 0.5 },
+        scale: 1,
+        rotate: 0,
+        opacity: 1,
+        z: 40,
+      };
+    case 'leftHand':
+      return {
+        anchor: { x: stage.width * 0.36, y: stage.height * 0.61 },
+        size: { width: stage.width * 0.18 },
+        assetAnchor: { x: 0.5, y: 0.5 },
+        scale: 1,
+        rotate: -8,
+        opacity: 1,
+        z: 50,
+      };
+    case 'weapon':
+      return {
+        anchor: { x: stage.width * 0.6, y: stage.height * 0.55 },
+        size: { width: stage.width * 0.22 },
+        assetAnchor: { x: 0.5, y: 0.5 },
+        scale: 1,
+        rotate: -6,
+        opacity: 1,
+        z: 60,
+      };
+    case 'rightHand':
+      return {
+        anchor: { x: stage.width * 0.66, y: stage.height * 0.6 },
+        size: { width: stage.width * 0.18 },
+        assetAnchor: { x: 0.5, y: 0.5 },
+        scale: 1,
+        rotate: 10,
+        opacity: 1,
+        z: 70,
+      };
+  }
+}
+
+function normalizeSafeArea(stage: CharacterCompositeStageDefinition): CharacterCompositeStageRect {
+  const fallbackSafeArea: CharacterCompositeStageRect = {
+    x: stage.width * DEFAULT_SAFE_AREA_RATIOS.x,
+    y: stage.height * DEFAULT_SAFE_AREA_RATIOS.y,
+    width: stage.width * DEFAULT_SAFE_AREA_RATIOS.width,
+    height: stage.height * DEFAULT_SAFE_AREA_RATIOS.height,
+  };
+  const safeArea = stage.safeArea ?? fallbackSafeArea;
+  const clampedX = clamp(safeArea.x, 0, stage.width);
+  const clampedY = clamp(safeArea.y, 0, stage.height);
+
+  return {
+    x: roundStageUnit(clampedX),
+    y: roundStageUnit(clampedY),
+    width: roundStageUnit(clamp(safeArea.width, 0, stage.width - clampedX)),
+    height: roundStageUnit(clamp(safeArea.height, 0, stage.height - clampedY)),
+  };
+}
+
+export function normalizeCharacterCompositeStage(
+  stage: CharacterCompositeStageDefinition,
+): NormalizedCharacterCompositeStage {
+  return {
+    ...stage,
+    safeArea: normalizeSafeArea(stage),
+    aspectRatio: stage.width / stage.height,
+  };
+}
+
+function mergePlacementPatch(
+  placement: CharacterCompositePlacement,
+  patch?: CharacterCompositePlacementPatch,
+): CharacterCompositePlacement {
+  if (!patch) {
+    return placement;
   }
 
-  return normalized;
+  return {
+    anchor: {
+      x: patch.anchor?.x ?? placement.anchor.x,
+      y: patch.anchor?.y ?? placement.anchor.y,
+    },
+    size: {
+      width: patch.size?.width ?? placement.size.width,
+      ...(patch.size?.height !== undefined
+        ? { height: patch.size.height }
+        : placement.size.height !== undefined
+          ? { height: placement.size.height }
+          : {}),
+    },
+    assetAnchor: {
+      x: patch.assetAnchor?.x ?? placement.assetAnchor?.x ?? 0.5,
+      y: patch.assetAnchor?.y ?? placement.assetAnchor?.y ?? 0.5,
+    },
+    scale: patch.scale ?? placement.scale ?? 1,
+    rotate: patch.rotate ?? placement.rotate ?? 0,
+    opacity: patch.opacity ?? placement.opacity ?? 1,
+    z: patch.z ?? placement.z ?? 0,
+  };
+}
+
+function normalizePlacement(
+  stage: CharacterCompositeStageDefinition,
+  layerId: CharacterCompositeLayerId,
+  ...overrides: Array<CharacterCompositePlacementPatch | undefined>
+): NormalizedCharacterCompositePlacement {
+  const merged = overrides.reduce<CharacterCompositePlacement>(
+    (result, patch) => mergePlacementPatch(result, patch),
+    createDefaultPlacement(stage, layerId),
+  );
+
+  return {
+    anchor: merged.anchor,
+    size: merged.size,
+    assetAnchor: merged.assetAnchor ?? { x: 0.5, y: 0.5 },
+    scale: merged.scale ?? 1,
+    rotate: merged.rotate ?? 0,
+    opacity: merged.opacity ?? 1,
+    z: merged.z ?? 0,
+  };
 }
 
 function buildLayer(
@@ -129,7 +209,7 @@ function buildLayer(
   character: CharacterCompositeDefinition,
   asset: CharacterCompositeAssetDefinition | null | undefined,
   emotion: string | null,
-  poseOverrides?: CharacterCompositeTransform,
+  poseOverrides?: CharacterCompositePlacementPatch,
 ): CharacterCompositeLayer | null {
   if (!asset?.assetId) {
     return null;
@@ -142,27 +222,29 @@ function buildLayer(
     label: asset.label ?? `${character.displayName} ${layerId}`,
     source,
     ...(emotion ? { emotion } : {}),
-    transform: normalizeTransform(
+    placement: normalizePlacement(
+      character.stage,
       layerId,
-      character.transforms?.[layerId],
-      asset.transform,
+      character.placements?.[layerId],
+      asset.placement,
       poseOverrides,
     ),
   };
 }
 
 function resolveEmotion(character: CharacterCompositeDefinition, preferredEmotion?: string | null) {
+  const headByEmotion = character.assets.headByEmotion ?? {};
   const availableEmotions = getCharacterCompositeEmotions(character);
 
-  if (preferredEmotion && character.assets.headByEmotion[preferredEmotion]) {
+  if (preferredEmotion && headByEmotion[preferredEmotion]) {
     return preferredEmotion;
   }
 
-  if (character.assets.headByEmotion[character.defaultEmotion]) {
+  if (character.defaultEmotion && headByEmotion[character.defaultEmotion]) {
     return character.defaultEmotion;
   }
 
-  return availableEmotions[0] ?? character.defaultEmotion;
+  return availableEmotions[0] ?? null;
 }
 
 function resolveWeaponPosePreset(
@@ -173,7 +255,10 @@ function resolveWeaponPosePreset(
     return preferredPreset;
   }
 
-  if (character.defaultWeaponPosePreset && character.weaponPosePresets?.[character.defaultWeaponPosePreset]) {
+  if (
+    character.defaultWeaponPosePreset &&
+    character.weaponPosePresets?.[character.defaultWeaponPosePreset]
+  ) {
     return character.defaultWeaponPosePreset;
   }
 
@@ -184,15 +269,16 @@ function resolveWeaponPosePreset(
 
 export function getCharacterCompositeEmotions(character: CharacterCompositeDefinition) {
   return uniqueValues([
-    character.defaultEmotion,
-    ...Object.keys(character.assets.headByEmotion),
+    ...(character.defaultEmotion ? [character.defaultEmotion] : []),
+    ...Object.keys(character.assets.headByEmotion ?? {}),
   ]).filter(Boolean);
 }
 
 export function buildCharacterCompositeLayers(
   character: CharacterCompositeDefinition,
   options: CharacterCompositeBuildOptions = {},
-) {
+): CharacterCompositeBuildResult {
+  const stage = normalizeCharacterCompositeStage(character.stage);
   const selectedEmotion = resolveEmotion(character, options.emotion);
   const selectedWeaponPosePreset = resolveWeaponPosePreset(character, options.weaponPosePreset);
   const poseOverrides = selectedWeaponPosePreset
@@ -211,11 +297,14 @@ export function buildCharacterCompositeLayers(
         return layer ? [layer] : [];
       }
       case 'head': {
+        const headAsset = selectedEmotion
+          ? character.assets.headByEmotion?.[selectedEmotion]
+          : undefined;
         const layer = buildLayer(
           layerId,
           'emotion',
           character,
-          character.assets.headByEmotion[selectedEmotion],
+          headAsset,
           selectedEmotion,
         );
 
@@ -268,6 +357,7 @@ export function buildCharacterCompositeLayers(
   });
 
   return {
+    stage,
     selectedEmotion,
     selectedWeaponPosePreset,
     layers,

@@ -1,5 +1,7 @@
 import type { NarrativeCharacterData } from '@engine/types/narrative';
 
+import { mirellaOutfits } from './mirellaOutfits';
+
 const chapterId = 'chapter-1';
 
 export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterData> = {
@@ -7,9 +9,12 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     id: 'mirella',
     chapterId,
     displayName: 'Мірелла',
+    role: 'heroine',
     defaultEmotion: 'neutral',
     defaultPortraitId: 'chapter-1/portraits/mirella/neutral.webp',
-    defaultSide: 'center',
+    defaultSide: 'left',
+    defaultOutfitId: 'dress-pristine',
+    outfits: mirellaOutfits,
     portraitRefs: {
       neutral: 'chapter-1/portraits/mirella/neutral.webp',
       thinking: 'chapter-1/portraits/mirella/thinking.webp',

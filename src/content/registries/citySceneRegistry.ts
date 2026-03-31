@@ -1,13 +1,22 @@
 import type { CitySceneData } from '@engine/types/city';
 
-import { chapter1MarketLaneScene } from '@content/chapters/chapter-1/city/market-lane.scene';
-import { chapter1ShrineCourtScene } from '@content/chapters/chapter-1/city/shrine-court.scene';
-import { chapter1SiltBarScene } from '@content/chapters/chapter-1/city/silt-bar.scene';
-import { chapter1TempleExitScene } from '@content/chapters/chapter-1/city/temple-exit.scene';
+import { adaptSceneFlowToCitySceneView } from '@engine/systems/scenes/sceneFlowViewAdapters';
 
-export const citySceneRegistry: Record<string, CitySceneData> = {
-  [chapter1TempleExitScene.id]: chapter1TempleExitScene,
-  [chapter1MarketLaneScene.id]: chapter1MarketLaneScene,
-  [chapter1SiltBarScene.id]: chapter1SiltBarScene,
-  [chapter1ShrineCourtScene.id]: chapter1ShrineCourtScene,
-};
+import { sceneFlowRegistry } from './sceneFlowRegistry';
+
+export const citySceneRegistry: Record<string, CitySceneData> = Object.fromEntries(
+  Object.values(sceneFlowRegistry)
+    .filter((sceneFlow) => sceneFlow.mode === 'hub')
+    .map((sceneFlow): [string, CitySceneData] => {
+      const scene = adaptSceneFlowToCitySceneView(sceneFlow, sceneFlow.startNodeId, {
+        resolveDialogueId: (flowId) => (sceneFlowRegistry[flowId]?.mode === 'sequence' ? flowId : null),
+        resolveTravelBoardId: (flowId) => (sceneFlowRegistry[flowId]?.mode === 'route' ? flowId : null),
+      });
+
+      if (!scene) {
+        throw new Error(`Expected hub scene flow "${sceneFlow.id}" to adapt into city scene view.`);
+      }
+
+      return [sceneFlow.id, scene];
+    }),
+);

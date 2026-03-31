@@ -1,1 +1,3 @@
-export { chapter1CityGateDialogue as introDialogue } from '@content/chapters/chapter-1/scenes/city-gate/city-gate.dialogue';
+import { dialogueContentRegistry } from '@content/registries/dialogueRegistry';
+
+export const introDialogue = dialogueContentRegistry['chapter-1/scene/city-gate'];
