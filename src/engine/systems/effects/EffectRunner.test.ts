@@ -96,15 +96,44 @@ describe('EffectRunner', () => {
     expect(rootStore.meta.hunger).toBe(2);
   });
 
-  it('executes changeStat, setStat, and unlockStat effects', () => {
+  it('executes quest lifecycle effects', () => {
     const rootStore = new GameRootStore();
 
     rootStore.executeEffect({
-      type: 'unlockStat',
+      type: 'addQuest',
+      questId: 'mq_survive',
+    });
+    rootStore.executeEffect({
+      type: 'advanceQuest',
+      questId: 'mq_road_to_hugen_um',
+      delta: 25,
+    });
+    rootStore.executeEffect({
+      type: 'completeQuest',
+      questId: 'mq_survive',
+    });
+
+    expect(rootStore.quests.getQuestState('mq_survive')).toEqual({
+      questId: 'mq_survive',
+      status: 'completed',
+      progress: 0,
+    });
+    expect(rootStore.quests.getQuestState('mq_road_to_hugen_um')).toEqual({
+      questId: 'mq_road_to_hugen_um',
+      status: 'active',
+      progress: 25,
+    });
+  });
+
+  it('executes profile effects through canonical and legacy aliases', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.executeEffect({
+      type: 'unlockProfile',
       key: 'pragmatism',
     });
     rootStore.executeEffect({
-      type: 'changeStat',
+      type: 'changeProfile',
       key: 'pragmatism',
       delta: 2,
     });
@@ -114,9 +143,50 @@ describe('EffectRunner', () => {
       value: 1,
     });
 
-    expect(rootStore.stats.isUnlocked('pragmatism')).toBe(true);
-    expect(rootStore.stats.getStat('pragmatism')).toBe(2);
-    expect(rootStore.stats.getStat('humanity')).toBe(1);
+    expect(rootStore.profile.isUnlocked('pragmatism')).toBe(true);
+    expect(rootStore.profile.getProfileValue('pragmatism')).toBe(2);
+    expect(rootStore.profile.getProfileValue('humanity')).toBe(1);
+    expect(rootStore.debug.statChangeLog).toEqual([
+      expect.objectContaining({
+        key: 'humanity',
+        source: 'setStat',
+        previousValue: 0,
+        nextValue: 1,
+      }),
+      expect.objectContaining({
+        key: 'pragmatism',
+        source: 'changeProfile',
+        previousValue: 0,
+        nextValue: 2,
+      }),
+      expect.objectContaining({
+        key: 'pragmatism',
+        source: 'unlockProfile',
+        previousValue: 0,
+        nextValue: 0,
+        previousUnlocked: false,
+        nextUnlocked: true,
+      }),
+    ]);
+  });
+
+  it('executes changeRelationship effects through the relationship store', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.executeEffect({
+      type: 'changeRelationship',
+      relationshipId: 'father',
+      axis: 'trust',
+      delta: -1,
+    });
+    rootStore.executeEffect({
+      type: 'changeRelationship',
+      key: 'father',
+      delta: 2,
+    });
+
+    expect(rootStore.relationships.getRelationshipValue('father', 'trust')).toBe(-1);
+    expect(rootStore.relationships.getRelationshipValue('father', 'affinity')).toBe(2);
   });
 
   it('executes addTag effects', () => {
@@ -217,6 +287,18 @@ describe('EffectRunner', () => {
 
     expect(rootStore.travelBoard.activeBoardId).toBe('chapter-1/travel/underground-route');
     expect(rootStore.ui.activeScreen).toBe('travelBoard');
+  });
+
+  it('executes startMinigame effects', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.executeEffect({
+      type: 'startMinigame',
+      minigameId: 'chapter-1/minigame/fishing/reed-bank',
+    });
+
+    expect(rootStore.miniGame.activeMinigameId).toBe('chapter-1/minigame/fishing/reed-bank');
+    expect(rootStore.ui.activeScreen).toBe('minigame');
   });
 
   it('executes changeLocation effects', () => {

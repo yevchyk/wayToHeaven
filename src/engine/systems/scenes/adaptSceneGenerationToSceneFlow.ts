@@ -37,6 +37,7 @@ function normalizeStageCharacter(character: SceneGenerationStageCharacter): Stag
     ...(character.portraitId ? { portraitId: character.portraitId } : {}),
     ...(character.outfitId ? { outfitId: character.outfitId } : {}),
     ...(character.isVisible !== undefined ? { isVisible: character.isVisible } : {}),
+    ...(character.placement ? { placement: { ...character.placement } } : {}),
   };
 }
 
@@ -151,7 +152,7 @@ function normalizeBackgroundPatch(
   return {
     image: patch.image,
     ...(patch.transition ? { transition: { type: patch.transition } } : {}),
-    ...(patch.style ? { style: patch.style } : {}),
+    ...(patch.style !== undefined ? { style: patch.style } : {}),
   };
 }
 
@@ -302,6 +303,9 @@ export function adaptSceneGenerationToSceneFlow(
           ...(onConditionFail ? { onConditionFail } : {}),
           ...(scene.backgroundId ?? document.meta.defaultBackgroundId
             ? { defaultBackgroundId: scene.backgroundId ?? document.meta.defaultBackgroundId }
+            : {}),
+          ...(scene.backgroundStyle !== undefined || document.meta.defaultBackgroundStyle !== undefined
+            ? { defaultBackgroundStyle: scene.backgroundStyle ?? document.meta.defaultBackgroundStyle ?? null }
             : {}),
           ...(defaultMusic?.musicId ? { defaultMusicId: defaultMusic.musicId } : {}),
           ...(defaultMusic ? { defaultMusic } : {}),

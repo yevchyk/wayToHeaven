@@ -1,6 +1,7 @@
-import { Button, Divider, List, ListItem, Stack, Typography } from '@mui/material';
+import { Button, Chip, Stack, Typography } from '@mui/material';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import { PanelSection } from '@ui/components/shell/PanelSection';
 
 interface InventoryTabProps {
   rootStore: GameRootStore;
@@ -14,15 +15,17 @@ export function InventoryTab({ rootStore, unitId, readOnly, onFeedback }: Invent
 
   if (inventory.isEmpty) {
     return (
-      <Typography color="text.secondary" variant="body2">
-        The party inventory is empty.
-      </Typography>
+      <PanelSection tone="sunken">
+        <Typography color="text.secondary" variant="body2">
+          The party inventory is empty.
+        </Typography>
+      </PanelSection>
     );
   }
 
   return (
-    <List disablePadding>
-      {inventory.detailedEntries.map((entry, index, entries) => {
+    <Stack spacing={1}>
+      {inventory.detailedEntries.map((entry) => {
         const isEquipment = entry.data.type === 'equipment' && Boolean(entry.data.equipment);
         const isUsable =
           !readOnly &&
@@ -35,81 +38,70 @@ export function InventoryTab({ rootStore, unitId, readOnly, onFeedback }: Invent
           rootStore.party.getEquippedItemId(unitId!, equippedSlot!) === entry.itemId;
 
         return (
-          <Stack key={entry.itemId} spacing={1.25}>
-            <ListItem disableGutters sx={{ display: 'block' }}>
-              <Stack spacing={1.25}>
-                <Stack alignItems="center" direction="row" justifyContent="space-between">
-                  <Typography variant="h6">{entry.data.name}</Typography>
-                  <Typography color="text.secondary" variant="body2">
-                    x{entry.quantity}
-                  </Typography>
-                </Stack>
-
-                {entry.data.description ? (
-                  <Typography color="text.secondary" variant="body2">
-                    {entry.data.description}
-                  </Typography>
+          <PanelSection
+            key={entry.itemId}
+            description={entry.data.description ?? 'No additional notes for this item.'}
+            title={entry.data.name}
+            tone="overlay"
+            action={
+              <Stack direction="row" flexWrap="wrap" gap={0.75}>
+                <Chip label={`x${entry.quantity}`} size="small" variant="outlined" />
+                <Chip label={entry.data.type} size="small" variant="outlined" />
+                {entry.data.equipment?.slot ? (
+                  <Chip label={`slot ${entry.data.equipment.slot}`} size="small" variant="outlined" />
                 ) : null}
-
-                <Typography color="text.secondary" variant="caption">
-                  Type {entry.data.type}
-                  {entry.data.equipment?.slot ? ` | Slot ${entry.data.equipment.slot}` : ''}
-                </Typography>
-
-                <Stack direction="row" flexWrap="wrap" gap={1}>
-                  <Button
-                    disabled={!isUsable}
-                    onClick={() => {
-                      const result = inventory.useItem(entry.itemId);
-
-                      onFeedback(
-                        result.consumed
-                          ? `${entry.data.name} used successfully.`
-                          : result.message ?? `${entry.data.name} could not be used.`,
-                      );
-                    }}
-                    variant="contained"
-                  >
-                    Use
-                  </Button>
-
-                  <Button
-                    disabled={!canEquip || isAlreadyEquipped}
-                    onClick={() => {
-                      if (!unitId) {
-                        return;
-                      }
-
-                      const result = rootStore.party.equipItem(unitId, entry.itemId);
-
-                      onFeedback(
-                        result.equipped
-                          ? `${entry.data.name} equipped successfully.`
-                          : result.message ?? `${entry.data.name} could not be equipped.`,
-                      );
-                    }}
-                    variant="outlined"
-                  >
-                    {isAlreadyEquipped ? 'Equipped' : 'Equip'}
-                  </Button>
-
-                  <Button
-                    onClick={() =>
-                      onFeedback(
-                        entry.data.description ?? `${entry.data.name} has no extra notes.`,
-                      )
-                    }
-                    variant="text"
-                  >
-                    Inspect
-                  </Button>
-                </Stack>
               </Stack>
-            </ListItem>
-            {index < entries.length - 1 ? <Divider sx={{ opacity: 0.08 }} /> : null}
-          </Stack>
+            }
+          >
+            <Stack direction="row" flexWrap="wrap" gap={1}>
+              <Button
+                disabled={!isUsable}
+                onClick={() => {
+                  const result = inventory.useItem(entry.itemId);
+
+                  onFeedback(
+                    result.consumed
+                      ? `${entry.data.name} used successfully.`
+                      : result.message ?? `${entry.data.name} could not be used.`,
+                  );
+                }}
+                variant="contained"
+              >
+                Use
+              </Button>
+
+              <Button
+                disabled={!canEquip || isAlreadyEquipped}
+                onClick={() => {
+                  if (!unitId) {
+                    return;
+                  }
+
+                  const result = rootStore.party.equipItem(unitId, entry.itemId);
+
+                  onFeedback(
+                    result.equipped
+                      ? `${entry.data.name} equipped successfully.`
+                      : result.message ?? `${entry.data.name} could not be equipped.`,
+                  );
+                }}
+                variant="outlined"
+              >
+                {isAlreadyEquipped ? 'Equipped' : 'Equip'}
+              </Button>
+
+              <Button
+                onClick={() =>
+                  onFeedback(entry.data.description ?? `${entry.data.name} has no extra notes.`)
+                }
+                variant="text"
+              >
+                Inspect
+              </Button>
+            </Stack>
+          </PanelSection>
         );
       })}
-    </List>
+    </Stack>
   );
 }

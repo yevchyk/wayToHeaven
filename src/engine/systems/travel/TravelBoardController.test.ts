@@ -20,6 +20,9 @@ describe('TravelBoardController', () => {
 
     rootStore.startTravelBoardDemo();
 
+    expect(
+      rootStore.seenContent.hasDiscoveredLocationEntry('travel:chapter-1/travel/underground-route'),
+    ).toBe(true);
     expect(rootStore.travelBoardController.rollDice()).toBe(3);
     expect(rootStore.travelBoard.lastRoll).toBe(3);
     expect(rootStore.travelBoard.currentNodeId).toBe('forked-passage');
@@ -52,6 +55,24 @@ describe('TravelBoardController', () => {
     expect(rootStore.travelBoardController.chooseDirection('black-river-ledger')).toBe(false);
     expect(rootStore.travelBoard.currentNodeId).toBe('forked-passage');
     expect(rootStore.travelBoard.phase).toBe('awaitingDirection');
+  });
+
+  it('adds aftermath-authored route branches when awakening flags were earned', () => {
+    const rootStore = new GameRootStore({
+      travelRandom: () => 0.4,
+    });
+
+    rootStore.startTravelBoardDemo();
+    rootStore.flags.setBooleanFlag('chapter1.travel.maintenanceDuctNoticed', true);
+    rootStore.flags.setBooleanFlag('chapter1.travel.lostPilgrimHeard', true);
+    rootStore.travelBoardController.rollDice();
+
+    expect(rootStore.travelBoard.availableDirectionNodeIds).toEqual([
+      'maintenance-duct',
+      'lost-pilgrim',
+      'shackled-guard',
+      'buried-cache',
+    ]);
   });
 
   it('consumes the final step and resolves battle nodes through the battle runtime', () => {

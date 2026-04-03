@@ -1,6 +1,9 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 
-import { Box, Paper, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
+
+import { NarrativeRichText } from '@ui/components/rich-text/NarrativeRichText';
+import { shellTokens } from '@ui/components/shell/shellTokens';
 
 interface SectionCardProps extends PropsWithChildren {
   eyebrow?: string;
@@ -11,46 +14,52 @@ interface SectionCardProps extends PropsWithChildren {
 
 export function SectionCard({ eyebrow, title, subtitle, action, children }: SectionCardProps) {
   return (
-    <Paper
-      elevation={0}
+    <Box
       sx={{
-        p: { xs: 2.5, md: 3 },
-        border: '1px solid rgba(255,255,255,0.08)',
+        p: { xs: 1.25, md: 1.5 },
+        borderRadius: shellTokens.radius.md,
+        border: `1px solid ${shellTokens.border.subtle}`,
         background:
-          'linear-gradient(180deg, rgba(39, 34, 49, 0.92) 0%, rgba(24, 21, 31, 0.98) 100%)',
+          'linear-gradient(180deg, rgba(17, 23, 31, 0.64) 0%, rgba(12, 17, 24, 0.78) 100%)',
+        boxShadow: shellTokens.shadow.inset,
       }}
     >
-      <Stack spacing={2.5}>
+      <Stack spacing={1.4}>
         <Stack
           alignItems={{ md: 'center' }}
           direction={{ xs: 'column', md: 'row' }}
           justifyContent="space-between"
-          spacing={1.5}
+          spacing={1}
         >
           <Box>
             {eyebrow ? (
               <Typography
-                color="primary.main"
-                sx={{ letterSpacing: '0.18em', textTransform: 'uppercase' }}
+                sx={{
+                  color: shellTokens.text.muted,
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                }}
                 variant="caption"
               >
                 {eyebrow}
               </Typography>
             ) : null}
-            <Typography component="h2" variant="h4">
+            <Typography component="h2" sx={{ fontSize: { xs: '1.16rem', md: '1.3rem' } }} variant="h4">
               {title}
             </Typography>
             {subtitle ? (
-              <Typography color="text.secondary" sx={{ mt: 0.5 }} variant="body2">
-                {subtitle}
-              </Typography>
+              <NarrativeRichText
+                component="div"
+                html={subtitle}
+                sx={{ color: 'text.secondary', fontSize: '0.875rem', mt: 0.35 }}
+              />
             ) : null}
           </Box>
           {action}
         </Stack>
         {children}
       </Stack>
-    </Paper>
+    </Box>
   );
 }
-

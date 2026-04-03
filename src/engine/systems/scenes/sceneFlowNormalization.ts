@@ -5,14 +5,51 @@ import type {
   SfxAction,
   SpeakerSide,
   StageCharacter,
+  StageCharacterPlacement,
   StageSlotCharacter,
   StageState,
 } from '@engine/types/dialogue';
 
+function clonePlacement(placement: StageCharacterPlacement | undefined): StageCharacterPlacement | undefined {
+  return placement ? { ...placement } : undefined;
+}
+
 function cloneStageCharacter(character: StageCharacter): StageCharacter {
-  return {
-    ...character,
+  const clone: StageCharacter = {
+    speakerId: character.speakerId,
   };
+
+  if (character.id) {
+    clone.id = character.id;
+  }
+
+  if (character.emotion) {
+    clone.emotion = character.emotion;
+  }
+
+  if (character.portraitId) {
+    clone.portraitId = character.portraitId;
+  }
+
+  if (character.outfitId) {
+    clone.outfitId = character.outfitId;
+  }
+
+  if (character.isVisible !== undefined) {
+    clone.isVisible = character.isVisible;
+  }
+
+  if (character.side) {
+    clone.side = character.side;
+  }
+
+  const placement = clonePlacement(character.placement);
+
+  if (placement) {
+    clone.placement = placement;
+  }
+
+  return clone;
 }
 
 function toStageCharacter(
@@ -23,17 +60,41 @@ function toStageCharacter(
     return null;
   }
 
-  return {
+  const normalized: StageCharacter = {
     speakerId: character.speakerId,
-    ...('id' in character && character.id ? { id: character.id } : {}),
-    ...(character.emotion ? { emotion: character.emotion } : {}),
-    ...(character.portraitId ? { portraitId: character.portraitId } : {}),
-    ...(character.outfitId ? { outfitId: character.outfitId } : {}),
-    ...('isVisible' in character && character.isVisible !== undefined
-      ? { isVisible: character.isVisible }
-      : {}),
-    ...(side ? { side } : {}),
   };
+
+  if ('id' in character && character.id) {
+    normalized.id = character.id;
+  }
+
+  if (character.emotion) {
+    normalized.emotion = character.emotion;
+  }
+
+  if (character.portraitId) {
+    normalized.portraitId = character.portraitId;
+  }
+
+  if (character.outfitId) {
+    normalized.outfitId = character.outfitId;
+  }
+
+  const placement = clonePlacement(character.placement);
+
+  if (placement) {
+    normalized.placement = placement;
+  }
+
+  if ('isVisible' in character && character.isVisible !== undefined) {
+    normalized.isVisible = character.isVisible;
+  }
+
+  if (side) {
+    normalized.side = side;
+  }
+
+  return normalized;
 }
 
 export function normalizeMusicAction(music: MusicAction | undefined): MusicAction | undefined {

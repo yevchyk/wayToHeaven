@@ -7,6 +7,7 @@ export const ACTION_TONES = [
   'reward',
   'social',
   'cult',
+  'duty',
 ] as const;
 
 export type ActionTone = (typeof ACTION_TONES)[number];

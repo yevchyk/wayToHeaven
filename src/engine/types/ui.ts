@@ -5,16 +5,21 @@ export type ScreenId =
   | 'world'
   | 'dialogue'
   | 'battle'
+  | 'minigame'
   | 'travelBoard'
   | (string & {});
 
 export type ModalId =
   | 'character-menu'
   | 'inventory'
+  | 'library'
   | 'party'
   | 'unit-details'
+  | 'quests'
   | 'backlog'
+  | 'stats-debug'
   | 'preferences'
+  | 'saves'
   | (string & {});
 
 export type OverlayId = 'loading' | 'battle-hud' | (string & {});

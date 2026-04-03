@@ -1,6 +1,8 @@
 import type { PropsWithChildren } from 'react';
 
-import { Box, Container, Paper } from '@mui/material';
+import { Box, Paper } from '@mui/material';
+
+import { shellTokens } from '@ui/components/shell/shellTokens';
 
 type AppShellMode = 'framed' | 'immersive';
 
@@ -8,13 +10,21 @@ interface AppShellProps extends PropsWithChildren {
   mode?: AppShellMode;
 }
 
+const viewportShellSx = {
+  width: '100%',
+  height: '100dvh',
+  minHeight: '100dvh',
+  overflow: 'hidden',
+} as const;
+
 export function AppShell({ children, mode = 'framed' }: AppShellProps) {
   if (mode === 'immersive') {
     return (
       <Box
         sx={{
-          minHeight: '100svh',
-          background: '#040508',
+          ...viewportShellSx,
+          background:
+            'linear-gradient(180deg, rgba(228, 235, 244, 0.12) 0%, rgba(25, 32, 42, 0.08) 18%, rgba(5, 7, 10, 0.74) 100%)',
         }}
       >
         {children}
@@ -25,27 +35,29 @@ export function AppShell({ children, mode = 'framed' }: AppShellProps) {
   return (
     <Box
       sx={{
-        minHeight: '100svh',
-        py: { xs: 4, md: 6 },
+        ...viewportShellSx,
+        p: { xs: 0.75, md: 1 },
         background:
-          'radial-gradient(circle at top, rgba(201, 164, 92, 0.16), transparent 36%), linear-gradient(180deg, #16111c 0%, #0f0d13 100%)',
+          'radial-gradient(circle at top, rgba(255,255,255,0.68) 0%, rgba(223, 230, 238, 0.78) 18%, rgba(190, 199, 211, 0.96) 100%)',
       }}
     >
-      <Container maxWidth="lg">
-        <Paper
-          elevation={0}
-          sx={{
-            minHeight: '70vh',
-            px: { xs: 3, md: 6 },
-            py: { xs: 4, md: 5 },
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            backgroundColor: 'rgba(27, 24, 34, 0.86)',
-            backdropFilter: 'blur(14px)',
-          }}
-        >
-          {children}
-        </Paper>
-      </Container>
+      <Paper
+        elevation={0}
+        square
+        sx={{
+          width: '100%',
+          height: '100%',
+          borderRadius: shellTokens.radius.lg,
+          border: `1px solid ${shellTokens.border.strong}`,
+          background:
+            'linear-gradient(180deg, rgba(20, 26, 35, 0.72) 0%, rgba(11, 16, 22, 0.78) 100%)',
+          backdropFilter: shellTokens.blur.medium,
+          boxShadow: shellTokens.shadow.panel,
+          overflow: 'hidden',
+        }}
+      >
+        {children}
+      </Paper>
     </Box>
   );
 }

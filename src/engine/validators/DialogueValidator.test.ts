@@ -12,6 +12,7 @@ describe('DialogueValidator', () => {
       dialogues: {},
       sceneFlows: {},
       items: {},
+      quests: {},
       locations: {},
       characterTemplates: {},
       characterInstances: {},
@@ -40,6 +41,10 @@ describe('DialogueValidator', () => {
             {
               type: 'runScript',
               scriptId: 'missing-script',
+            },
+            {
+              type: 'addQuest',
+              questId: 'missing-quest',
             },
             {
               type: 'jumpToNode',
@@ -73,6 +78,7 @@ describe('DialogueValidator', () => {
     expect(issues.some((issue) => issue.code === 'unsupportedEmotion')).toBe(true);
     expect(issues.some((issue) => issue.code === 'missingBackgroundReference')).toBe(true);
     expect(issues.some((issue) => issue.code === 'missingItemReference')).toBe(true);
+    expect(issues.some((issue) => issue.code === 'missingQuestReference')).toBe(true);
     expect(issues.some((issue) => issue.code === 'missingScriptReference')).toBe(true);
     expect(issues.some((issue) => issue.code === 'missingJumpNodeReference')).toBe(true);
   });

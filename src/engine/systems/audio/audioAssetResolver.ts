@@ -16,23 +16,26 @@ function normalizeModulePath(path: string) {
 }
 
 function buildConventionalModulePaths(assetId: string) {
-  if (!assetId.startsWith('chapter-')) {
+  if (!assetId.startsWith('chapter-') && !assetId.startsWith('prologue/')) {
     return [];
   }
 
-  const [chapterId, ...restParts] = assetId.split('/');
+  const [rootId, ...restParts] = assetId.split('/');
   const relativeAssetPath = restParts.join('/');
 
-  if (!relativeAssetPath) {
+  if (!rootId || !relativeAssetPath) {
     return [];
   }
 
+  const rootPath = rootId.startsWith('chapter-')
+    ? `/src/content/chapters/${rootId}`
+    : `/src/content/${rootId}`;
   const assetBasePath = relativeAssetPath.replace(/\.(ogg|mp3|wav|m4a|webm)$/i, '');
   const explicitPath = /\.(ogg|mp3|wav|m4a|webm)$/i.test(relativeAssetPath)
-    ? [`/src/content/chapters/${chapterId}/${relativeAssetPath}`]
+    ? [`${rootPath}/${relativeAssetPath}`]
     : [];
   const extensionVariants = AUDIO_EXTENSIONS.map(
-    (extension) => `/src/content/chapters/${chapterId}/${assetBasePath}.${extension}`,
+    (extension) => `${rootPath}/${assetBasePath}.${extension}`,
   );
 
   return uniqueValues([...explicitPath, ...extensionVariants].map(normalizeModulePath));

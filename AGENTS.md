@@ -274,6 +274,13 @@ Dialogue engine responsibilities:
 - apply effects
 - close dialogue without manual screen logic
 
+Dialogue presentation target:
+- dialogue text should be paged, not scrolled
+- target density is up to `6` rendered lines per page in the main dialogue panel
+- paragraph break is the preferred page break
+- speaker line changes should render on a new visual line
+- if authored text is longer than one page, runtime should split it automatically instead of requiring content rewrites
+
 ## Effect Contract
 
 Initial effect types:
@@ -415,28 +422,6 @@ Also preferred:
 - item ref checks
 - script ref checks
 
-## Phase Order
-
-Work in phases and do not skip ahead.
-
-Initial execution order:
-1. app bootstrap
-2. root architecture
-3. core types
-4. stores
-5. effect runner
-6. dialogue engine
-7. world controller
-8. battle core
-9. UI screens
-10. first vertical slice
-
-Do not start with:
-- decorative styling
-- battle animations
-- large content packs
-- sprites
-
 ## Reporting Contract After Each Phase
 
 After each phase, report:
@@ -539,3 +524,10 @@ Never:
 - prioritize cosmetics over the runtime core
 - collapse everything into one giant file
 - mix runtime state with static templates
+
+Коли щось стосується змін персонажів чи сюжету заходь в Папку Documentation і
+перероблюй там все згідно логіки обсідіан, створюй файли під нових персонажів
+нові механіки і так далі.
+
+Documentation - це джерело істини проекту. Коли як даю завдання і ти його виконав змінив щось що не так в документації.
+то документацію також міняєш. 1000%

@@ -17,7 +17,7 @@ Use:
 - one registry touchpoint per content family
 - validator-friendly references
 
-If you add a new scene, character, background, portrait, music cue, travel board, battle, or item, it should be discoverable through the existing registries without rewriting the runtime.
+If you add a new scene, character, background, portrait, music cue, travel board, battle, item, or mini-game, it should be discoverable through the existing registries without rewriting the runtime.
 
 ## Chapter Folder Layout
 
@@ -86,9 +86,29 @@ When adding content, wire it into the matching registry:
 - assets: `src/content/registries/assetRegistry.ts`
 - items: `src/content/items/index.ts`
 - battles: `src/content/battles/index.ts`
+- mini-games: `src/content/minigames/index.ts`
 - units: `src/content/units/index.ts`
 - locations: `src/content/locations/index.ts`
 - scripts: `src/engine/scripts/registerNarrativeScripts.ts`
+
+## Mini-game Contract
+
+Mini-games are authored content plus a dedicated runtime layer.
+
+Use:
+- `src/content/minigames/*.ts` for static minigame templates
+- `startMinigame` in `GameEffect` to enter a minigame from scenes, dialogue, or travel
+- `src/engine/stores/MiniGameStore.ts` for active session state and skill progression
+- `src/engine/systems/minigame/MiniGameController.ts` for runtime rules and resolution
+
+Current supported kinds:
+- `fishing`: green-zone hold-and-release tension game
+- `dance`: blinking arrow rhythm prompts with hit windows
+
+Do not:
+- embed minigame logic inside React components
+- store authored prompt lists or fishing balance values inside stores
+- bypass the runtime by switching directly to the `minigame` screen without content data
 
 ## Character Contract
 
@@ -193,6 +213,43 @@ Each background should answer:
 - what time is it
 - what is the emotional temperature
 - is this safe, social, sacred, industrial, or horror space
+
+## Background Authoring Model
+
+Do not treat every new background as a standalone one-off prompt.
+
+Chapter 1 background authoring now uses a composable model:
+
+- `master location`
+- `room / zone`
+- `general vibe`
+- `situation`
+- `style pack`
+- `variant`
+- optional `scene preset`
+
+The practical rule:
+
+1. Start from the canonical location family.
+2. Pick the specific room or zone inside it.
+3. Change the state of that same place through `situation`.
+4. Only then adjust vibe, style, and framing.
+
+Examples:
+
+- `Thorn Estate` -> `Dining Hall` -> `Formal Morning`
+- `Thorn Estate` -> `Estate Corridors` -> `Open Assault`
+- `Black River Underworks` -> `Cell And Holding Space` -> `Captivity And Awakening`
+- `Ashen Reach` -> `Market Lane` -> `City Routine`
+
+This avoids generating five unrelated “castle dining halls” when the story actually needs one dining hall in multiple states.
+
+Current source files for this layer:
+
+- `src/content/storybook/backgroundProfiles/chapter1BackgroundPromptWorkbench.ts`
+- `src/engine/types/backgroundAuthoring.ts`
+- `src/engine/utils/buildBackgroundPromptRecipe.ts`
+- `src/ui/components/location-backdrop/BackgroundPromptWorkbench.tsx`
 
 ## Portrait Contract
 

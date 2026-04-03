@@ -23,7 +23,12 @@ const menuEntries = [
   {
     id: 'saves',
     label: 'Збереження',
-    enabled: false,
+    enabled: true,
+  },
+  {
+    id: 'library',
+    label: 'Бібліотека',
+    enabled: true,
   },
   {
     id: 'exit',
@@ -38,11 +43,11 @@ export const MainMenuScreen = observer(function MainMenuScreen() {
   return (
     <Box
       sx={{
-        minHeight: '100svh',
+        height: '100%',
         display: 'grid',
         placeItems: 'center',
         px: { xs: 2, sm: 3 },
-        py: { xs: 5, md: 7 },
+        py: { xs: 3, md: 4 },
       }}
     >
       <Stack
@@ -82,6 +87,10 @@ export const MainMenuScreen = observer(function MainMenuScreen() {
                   ? () => rootStore.startNewGame()
                   : entry.id === 'settings'
                     ? () => rootStore.ui.openModal('preferences')
+                    : entry.id === 'saves'
+                      ? () => rootStore.ui.openModal('saves')
+                      : entry.id === 'library'
+                        ? () => rootStore.openLibrary('characters')
                     : undefined
               }
               size="large"
@@ -104,6 +113,23 @@ export const MainMenuScreen = observer(function MainMenuScreen() {
               {entry.label}
             </Button>
           ))}
+        </Stack>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.1} sx={{ width: '100%' }}>
+          <Button
+            fullWidth
+            onClick={() => rootStore.miniGameController.startMinigame('chapter-1/minigame/fishing/reed-bank')}
+            variant="outlined"
+          >
+            Демо: рибалка
+          </Button>
+          <Button
+            fullWidth
+            onClick={() => rootStore.miniGameController.startMinigame('chapter-1/minigame/dance/lantern-step')}
+            variant="outlined"
+          >
+            Демо: танці
+          </Button>
         </Stack>
       </Stack>
     </Box>

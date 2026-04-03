@@ -10,6 +10,7 @@ import type {
   ResolvedCharacterEquipment,
 } from '@engine/types/appearance';
 import type { EffectTargetScope, ResourceKey } from '@engine/types/effects';
+import type { PartySnapshot } from '@engine/types/save';
 import type { StatusEffectInstance } from '@engine/types/status';
 import type { TagId } from '@engine/types/tags';
 import type { CharacterInstance, CharacterTemplate, PartyUnitRuntime } from '@engine/types/unit';
@@ -105,6 +106,22 @@ export class PartyStore {
 
   get hasReserveMembers() {
     return this.reservePartyIds.length > 0;
+  }
+
+  get snapshot(): PartySnapshot {
+    return {
+      rosterIds: [...this.rosterIds],
+      activePartyIds: [...this.activePartyIds],
+      reservePartyIds: [...this.reservePartyIds],
+      selectedCharacterId: this.selectedCharacterId,
+      unitStates: this.rosterIds
+        .map((unitId) => this.unitStates.get(unitId))
+        .filter((unitState): unitState is PartyUnitRuntime => unitState !== undefined)
+        .map((unitState) => clonePartyUnitRuntime(unitState)),
+      equippedItemsByUnitId: Object.fromEntries(
+        this.rosterIds.map((unitId) => [unitId, this.getEquippedItemIds(unitId)]),
+      ),
+    };
   }
 
   get selectedCharacter() {
@@ -487,6 +504,23 @@ export class PartyStore {
     this.selectedCharacterId = null;
     this.unitStates.clear();
     this.equippedItemsByUnitId.clear();
+  }
+
+  restore(snapshot: PartySnapshot) {
+    this.rosterIds = [...snapshot.rosterIds];
+    this.activePartyIds = [...snapshot.activePartyIds];
+    this.reservePartyIds = [...snapshot.reservePartyIds];
+    this.selectedCharacterId = snapshot.selectedCharacterId;
+    this.unitStates.clear();
+    this.equippedItemsByUnitId.clear();
+
+    snapshot.unitStates.forEach((unitState) => {
+      this.unitStates.set(unitState.unitId, clonePartyUnitRuntime(unitState));
+    });
+
+    Object.entries(snapshot.equippedItemsByUnitId).forEach(([unitId, equippedItemIds]) => {
+      this.equippedItemsByUnitId.set(unitId, cloneEquippedItemIds(equippedItemIds));
+    });
   }
 
   private buildRuntimeFromRegistry(instanceId: string) {

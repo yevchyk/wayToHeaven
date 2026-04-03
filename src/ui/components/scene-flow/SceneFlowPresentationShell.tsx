@@ -2,8 +2,9 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
 import { observer } from 'mobx-react-lite';
-import { Box, Stack, Typography } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
+import { Box, Typography } from '@mui/material';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
 import type { NarrativeAssetKind } from '@engine/types/narrative';
@@ -21,6 +22,7 @@ import {
   buildNarrativeBackdropBackground,
   renderNarrativeBackdropArchitectureLayer,
 } from '@ui/components/narrative/narrativeBackdrop';
+import { renderNarrativeBackdropEffectLayers } from '@ui/components/narrative/narrativeBackdropEffects';
 import { NarrativePortraitFigure } from '@ui/components/narrative/NarrativePortraitFigure';
 import { buildSceneFlowStageLayout } from '@ui/components/scene-flow/sceneFlowStageLayout';
 
@@ -31,6 +33,9 @@ interface SceneFlowPresentationShellProps extends PropsWithChildren {
   header?: ReactNode;
   mapAssetId?: string | null;
   showStage?: boolean;
+  stageSx?: SxProps<Theme>;
+  contentClassName?: string;
+  contentSx?: SxProps<Theme>;
 }
 
 interface ResolvedSceneAssetLayer {
@@ -39,6 +44,14 @@ interface ResolvedSceneAssetLayer {
   label: string;
   url: string | null;
   isPlaceholder: boolean;
+}
+
+function toSxArray(value?: SxProps<Theme>) {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? [...value] : [value];
 }
 
 function buildPresentationRuntime(
@@ -104,6 +117,7 @@ function ScenePresentationAssetLayer({
   return (
     <Box
       aria-label={ariaLabel}
+      className={`scene-flow-shell__asset-layer scene-flow-shell__asset-layer--${mode}`}
       data-asset-id={layer.assetId}
       data-placeholder={layer.isPlaceholder ? 'true' : 'false'}
       sx={{
@@ -114,6 +128,7 @@ function ScenePresentationAssetLayer({
       }}
     >
       <Box
+        className="scene-flow-shell__asset-image"
         sx={{
           position: 'absolute',
           inset: 0,
@@ -128,6 +143,7 @@ function ScenePresentationAssetLayer({
 
       {layer.isPlaceholder ? (
         <Box
+          className="scene-flow-shell__asset-placeholder"
           sx={{
             position: 'absolute',
             top: { xs: 18, md: 24 },
@@ -309,28 +325,35 @@ function StagePortrait({
   return (
     <Box
       aria-label={`stage portrait ${portrait.speakerId}`}
+      className={`scene-flow-shell__portrait scene-flow-shell__portrait--${alignment}${portrait.isActive ? ' is-active' : ''}`}
       data-outfit-id={portrait.outfitId ?? undefined}
       data-portrait-mode={portrait.portrait.type}
+      data-stage-side={alignment}
+      data-stage-position={layout.left}
+      data-stage-scale={layout.scale}
       data-speaker-id={portrait.speakerId}
       sx={{
         position: 'absolute',
         left: layout.left,
-        bottom: 0,
+        bottom: layout.bottom,
         width: layout.width,
-        height: { xs: '37svh', sm: '46svh', md: '68svh' },
+        height: '100%',
         maxHeight: 760,
         maxWidth: getPortraitWidth(total),
-        transform: `translateX(-50%) ${portrait.isActive ? 'translateY(-10px) scale(1.015)' : 'translateY(18px) scale(0.985)'}`,
+        transform: `translateX(-50%) translateY(${portrait.isActive ? 0 : 18}px) scale(${layout.scale * (portrait.isActive ? 1.08 : 0.94)})`,
         zIndex: layout.zIndex,
         pointerEvents: 'none',
-        opacity: portrait.isActive ? 1 : 0.62,
-        transition: 'opacity 180ms ease, transform 180ms ease, filter 180ms ease',
+        opacity: layout.opacity * (portrait.isActive ? 1 : 0.58),
+        transition:
+          'left 360ms cubic-bezier(0.22, 1, 0.36, 1), bottom 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease',
+        willChange: 'left, bottom, transform, opacity, filter',
         filter: portrait.isActive
           ? 'drop-shadow(0 30px 40px rgba(0, 0, 0, 0.46)) drop-shadow(0 0 20px rgba(240, 204, 139, 0.14))'
           : 'drop-shadow(0 18px 28px rgba(0, 0, 0, 0.34))',
       }}
     >
       <Box
+        className="scene-flow-shell__portrait-figure"
         sx={{
           position: 'absolute',
           inset: 0,
@@ -354,6 +377,7 @@ function StagePortrait({
       </Box>
 
       <Box
+        className="scene-flow-shell__portrait-shadow"
         sx={{
           position: 'absolute',
           bottom: { xs: 10, md: 16 },
@@ -389,7 +413,7 @@ function SceneFlowTransitionLayer() {
   const rootStore = useGameRootStore();
   const transition = rootStore.sceneFlow.activeSession?.presentation.activeTransition ?? null;
   const transitionKey = transition
-    ? `${rootStore.sceneFlow.activeSession?.sessionId ?? 'ambient'}:${rootStore.sceneFlow.currentNodeId ?? 'none'}:${transition.type}:${transition.durationMs ?? 0}`
+    ? `${rootStore.sceneFlow.activeSession?.sessionId ?? 'ambient'}:${transition.type}:${transition.durationMs ?? 0}`
     : null;
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [activeTransition, setActiveTransition] = useState<typeof transition>(null);
@@ -477,6 +501,9 @@ export const SceneFlowPresentationShell = observer(function SceneFlowPresentatio
   header,
   mapAssetId = null,
   showStage = true,
+  stageSx,
+  contentClassName,
+  contentSx,
 }: SceneFlowPresentationShellProps) {
   const rootStore = useGameRootStore();
   const sceneTitle = rootStore.dialogue.currentSceneTitle ?? rootStore.sceneFlow.currentFlow?.title ?? null;
@@ -490,20 +517,27 @@ export const SceneFlowPresentationShell = observer(function SceneFlowPresentatio
   const cgLayer = resolveSceneLayer(rootStore, rootStore.sceneFlow.currentCgId, 'cg');
   const overlayLayer = resolveSceneLayer(rootStore, rootStore.sceneFlow.currentOverlayId, 'overlay');
   const portraits = showStage ? resolvePresentationStagePortraits(rootStore, presentationRuntime) : [];
-  const portraitLayouts = buildSceneFlowStageLayout(portraits.length);
+  const portraitLayouts = buildSceneFlowStageLayout(portraits);
+  const shellContentClassName = contentClassName
+    ? `scene-flow-shell__content ${contentClassName}`
+    : 'scene-flow-shell__content';
 
   return (
     <Box
+      className="scene-flow-shell"
       sx={{
         position: 'relative',
-        minHeight: '100svh',
+        width: '100%',
+        height: '100%',
         overflow: 'hidden',
         background: buildNarrativeBackdropBackground(backdrop),
       }}
     >
       {renderNarrativeBackdropArchitectureLayer(backdrop)}
+      {renderNarrativeBackdropEffectLayers(rootStore.sceneFlow.currentBackgroundStyle)}
 
       <Box
+        className="scene-flow-shell__backdrop-veil"
         sx={{
           position: 'absolute',
           inset: 0,
@@ -512,24 +546,29 @@ export const SceneFlowPresentationShell = observer(function SceneFlowPresentatio
         }}
       />
 
-      <Box sx={{ position: 'absolute', inset: 0, zIndex: 0.5 }}>
+      <Box className="scene-flow-shell__map-layer" sx={{ position: 'absolute', inset: 0, zIndex: 0.5 }}>
         <ScenePresentationAssetLayer ariaLabel="scene map layer" layer={mapLayer} mode="map" />
       </Box>
 
-      <Box sx={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+      <Box className="scene-flow-shell__cg-layer" sx={{ position: 'absolute', inset: 0, zIndex: 1 }}>
         <ScenePresentationAssetLayer ariaLabel="scene cg layer" layer={cgLayer} mode="cg" />
       </Box>
 
       {showStage && portraits.length > 0 ? (
         <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            px: { xs: '0.75rem', sm: '1.5rem', md: '2.5rem', xl: '4rem' },
-            pb: { xs: '2.5rem', md: '3.75rem' },
-            pointerEvents: 'none',
-            zIndex: 2,
-          }}
+          className="scene-flow-shell__stage"
+          sx={[
+            {
+              position: 'absolute',
+              inset: 0,
+              px: { xs: '0.75rem', sm: '1.5rem', md: '2.5rem', xl: '4rem' },
+              pt: { xs: '0.75rem', md: '1.25rem' },
+              pb: { xs: '2.5rem', md: '3.75rem' },
+              pointerEvents: 'none',
+              zIndex: 2,
+            },
+            ...toSxArray(stageSx),
+          ]}
         >
           {portraits.map((portrait, index) => (
             <StagePortrait
@@ -543,7 +582,7 @@ export const SceneFlowPresentationShell = observer(function SceneFlowPresentatio
         </Box>
       ) : null}
 
-      <Box sx={{ position: 'absolute', inset: 0, zIndex: 2.5 }}>
+      <Box className="scene-flow-shell__overlay-layer" sx={{ position: 'absolute', inset: 0, zIndex: 2.5 }}>
         <ScenePresentationAssetLayer ariaLabel="scene overlay layer" layer={overlayLayer} mode="overlay" />
       </Box>
 
@@ -551,6 +590,7 @@ export const SceneFlowPresentationShell = observer(function SceneFlowPresentatio
 
       {header ? (
         <Box
+          className="scene-flow-shell__header"
           sx={{
             position: 'absolute',
             top: { xs: 20, md: 28 },
@@ -563,7 +603,21 @@ export const SceneFlowPresentationShell = observer(function SceneFlowPresentatio
         </Box>
       ) : null}
 
-      <Box sx={{ position: 'relative', zIndex: 4, minHeight: '100svh' }}>{children}</Box>
+      <Box
+        className={shellContentClassName}
+        sx={[
+          {
+            position: 'relative',
+            zIndex: 4,
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+          },
+          ...toSxArray(contentSx),
+        ]}
+      >
+        {children}
+      </Box>
     </Box>
   );
 });

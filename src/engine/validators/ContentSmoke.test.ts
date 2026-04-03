@@ -1,5 +1,6 @@
 import { hasNarrativeAssetOfKind } from '@content/registries/assetRegistry';
 import { sceneGenerationRegistry } from '@content/registries/sceneGenerationRegistry';
+import { itemContentRegistry } from '@content/items';
 import { GameRootStore } from '@engine/stores/GameRootStore';
 import { importSceneGenerationDocument } from '@engine/systems/scenes/importSceneGenerationDocument';
 import { SceneGenerationValidator } from '@engine/validators/SceneGenerationValidator';
@@ -18,6 +19,7 @@ describe('Bundled content smoke', () => {
       hasSpeakerId: (speakerId) => speakerId in rootStore.narrativeCharacterRegistry,
       hasAssetOfKind: hasNarrativeAssetOfKind,
       hasSceneFlowId: (sceneFlowId) => sceneFlowId in rootStore.sceneFlowRegistry,
+      hasItemId: (itemId) => itemId in itemContentRegistry,
     });
 
     expect(Object.keys(sceneGenerationRegistry).length).toBeGreaterThan(0);

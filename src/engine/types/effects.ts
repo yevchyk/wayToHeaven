@@ -1,6 +1,8 @@
 import type { FlagValue } from '@engine/types/flags';
 import type { MetaKey } from '@engine/types/meta';
-import type { GameStatKey } from '@engine/types/stats';
+import type { NarrativeProfileKey } from '@engine/types/profile';
+import type { QuestDefinition } from '@engine/types/quest';
+import type { RelationshipAxis, RelationshipId } from '@engine/types/relationships';
 import type { TagId } from '@engine/types/tags';
 import type { ModalId, ScreenId } from '@engine/types/ui';
 
@@ -28,21 +30,62 @@ export interface ChangeMetaEffect {
   delta: number;
 }
 
+export interface AddQuestEffect {
+  type: 'addQuest';
+  questId: QuestDefinition['id'];
+}
+
+export interface AdvanceQuestEffect {
+  type: 'advanceQuest';
+  questId: QuestDefinition['id'];
+  delta?: number;
+}
+
+export interface CompleteQuestEffect {
+  type: 'completeQuest';
+  questId: QuestDefinition['id'];
+}
+
 export interface ChangeStatEffect {
   type: 'changeStat';
-  key: GameStatKey;
+  key: NarrativeProfileKey;
+  delta: number;
+}
+
+export interface ChangeRelationshipEffect {
+  type: 'changeRelationship';
+  relationshipId?: RelationshipId;
+  key?: string;
+  axis?: RelationshipAxis;
+  delta: number;
+}
+
+export interface ChangeProfileEffect {
+  type: 'changeProfile';
+  key: NarrativeProfileKey;
   delta: number;
 }
 
 export interface SetStatEffect {
   type: 'setStat';
-  key: GameStatKey;
+  key: NarrativeProfileKey;
+  value: number;
+}
+
+export interface SetProfileEffect {
+  type: 'setProfile';
+  key: NarrativeProfileKey;
   value: number;
 }
 
 export interface UnlockStatEffect {
   type: 'unlockStat';
-  key: GameStatKey;
+  key: NarrativeProfileKey;
+}
+
+export interface UnlockProfileEffect {
+  type: 'unlockProfile';
+  key: NarrativeProfileKey;
 }
 
 export interface AddTagEffect {
@@ -88,6 +131,11 @@ export interface StartTravelBoardEffect {
   type: 'startTravelBoard';
   boardId: string;
   startNodeId?: string;
+}
+
+export interface StartMinigameEffect {
+  type: 'startMinigame';
+  minigameId: string;
 }
 
 export interface ChangeLocationEffect {
@@ -159,9 +207,16 @@ export type GameEffect =
   | SetFlagEffect
   | SetCharacterOutfitEffect
   | ChangeMetaEffect
+  | AddQuestEffect
+  | AdvanceQuestEffect
+  | CompleteQuestEffect
   | ChangeStatEffect
+  | ChangeProfileEffect
+  | ChangeRelationshipEffect
   | SetStatEffect
+  | SetProfileEffect
   | UnlockStatEffect
+  | UnlockProfileEffect
   | AddTagEffect
   | RemoveTagEffect
   | GiveItemEffect
@@ -169,6 +224,7 @@ export type GameEffect =
   | RestoreResourceEffect
   | StartBattleEffect
   | StartTravelBoardEffect
+  | StartMinigameEffect
   | ChangeLocationEffect
   | SetBackgroundEffect
   | PlayMusicEffect

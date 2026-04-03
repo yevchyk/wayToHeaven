@@ -6,6 +6,7 @@ export type EffectReferenceValidationIssueCode =
   | 'missingBattleReference'
   | 'missingTravelBoardReference'
   | 'missingItemReference'
+  | 'missingQuestReference'
   | 'missingLocationReference'
   | 'missingLocationNodeReference'
   | 'missingScriptReference'
@@ -54,6 +55,19 @@ export class EffectReferenceValidator {
                 message: `Effect references missing item "${effect.itemId}".`,
                 path,
                 targetId: effect.itemId,
+              },
+            ]
+          : [];
+      case 'addQuest':
+      case 'advanceQuest':
+      case 'completeQuest':
+        return this.lookup && !this.lookup.hasQuest(effect.questId)
+          ? [
+              {
+                code: 'missingQuestReference',
+                message: `Effect references missing quest "${effect.questId}".`,
+                path,
+                targetId: effect.questId,
               },
             ]
           : [];

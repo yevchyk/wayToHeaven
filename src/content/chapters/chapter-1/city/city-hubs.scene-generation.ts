@@ -56,6 +56,20 @@ export const chapter1CityHubsSceneGenerationDocument = {
               nextSceneId: 'chapter-1/city/shrine-court',
             },
             {
+              id: 'to-wayfarer-shelter',
+              text: 'Піти за тихим знаком до паломницького сховку',
+              description: 'Материн слід веде до вузького прихистку за святинею, де ще пам’ятають, як ховати тих, хто впав із видимого світу.',
+              tone: 'social',
+              conditions: [
+                {
+                  type: 'flagEquals',
+                  flagId: 'chapter1.aftermath.motherThreadRemembered',
+                  value: true,
+                },
+              ],
+              nextSceneId: 'chapter-1/city/wayfarer-shelter',
+            },
+            {
               id: 'talk-warden',
               text: 'Поговорити з охоронцем біля брами',
               description: 'Звичний guard check і кілька зайвих запитань про ваші наміри.',
@@ -100,6 +114,86 @@ export const chapter1CityHubsSceneGenerationDocument = {
               description: 'Небезпечний шлях під кварталом, де місто закінчується й починається ризик.',
               tone: 'cult',
               openSceneFlowId: 'chapter-1/travel/underground-route',
+            },
+          ],
+        },
+      },
+    },
+    'chapter-1/city/wayfarer-shelter': {
+      id: 'chapter-1/city/wayfarer-shelter',
+      mode: 'hub',
+      title: 'Wayfarer Shelter',
+      description: 'A narrow shelter behind the shrine where temple servants keep blankets, road scraps, and favors that are never written down.',
+      cityId: 'ashen-reach',
+      cityName: 'Ashen Reach',
+      locationName: 'Wayfarer Shelter',
+      districtLabel: 'Temple Quarter',
+      statusLabel: 'quiet refuge',
+      backgroundId: 'chapter-1/backgrounds/shrine-court.webp',
+      startNodeId: 'wayfarer-shelter',
+      nodes: {
+        'wayfarer-shelter': {
+          id: 'wayfarer-shelter',
+          type: 'choice',
+          title: 'Wayfarer Shelter',
+          text: 'A narrow shelter behind the shrine where the right knock still buys silence.',
+          onEnterEffects: [
+            {
+              type: 'setFlag',
+              flagId: 'chapter1.city.wayfarerShelterSeen',
+              value: true,
+            },
+          ],
+          choices: [
+            {
+              id: 'claim-pilgrim-seal',
+              text: 'Попросити тиху печать проходу',
+              description: 'Служка не ставить питань, тільки передає знак, який відкриває браму без зайвих слів.',
+              tone: 'info',
+              once: true,
+              effects: [
+                {
+                  type: 'setFlag',
+                  flagId: 'hasGatePass',
+                  value: true,
+                },
+                {
+                  type: 'giveItem',
+                  itemId: 'pilgrim-seal',
+                  quantity: 1,
+                },
+                {
+                  type: 'setFlag',
+                  flagId: 'chapter1.city.wayfarerSealGranted',
+                  value: true,
+                },
+              ],
+            },
+            {
+              id: 'accept-road-bundle',
+              text: 'Забрати дорожній згорток',
+              description: 'Трохи сухої їжі й тиша, яка відчувається дорожчою за їжу.',
+              tone: 'reward',
+              once: true,
+              effects: [
+                {
+                  type: 'giveItem',
+                  itemId: 'travel-ration',
+                  quantity: 1,
+                },
+                {
+                  type: 'changeMeta',
+                  key: 'morale',
+                  delta: 1,
+                },
+              ],
+            },
+            {
+              id: 'return-plaza',
+              text: 'Повернутися на площу',
+              description: 'Вийти назад до храмового виходу, уже маючи хоч трохи опори.',
+              tone: 'neutral',
+              nextSceneId: 'chapter-1/city/temple-exit',
             },
           ],
         },

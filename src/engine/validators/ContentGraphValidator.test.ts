@@ -3,6 +3,7 @@ import { dialogueContentRegistry } from '@content/dialogues';
 import { itemContentRegistry } from '@content/items';
 import { locationContentRegistry } from '@content/registries/locationRegistry';
 import { citySceneRegistry } from '@content/registries/citySceneRegistry';
+import { questRegistry } from '@content/registries/questRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 import {
   characterInstanceRegistry,
@@ -118,6 +119,7 @@ describe('ContentGraphValidator', () => {
         ...itemContentRegistry,
         [brokenItem.id]: brokenItem,
       },
+      quests: questRegistry,
       locations: locationContentRegistry,
       characterTemplates: {
         ...characterTemplateRegistry,

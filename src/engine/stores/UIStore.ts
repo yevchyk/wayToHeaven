@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import type { UISnapshot } from '@engine/types/save';
 import type { ActiveModal, NotificationTone, OverlayId, ScreenId, UINotification } from '@engine/types/ui';
 
 export class UIStore {
@@ -25,6 +26,19 @@ export class UIStore {
 
   get hasNotifications() {
     return this.notifications.length > 0;
+  }
+
+  get snapshot(): UISnapshot {
+    return {
+      activeScreen: this.activeScreen,
+      activeModal: this.activeModal
+        ? {
+            id: this.activeModal.id,
+            ...(this.activeModal.payload ? { payload: { ...this.activeModal.payload } } : {}),
+          }
+        : null,
+      overlays: [...this.overlays],
+    };
   }
 
   setScreen(screenId: ScreenId) {
@@ -69,6 +83,18 @@ export class UIStore {
 
   dismissNotification(notificationId: string) {
     this.notifications = this.notifications.filter((entry) => entry.id !== notificationId);
+  }
+
+  restore(snapshot: UISnapshot) {
+    this.activeScreen = snapshot.activeScreen;
+    this.activeModal = snapshot.activeModal
+      ? {
+          id: snapshot.activeModal.id,
+          ...(snapshot.activeModal.payload ? { payload: { ...snapshot.activeModal.payload } } : {}),
+        }
+      : null;
+    this.overlays = [...snapshot.overlays];
+    this.notifications = [];
   }
 
   reset() {

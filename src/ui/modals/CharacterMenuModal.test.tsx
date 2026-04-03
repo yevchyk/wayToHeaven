@@ -8,6 +8,8 @@ describe('CharacterMenuModal', () => {
     const rootStore = new GameRootStore();
 
     rootStore.startNewGame();
+    rootStore.profile.setProfileValue('superiority', 1);
+    rootStore.profile.setProfileValue('corruption', 2);
     rootStore.openCharacterMenu();
     renderWithStore(rootStore);
 
@@ -19,6 +21,14 @@ describe('CharacterMenuModal', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Inventory' }));
     expect(screen.getByText('Basic Potion')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Profile' }));
+    expect(screen.getByText('Core Axes')).toBeInTheDocument();
+    expect(screen.getByText('Superiority 1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Corruption' }));
+    expect(screen.getByText('Corruption Pressure')).toBeInTheDocument();
+    expect(screen.getByText('Corruption 2')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
@@ -42,5 +52,16 @@ describe('CharacterMenuModal', () => {
 
     expect(screen.getByTestId('character-menu-selected-name')).toHaveTextContent('Ash');
     expect(screen.getByTestId('character-preview-layer-headwear')).toBeInTheDocument();
+  });
+
+  it('opens the inventory modal on the inventory tab by default', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.startNewGame();
+    rootStore.ui.openModal('inventory');
+    renderWithStore(rootStore);
+
+    expect(screen.getByRole('tab', { name: 'Inventory' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Basic Potion')).toBeInTheDocument();
   });
 });

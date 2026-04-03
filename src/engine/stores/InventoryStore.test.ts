@@ -69,9 +69,10 @@ describe('InventoryStore runtime', () => {
     expect(rootStore.inventory.getItemCount('travel-ration')).toBe(0);
     expect(rootStore.meta.snapshot).toEqual({
       hunger: 3,
+      safety: 0,
       morale: 1,
       reputation: 0,
+      badReputation: 0,
     });
   });
 });
-

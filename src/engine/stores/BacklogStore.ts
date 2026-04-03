@@ -2,6 +2,8 @@ import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
 import type { BacklogEntry, BacklogEntryKind } from '@engine/types/playerShell';
+import type { BacklogSnapshot } from '@engine/types/save';
+import { getNarrativePlainText } from '@engine/utils/narrativeHtml';
 
 interface AppendBacklogEntryInput {
   kind: BacklogEntryKind;
@@ -25,8 +27,14 @@ export class BacklogStore {
     makeAutoObservable(this, { rootStore: false }, { autoBind: true });
   }
 
+  get snapshot(): BacklogSnapshot {
+    return {
+      entries: this.entries.map((entry) => ({ ...entry })),
+    };
+  }
+
   appendEntry(input: AppendBacklogEntryInput) {
-    const normalizedText = input.text.trim();
+    const normalizedText = getNarrativePlainText(input.text).trim();
 
     if (!normalizedText) {
       return null;
@@ -41,7 +49,7 @@ export class BacklogStore {
       nodeId: input.nodeId,
       speakerId: input.speakerId,
       speakerName: input.speakerName,
-      text: normalizedText,
+      text: input.text.trim(),
     };
 
     this.entries = [...this.entries, entry];
@@ -52,5 +60,10 @@ export class BacklogStore {
   reset() {
     this.entries = [];
     this.sequence = 0;
+  }
+
+  restore(snapshot: BacklogSnapshot) {
+    this.entries = snapshot.entries.map((entry) => ({ ...entry }));
+    this.sequence = this.entries.length;
   }
 }

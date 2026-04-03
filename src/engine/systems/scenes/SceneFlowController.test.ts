@@ -29,6 +29,7 @@ describe('SceneFlowController regressions', () => {
       meta: {
         chapterId: 'chapter-1',
         defaultBackgroundId: chapter1BackgroundIds.introRoom,
+        defaultBackgroundStyle: 'cold-morning-spill+shadow-veil',
         defaultMusicId: chapter1MusicIds.introTheme,
         defaultCgId: chapter1CgIds.awakeningFlash,
         defaultOverlayId: chapter1OverlayIds.dreamVeil,
@@ -103,6 +104,7 @@ describe('SceneFlowController regressions', () => {
     expect(rootStore.dialogue.currentCgId).toBe(chapter1CgIds.awakeningFlash);
     expect(rootStore.dialogue.currentOverlayId).toBe(chapter1OverlayIds.dreamVeil);
     expect(rootStore.dialogue.currentStage?.focusCharacterId).toBe('heroine');
+    expect(rootStore.sceneFlow.currentBackgroundStyle).toBe('cold-morning-spill+shadow-veil');
     expect(rootStore.sceneFlow.activeSession?.presentation.activeTransition).toMatchObject({
       type: 'fade',
       durationMs: 320,
@@ -218,6 +220,86 @@ describe('SceneFlowController regressions', () => {
     rootStore.dialogue.next();
     expect(rootStore.dialogue.currentNodeId).toBe('resolved');
     expect(rootStore.dialogue.currentText).toBe('The fallback for the blocked next node is visible.');
+  });
+
+  it('can replace an entire follow-up scene when scene conditions read inventory state', () => {
+    const rootStore = new GameRootStore();
+
+    registerImportedFlows(rootStore, {
+      id: 'tests/scene-generation/inventory-scene-replacement',
+      schemaVersion: 1,
+      title: 'Inventory Scene Replacement',
+      meta: {
+        chapterId: 'chapter-1',
+      },
+      scenes: {
+        'tests/scene/source': {
+          id: 'tests/scene/source',
+          mode: 'sequence',
+          startNodeId: 'source-start',
+          nodes: {
+            'source-start': {
+              id: 'source-start',
+              type: 'narration',
+              text: 'Move into the gated follow-up scene.',
+              nextSceneId: 'tests/scene/gated',
+            },
+          },
+        },
+        'tests/scene/gated': {
+          id: 'tests/scene/gated',
+          mode: 'sequence',
+          startNodeId: 'gated-start',
+          conditions: [
+            {
+              type: 'inventory',
+              itemId: 'basic-potion',
+              operator: 'gte',
+              value: 1,
+            },
+          ],
+          onConditionFail: {
+            nextSceneId: 'tests/scene/fallback',
+          },
+          nodes: {
+            'gated-start': {
+              id: 'gated-start',
+              type: 'narration',
+              text: 'The item-gated scene is visible.',
+              isEnd: true,
+            },
+          },
+        },
+        'tests/scene/fallback': {
+          id: 'tests/scene/fallback',
+          mode: 'sequence',
+          startNodeId: 'fallback-start',
+          nodes: {
+            'fallback-start': {
+              id: 'fallback-start',
+              type: 'narration',
+              text: 'The fallback scene replaced the gated scene.',
+              isEnd: true,
+            },
+          },
+        },
+      },
+    });
+
+    rootStore.sceneFlowController.startSceneFlow('tests/scene/source');
+    rootStore.dialogue.next();
+
+    expect(rootStore.dialogue.activeSceneId).toBe('tests/scene/fallback');
+    expect(rootStore.dialogue.currentText).toBe('The fallback scene replaced the gated scene.');
+
+    rootStore.dialogue.endDialogue();
+    rootStore.inventory.addItem('basic-potion', 1);
+
+    rootStore.sceneFlowController.startSceneFlow('tests/scene/source');
+    rootStore.dialogue.next();
+
+    expect(rootStore.dialogue.activeSceneId).toBe('tests/scene/gated');
+    expect(rootStore.dialogue.currentText).toBe('The item-gated scene is visible.');
   });
 
   it('uses scene flow routeRules.rollRange at runtime instead of hardcoded dice limits', () => {

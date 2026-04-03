@@ -7,6 +7,7 @@ import type {
   MusicAction,
   SceneTransition,
   SpeakerSide,
+  StageCharacterPlacement,
 } from '@engine/types/dialogue';
 import type { GameEffect } from '@engine/types/effects';
 
@@ -16,11 +17,14 @@ export type SceneGenerationSchemaVersion = typeof SCENE_GENERATION_SCHEMA_VERSIO
 
 export interface SceneGenerationMeta {
   chapterId: string;
+  language?: string;
   defaultBackgroundId?: string;
+  defaultBackgroundStyle?: string | null;
   defaultMusicId?: string;
   defaultCgId?: string;
   defaultOverlayId?: string;
   defaultStage?: SceneGenerationStageState;
+  notes?: string;
 }
 
 export interface SceneGenerationStageCharacter {
@@ -29,6 +33,7 @@ export interface SceneGenerationStageCharacter {
   portraitId?: string;
   outfitId?: string;
   isVisible?: boolean;
+  placement?: StageCharacterPlacement;
 }
 
 export interface SceneGenerationStageState {
@@ -39,7 +44,7 @@ export interface SceneGenerationStageState {
 export interface SceneGenerationBackgroundChange {
   image: string;
   transition?: 'cut' | 'fade' | 'dissolve' | 'flash';
-  style?: string;
+  style?: string | null;
 }
 
 export interface SceneGenerationSceneChange {
@@ -146,6 +151,7 @@ export interface SceneGenerationScene {
   statusLabel?: string;
   startNodeId: string;
   backgroundId?: string;
+  backgroundStyle?: string | null;
   cgId?: string;
   overlayId?: string;
   music?: MusicAction;

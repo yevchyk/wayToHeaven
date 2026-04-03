@@ -15,11 +15,21 @@ export const chapter1AwakeningSceneGenerationDocument = {
           emotion: 'trembling',
           portraitId: 'chapter-1/portraits/mirella/trembling.webp',
           outfitId: 'dress-ripped',
+          placement: {
+            x: 18,
+            scale: 1.08,
+          },
         },
         {
           speakerId: 'ner-azet',
           emotion: 'whisper',
           portraitId: 'chapter-1/portraits/ner-azet/whisper.webp',
+          placement: {
+            x: 82,
+            y: 3,
+            scale: 0.96,
+            opacity: 0.84,
+          },
         },
       ],
       focusCharacterId: 'mirella',
@@ -59,11 +69,21 @@ export const chapter1AwakeningSceneGenerationDocument = {
                 emotion: 'trembling',
                 portraitId: 'chapter-1/portraits/mirella/trembling.webp',
                 outfitId: 'dress-ripped',
+                placement: {
+                  x: 18,
+                  scale: 1.08,
+                },
               },
               {
                 speakerId: 'ner-azet',
                 emotion: 'whisper',
                 portraitId: 'chapter-1/portraits/ner-azet/whisper.webp',
+                placement: {
+                  x: 82,
+                  y: 3,
+                  scale: 0.96,
+                  opacity: 0.84,
+                },
               },
             ],
             focusCharacterId: 'ner-azet',
@@ -84,11 +104,21 @@ export const chapter1AwakeningSceneGenerationDocument = {
                 emotion: 'trembling',
                 portraitId: 'chapter-1/portraits/mirella/trembling.webp',
                 outfitId: 'dress-ripped',
+                placement: {
+                  x: 18,
+                  scale: 1.08,
+                },
               },
               {
                 speakerId: 'ner-azet',
                 emotion: 'whisper',
                 portraitId: 'chapter-1/portraits/ner-azet/whisper.webp',
+                placement: {
+                  x: 82,
+                  y: 3,
+                  scale: 0.96,
+                  opacity: 0.84,
+                },
               },
             ],
             focusCharacterId: 'mirella',
@@ -145,6 +175,10 @@ export const chapter1AwakeningSceneGenerationDocument = {
             emotion: 'determined',
             portraitId: 'chapter-1/portraits/mirella/determined.webp',
             outfitId: 'dress-ripped',
+            placement: {
+              x: 50,
+              scale: 1.12,
+            },
           },
         ],
         focusCharacterId: 'mirella',
@@ -154,6 +188,120 @@ export const chapter1AwakeningSceneGenerationDocument = {
           id: 'awakening-road-1',
           type: 'narration',
           text: 'Попереду чекає маршрут крізь затоплені проходи, засідки і схрони. Далі вже йде не сон, а дорога.',
+          nextNodeId: 'awakening-road-2',
+        },
+        'awakening-road-2': {
+          id: 'awakening-road-2',
+          type: 'choice',
+          speakerId: 'mirella',
+          emotion: 'determined',
+          portraitId: 'chapter-1/portraits/mirella/determined.webp',
+          text: 'У першому підземному відрізку Мірелла вирішує, за що саме триматиметься далі.',
+          choices: [
+            {
+              id: 'awakening-road-2-mother-thread',
+              text: 'Згадати матір і тихі храмові вузли, які вона ховала в побуті.',
+              conditions: [
+                {
+                  type: 'flag',
+                  flagId: 'relationship.mother',
+                  operator: 'gte',
+                  value: 2,
+                },
+              ],
+              effects: [
+                {
+                  type: 'setFlag',
+                  flagId: 'chapter1.aftermath.motherThreadRemembered',
+                  value: true,
+                },
+                {
+                  type: 'changeMeta',
+                  key: 'morale',
+                  delta: 1,
+                },
+              ],
+              nextNodeId: 'awakening-road-3',
+            },
+            {
+              id: 'awakening-road-2-father-mask',
+              text: 'Випрямити спину так, як робив батько, коли хотів зламати кімнату самою поставою.',
+              conditions: [
+                {
+                  type: 'flag',
+                  flagId: 'relationship.father',
+                  operator: 'gte',
+                  value: 1,
+                },
+              ],
+              effects: [
+                {
+                  type: 'setFlag',
+                  flagId: 'chapter1.aftermath.fatherMask',
+                  value: true,
+                },
+                {
+                  type: 'changeStat',
+                  key: 'superiority',
+                  delta: 1,
+                },
+              ],
+              nextNodeId: 'awakening-road-3',
+            },
+            {
+              id: 'awakening-road-2-pragmatic-route',
+              text: 'Рахувати кроки, шви в камені й технічні жолоби, а не шепіт.',
+              conditions: [
+                {
+                  type: 'statGte',
+                  key: 'pragmatism',
+                  value: 2,
+                },
+              ],
+              effects: [
+                {
+                  type: 'setFlag',
+                  flagId: 'chapter1.travel.maintenanceDuctNoticed',
+                  value: true,
+                },
+              ],
+              nextNodeId: 'awakening-road-3',
+            },
+            {
+              id: 'awakening-road-2-human-route',
+              text: 'Слухати не древній шепіт, а те, чи не лишився під каменем хтось живий.',
+              conditions: [
+                {
+                  type: 'statGte',
+                  key: 'humanity',
+                  value: 2,
+                },
+              ],
+              effects: [
+                {
+                  type: 'setFlag',
+                  flagId: 'chapter1.travel.lostPilgrimHeard',
+                  value: true,
+                },
+                {
+                  type: 'changeMeta',
+                  key: 'morale',
+                  delta: 1,
+                },
+              ],
+              nextNodeId: 'awakening-road-3',
+            },
+            {
+              id: 'awakening-road-2-keep-moving',
+              text: 'Не називати це ніяк. Просто йти.',
+              nextNodeId: 'awakening-road-3',
+            },
+          ],
+        },
+        'awakening-road-3': {
+          id: 'awakening-road-3',
+          type: 'narration',
+          text: 'Так або інакше, темрява вже отримала від неї першу відповідь. Далі шлях мав перевірити, чи вистачить цієї внутрішньої опори бодай до наступного виходу нагору.',
           onEnterEffects: [
             {
               type: 'setFlag',
@@ -161,7 +309,7 @@ export const chapter1AwakeningSceneGenerationDocument = {
               value: true,
             },
           ],
-          isEnd: true,
+          nextSceneId: 'chapter-1/scene/caravan-to-hugen-um',
         },
       },
     },

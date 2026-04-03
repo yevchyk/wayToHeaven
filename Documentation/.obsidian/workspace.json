@@ -1,0 +1,218 @@
+{
+  "main": {
+    "id": "d51f54e0cd3747b9",
+    "type": "split",
+    "children": [
+      {
+        "id": "c619840f9ca2f006",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5ac634fba8af68c4",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2c1f6e90ff4d8f5e",
+    "type": "split",
+    "children": [
+      {
+        "id": "41fa6637ce1b4076",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0a0e510148dff1a7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "b9972b2ed97a1c61",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "b84b344c44b91aff",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "3da9ab254d8069fe",
+    "type": "split",
+    "children": [
+      {
+        "id": "72512870fe0a2ee5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f3bf19300f3407f7",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "cf814564ff28206e",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "562e8ff160cb08ad",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "4866855cc00be4d3",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "afd3399642fdbd32",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "5ac634fba8af68c4",
+  "lastOpenFiles": [
+    "WTH/06 Системи світу/Конструктор background-станів.md",
+    "WTH/Лор/Загальний лор.md",
+    "WTH/Інструментарій/Можливості гри.md",
+    "WTH/Інструментарій/Будівельник сцен максимальний приклад.md",
+    "WTH/09 Чернетки і джерела/Стара коротка хронологія.md",
+    "WTH/09 Чернетки і джерела/Джерела.md",
+    "WTH/08 Шаблони/Шаблон фракції.md",
+    "WTH/08 Шаблони/Шаблон сцени.md",
+    "WTH/08 Шаблони/Шаблон персонажа.md",
+    "WTH/08 Шаблони/Шаблон механіки світу.md",
+    "WTH/08 Шаблони/Шаблон локації.md",
+    "WTH/07 Предмети і символи/Родовий знак Торнів.md",
+    "WTH/06 Системи світу/Танець.md",
+    "WTH/06 Системи світу/Сцени і переходи.md",
+    "WTH/06 Системи світу/Стати персонажа.md",
+    "WTH/06 Системи світу/Список майбутніх механік світу.md",
+    "WTH/06 Системи світу/Система стосунків.md",
+    "WTH/06 Системи світу/Рибалка.md",
+    "WTH/06 Системи світу/Порча.md",
+    "WTH/06 Системи світу/Погана слава.md",
+    "WTH/06 Системи світу/Мініігри.md",
+    "WTH/06 Системи світу/Меню персонажа та інвентар.md",
+    "WTH/06 Системи світу/Логіка виборів і наслідків.md",
+    "WTH/06 Системи світу/Карта конфліктів.md",
+    "WTH/06 Системи світу/Караванне виживання.md",
+    "WTH/06 Системи світу/Внутрішній профіль.md",
+    "WTH",
+    "WTH/09 Чернетки і джерела/prologue_microchapter_1.json",
+    "WTH/09 Чернетки і джерела",
+    "WTH/08 Шаблони",
+    "WTH/07 Предмети і символи",
+    "WTH/06 Системи світу",
+    "WTH/05 Локації/Регіони",
+    "WTH/05 Локації/Маєток Торнів",
+    "WTH/05 Локації/Гірський комплекс",
+    "WTH/05 Локації"
+  ]
+}

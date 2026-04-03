@@ -78,7 +78,7 @@ export interface SceneFlowRouteLayout {
 export interface SceneFlowBackgroundPatch {
   image: string;
   transition?: SceneTransition;
-  style?: string;
+  style?: string | null;
 }
 
 export interface SceneFlowPresentationPatch {
@@ -150,6 +150,7 @@ export interface SceneFlowData {
   conditions?: Condition[];
   onConditionFail?: SceneFlowFallbackTarget;
   defaultBackgroundId?: string;
+  defaultBackgroundStyle?: string | null;
   defaultMusicId?: string;
   defaultMusic?: MusicAction;
   defaultCgId?: string;

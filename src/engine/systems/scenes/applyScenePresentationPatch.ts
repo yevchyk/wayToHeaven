@@ -48,7 +48,11 @@ function resolveBackgroundStyle(
   currentBackgroundStyle: string | null,
   background: SceneFlowBackgroundPatch | undefined,
 ) {
-  return background?.style ?? currentBackgroundStyle;
+  if (!background || background.style === undefined) {
+    return currentBackgroundStyle;
+  }
+
+  return background.style ?? null;
 }
 
 function resolveTransition(

@@ -1,4 +1,5 @@
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import { buildWorldLocationLibraryEntryId } from '@engine/systems/library/libraryDiscovery';
 import type {
   BattleNodeInteraction,
   DialogueNodeInteraction,
@@ -17,6 +18,9 @@ export class WorldController {
     const location = this.requireLocation(locationId);
 
     this.rootStore.locationGraphValidator.assertValid(location);
+    this.rootStore.seenContent.markLocationEntryDiscovered(
+      buildWorldLocationLibraryEntryId(location.id),
+    );
 
     const targetNodeId = startNodeId ?? location.startNodeId;
     const targetNode = location.nodes[targetNodeId];
@@ -33,6 +37,7 @@ export class WorldController {
     }
 
     this.applyOnEnterEffects(targetNodeId);
+    void this.rootStore.saves.autoSave(location.title ?? locationId);
   }
 
   setCurrentNode(nodeId: string) {

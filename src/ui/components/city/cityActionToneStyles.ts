@@ -42,6 +42,11 @@ export const CITY_ACTION_TONE_STYLES: Record<ActionTone, CityActionToneStyle> = 
     muted: 'rgba(149, 119, 168, 0.18)',
     glow: 'rgba(149, 119, 168, 0.14)',
   },
+  duty: {
+    accent: 'rgba(119, 138, 191, 0.94)',
+    muted: 'rgba(119, 138, 191, 0.18)',
+    glow: 'rgba(119, 138, 191, 0.14)',
+  },
   cult: {
     accent: 'rgba(103, 79, 133, 0.94)',
     muted: 'rgba(103, 79, 133, 0.2)',

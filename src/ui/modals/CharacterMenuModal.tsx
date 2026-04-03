@@ -4,11 +4,7 @@ import { observer } from 'mobx-react-lite';
 import {
   Alert,
   Box,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Button,
+  Chip,
   Stack,
   Tab,
   Tabs,
@@ -19,14 +15,33 @@ import { useGameRootStore } from '@app/providers/StoreProvider';
 import { CharacterPreview } from '@ui/components/CharacterPreview';
 import { EquipmentTab } from '@ui/components/character-menu/EquipmentTab';
 import { InventoryTab } from '@ui/components/character-menu/InventoryTab';
+import { NarrativeProfileTab } from '@ui/components/character-menu/NarrativeProfileTab';
 import { OverviewTab } from '@ui/components/character-menu/OverviewTab';
 import { PartyTab } from '@ui/components/character-menu/PartyTab';
 import { StatusTab } from '@ui/components/character-menu/StatusTab';
+import { ModalShell } from '@ui/components/shell/ModalShell';
+import { PanelSection } from '@ui/components/shell/PanelSection';
+import { shellTokens } from '@ui/components/shell/shellTokens';
 
-type CharacterMenuTabId = 'overview' | 'equipment' | 'inventory' | 'party' | 'status';
+type CharacterMenuTabId =
+  | 'overview'
+  | 'equipment'
+  | 'inventory'
+  | 'party'
+  | 'status'
+  | 'profile'
+  | 'corruption';
 
 function isCharacterMenuTabId(value: unknown): value is CharacterMenuTabId {
-  return value === 'overview' || value === 'equipment' || value === 'inventory' || value === 'party' || value === 'status';
+  return (
+    value === 'overview' ||
+    value === 'equipment' ||
+    value === 'inventory' ||
+    value === 'party' ||
+    value === 'status' ||
+    value === 'profile' ||
+    value === 'corruption'
+  );
 }
 
 export const CharacterMenuModal = observer(function CharacterMenuModal() {
@@ -46,9 +61,11 @@ export const CharacterMenuModal = observer(function CharacterMenuModal() {
       party.setSelectedCharacter(party.playerUnitId);
     }
 
-    setActiveTab(isCharacterMenuTabId(payloadTab) ? payloadTab : 'overview');
+    const defaultTab = ui.activeModal?.id === 'inventory' ? 'inventory' : 'overview';
+
+    setActiveTab(isCharacterMenuTabId(payloadTab) ? payloadTab : defaultTab);
     setFeedbackMessage(null);
-  }, [isOpen, party, payloadTab]);
+  }, [isOpen, party, payloadTab, ui.activeModal?.id]);
 
   const selectedCharacter = party.selectedCharacter;
   const selectedCharacterTemplate = party.selectedCharacterTemplate;
@@ -56,49 +73,64 @@ export const CharacterMenuModal = observer(function CharacterMenuModal() {
   const isReadOnly = battle.hasActiveBattle;
 
   return (
-    <Dialog fullWidth maxWidth="xl" onClose={() => ui.closeModal()} open={isOpen}>
-      <DialogTitle>Character Menu</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2.5}>
-          {isReadOnly ? (
-            <Alert severity="info">
-              Battle is active. Character preview remains available, but use and equip interactions are read-only.
-            </Alert>
-          ) : null}
-          {feedbackMessage ? <Alert severity="info">{feedbackMessage}</Alert> : null}
+    <ModalShell
+      maxWidth="xl"
+      onClose={() => ui.closeModal()}
+      open={isOpen}
+      subtitle="Портрет, стан загону, інвентар, спорядження та внутрішній профіль героя."
+      title="Character Menu"
+    >
+      <Stack spacing={1}>
+        {isReadOnly ? (
+          <Alert severity="info">
+            Battle is active. Character preview remains available, but use and equip interactions are read-only.
+          </Alert>
+        ) : null}
+        {feedbackMessage ? <Alert severity="info">{feedbackMessage}</Alert> : null}
 
-          <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3}>
-            <Stack spacing={2} sx={{ width: { xs: '100%', lg: '38%' } }}>
-              <CharacterPreview character={selectedCharacterPreviewModel} />
-              <Box
-                sx={{
-                  p: 2.5,
-                  borderRadius: 3,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                }}
-              >
-                {selectedCharacter ? (
-                  <Stack spacing={0.75}>
-                    <Typography data-testid="character-menu-selected-name" variant="h5">
-                      {selectedCharacter.name}
-                    </Typography>
-                    <Typography color="text.secondary" variant="body2">
-                      {selectedCharacterTemplate?.description ?? 'No overview is available for this party member yet.'}
-                    </Typography>
-                    <Typography color="text.secondary" variant="body2">
-                      Level {selectedCharacter.level} | HP {selectedCharacter.currentHp}/{selectedCharacter.derivedStats.maxHp} | Mana {selectedCharacter.currentMana}/{selectedCharacter.derivedStats.maxMana}
-                    </Typography>
+        <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1}>
+          <Stack spacing={1} sx={{ width: { xs: '100%', lg: '32%' }, minWidth: 0 }}>
+            <CharacterPreview character={selectedCharacterPreviewModel} />
+
+            <PanelSection
+              description={selectedCharacterTemplate?.description ?? 'No overview is available for this party member yet.'}
+              title={selectedCharacter?.name ?? 'No party member loaded'}
+              tone="overlay"
+              action={
+                selectedCharacter ? (
+                  <Stack direction="row" flexWrap="wrap" gap={0.75}>
+                    <Chip label={`Level ${selectedCharacter.level}`} size="small" variant="outlined" />
+                    <Chip label={`HP ${selectedCharacter.currentHp}/${selectedCharacter.derivedStats.maxHp}`} size="small" variant="outlined" />
                   </Stack>
-                ) : (
-                  <Typography color="text.secondary" variant="body2">
-                    Load a party member to unlock the character management hub.
+                ) : null
+              }
+            >
+              {selectedCharacter ? (
+                <Stack spacing={0.55}>
+                  <Typography data-testid="character-menu-selected-name" sx={{ color: shellTokens.text.primary }} variant="h5">
+                    {selectedCharacter.name}
                   </Typography>
-                )}
-              </Box>
-            </Stack>
+                  <Typography color="text.secondary" variant="body2">
+                    Mana {selectedCharacter.currentMana}/{selectedCharacter.derivedStats.maxMana} • Attack {selectedCharacter.derivedStats.physicalAttack} • Armor {selectedCharacter.derivedStats.armor}
+                  </Typography>
+                </Stack>
+              ) : (
+                <Typography color="text.secondary" variant="body2">
+                  Load a party member to unlock the character management hub.
+                </Typography>
+              )}
+            </PanelSection>
+          </Stack>
 
-            <Stack spacing={2} sx={{ width: { xs: '100%', lg: '62%' } }}>
+          <Stack spacing={1} sx={{ width: { xs: '100%', lg: '68%' }, minWidth: 0 }}>
+            <Box
+              sx={{
+                px: 0.25,
+                borderRadius: shellTokens.radius.sm,
+                border: `1px solid ${shellTokens.border.subtle}`,
+                background: shellTokens.surface.sunken,
+              }}
+            >
               <Tabs
                 aria-label="Character menu tabs"
                 onChange={(_event, nextTab: CharacterMenuTabId) => setActiveTab(nextTab)}
@@ -110,48 +142,53 @@ export const CharacterMenuModal = observer(function CharacterMenuModal() {
                 <Tab label="Inventory" value="inventory" />
                 <Tab label="Party" value="party" />
                 <Tab label="Status" value="status" />
+                <Tab label="Profile" value="profile" />
+                <Tab label="Corruption" value="corruption" />
               </Tabs>
+            </Box>
 
-              <Box
-                sx={{
-                  minHeight: 460,
-                  p: { xs: 2, md: 2.5 },
-                  borderRadius: 3,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                }}
-              >
-                {activeTab === 'overview' ? (
-                  <OverviewTab rootStore={rootStore} unitId={party.selectedCharacterId} />
-                ) : null}
-                {activeTab === 'equipment' ? (
-                  <EquipmentTab
-                    onFeedback={setFeedbackMessage}
-                    readOnly={isReadOnly}
-                    rootStore={rootStore}
-                    unitId={party.selectedCharacterId}
-                  />
-                ) : null}
-                {activeTab === 'inventory' ? (
-                  <InventoryTab
-                    onFeedback={setFeedbackMessage}
-                    readOnly={isReadOnly}
-                    rootStore={rootStore}
-                    unitId={party.selectedCharacterId}
-                  />
-                ) : null}
-                {activeTab === 'party' ? <PartyTab rootStore={rootStore} /> : null}
-                {activeTab === 'status' ? (
-                  <StatusTab rootStore={rootStore} unitId={party.selectedCharacterId} />
-                ) : null}
-              </Box>
-            </Stack>
+            <Box sx={{ minHeight: 460 }}>
+              {activeTab === 'overview' ? (
+                <OverviewTab rootStore={rootStore} unitId={party.selectedCharacterId} />
+              ) : null}
+              {activeTab === 'equipment' ? (
+                <EquipmentTab
+                  onFeedback={setFeedbackMessage}
+                  readOnly={isReadOnly}
+                  rootStore={rootStore}
+                  unitId={party.selectedCharacterId}
+                />
+              ) : null}
+              {activeTab === 'inventory' ? (
+                <InventoryTab
+                  onFeedback={setFeedbackMessage}
+                  readOnly={isReadOnly}
+                  rootStore={rootStore}
+                  unitId={party.selectedCharacterId}
+                />
+              ) : null}
+              {activeTab === 'party' ? <PartyTab rootStore={rootStore} /> : null}
+              {activeTab === 'status' ? (
+                <StatusTab rootStore={rootStore} unitId={party.selectedCharacterId} />
+              ) : null}
+              {activeTab === 'profile' ? (
+                <NarrativeProfileTab
+                  rootStore={rootStore}
+                  unitId={party.selectedCharacterId}
+                  variant="profile"
+                />
+              ) : null}
+              {activeTab === 'corruption' ? (
+                <NarrativeProfileTab
+                  rootStore={rootStore}
+                  unitId={party.selectedCharacterId}
+                  variant="corruption"
+                />
+              ) : null}
+            </Box>
           </Stack>
         </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => ui.closeModal()}>Close</Button>
-      </DialogActions>
-    </Dialog>
+      </Stack>
+    </ModalShell>
   );
 });

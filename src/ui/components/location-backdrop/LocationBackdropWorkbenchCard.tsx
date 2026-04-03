@@ -1,13 +1,13 @@
-import { Box, Stack, Typography } from '@mui/material';
+import { Stack, Typography, Box } from '@mui/material';
 
-import type { LocationBackdropWorkbenchEntry } from '@content/locations';
+import type { BackgroundWorkbenchEntry } from '@engine/types/authoring';
 import { buildNarrativeBackdropBackground, renderNarrativeBackdropArchitectureLayer } from '@ui/components/narrative/narrativeBackdrop';
 import {
   getSuggestedContentImagePaths,
   resolveContentImageUrl,
 } from '@ui/components/character-composite/characterCompositeAssetResolver';
 
-function buildBackdropVisual(entry: LocationBackdropWorkbenchEntry) {
+function buildBackdropVisual(entry: BackgroundWorkbenchEntry) {
   const url = resolveContentImageUrl(entry.backgroundId);
 
   return {
@@ -20,7 +20,7 @@ function buildBackdropVisual(entry: LocationBackdropWorkbenchEntry) {
   };
 }
 
-function getPreferredBackgroundPath(entry: LocationBackdropWorkbenchEntry) {
+function getPreferredBackgroundPath(entry: BackgroundWorkbenchEntry) {
   const suggestedPaths = getSuggestedContentImagePaths(entry.backgroundId);
 
   return (
@@ -49,7 +49,7 @@ function CodeInline({ children }: { children: string }) {
   );
 }
 
-export function LocationBackdropWorkbenchCard({ entry }: { entry: LocationBackdropWorkbenchEntry }) {
+export function LocationBackdropWorkbenchCard({ entry }: { entry: BackgroundWorkbenchEntry }) {
   const backdrop = buildBackdropVisual(entry);
   const suggestedPath = getPreferredBackgroundPath(entry);
 
@@ -57,6 +57,7 @@ export function LocationBackdropWorkbenchCard({ entry }: { entry: LocationBackdr
     <Stack
       spacing={1.5}
       sx={{
+        minHeight: '100%',
         p: 1.5,
         borderRadius: 3,
         border: '1px solid rgba(255,255,255,0.08)',
@@ -66,7 +67,7 @@ export function LocationBackdropWorkbenchCard({ entry }: { entry: LocationBackdr
       <Box
         sx={{
           position: 'relative',
-          minHeight: 260,
+          minHeight: 320,
           overflow: 'hidden',
           borderRadius: 3,
           border: '1px solid rgba(255,255,255,0.08)',
@@ -115,6 +116,9 @@ export function LocationBackdropWorkbenchCard({ entry }: { entry: LocationBackdr
 
       <Stack spacing={0.7}>
         <Typography variant="body2">
+          story context: <CodeInline>{entry.storyContext}</CodeInline>
+        </Typography>
+        <Typography variant="body2">
           image file: <CodeInline>{suggestedPath}</CodeInline>
         </Typography>
         <Typography variant="body2">
@@ -125,7 +129,9 @@ export function LocationBackdropWorkbenchCard({ entry }: { entry: LocationBackdr
         </Typography>
       </Stack>
 
-      <Stack spacing={0.7}>
+      <Stack
+        spacing={0.7}
+      >
         {entry.improvementHints.map((hint) => (
           <Typography color="text.secondary" key={`${entry.id}-${hint}`} variant="body2">
             {hint}

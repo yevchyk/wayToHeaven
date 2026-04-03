@@ -1,5 +1,5 @@
 import { GameRootStore } from '@engine/stores/GameRootStore';
-import { resolveNarrativePortraitVisual } from '@ui/components/dialogue/dialoguePresentation';
+import { resolveNarrativePortraitVisual, resolvePresentationStagePortraits } from '@ui/components/dialogue/dialoguePresentation';
 
 function createImageResolver(urls: Record<string, string>) {
   return {
@@ -136,5 +136,65 @@ describe('resolveNarrativePortraitVisual', () => {
 
     expect(visual.assetId).toBe('chapter-1/portraits/lady-sera/sad.webp');
     expect(visual.url).toBe('/portraits/lady-sera-sad.webp');
+  });
+
+  it('preserves authored stage placements so the shell can animate across the full stage width', () => {
+    const rootStore = new GameRootStore();
+    const portraits = resolvePresentationStagePortraits(rootStore, {
+      currentBackgroundId: null,
+      currentCgId: null,
+      currentEmotion: 'cool',
+      currentOverlayId: null,
+      currentPortraitId: null,
+      currentSceneTitle: 'Placement Preview',
+      currentSpeakerId: 'mirella',
+      currentSpeakerSide: null,
+      currentStage: {
+        characters: [
+          {
+            speakerId: 'father',
+            emotion: 'cold',
+            placement: {
+              x: 12,
+              scale: 0.92,
+            },
+          },
+          {
+            speakerId: 'mirella',
+            emotion: 'cool',
+            placement: {
+              x: 78,
+              y: 4,
+              scale: 1.18,
+            },
+          },
+        ],
+        focusCharacterId: 'mirella',
+      },
+    });
+
+    expect(portraits.map((portrait) => ({
+      speakerId: portrait.speakerId,
+      placement: portrait.placement,
+      isActive: portrait.isActive,
+    }))).toEqual([
+      {
+        speakerId: 'father',
+        placement: {
+          x: 12,
+          scale: 0.92,
+        },
+        isActive: false,
+      },
+      {
+        speakerId: 'mirella',
+        placement: {
+          x: 78,
+          y: 4,
+          scale: 1.18,
+        },
+        isActive: true,
+      },
+    ]);
   });
 });

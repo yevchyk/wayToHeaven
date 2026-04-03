@@ -4,6 +4,12 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { GameRootStore } from '@engine/stores/GameRootStore';
 import { renderWithStore } from '@test/renderWithStore';
 
+function revealActiveDialogueLine(rootStore: GameRootStore) {
+  act(() => {
+    rootStore.dialogue.revealCurrentLine();
+  });
+}
+
 describe('First vertical slice', () => {
   it('starts in the chapter 1 prologue and still supports the first world-battle loop', async () => {
     const rootStore = new GameRootStore({
@@ -13,10 +19,15 @@ describe('First vertical slice', () => {
     renderWithStore(rootStore);
 
     fireEvent.click(screen.getByRole('button', { name: 'Грати' }));
+    revealActiveDialogueLine(rootStore);
 
-    expect(screen.getByRole('heading', { name: 'Пролог — Над містом, під землею' })).toBeInTheDocument();
-    expect(screen.getByText(/Ранок у домі Торнів завжди починався красиво\./i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Повернення з гірських шахт' })).toBeInTheDocument();
+    expect(screen.getByText(/Ранок у домі Торнів починався не зі світла\./i)).toBeInTheDocument();
     expect(rootStore.flags.getBooleanFlag('chapter1.prologue.seen')).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }));
+    expect(screen.getByRole('dialog', { name: 'Бібліотека світу' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
     act(() => {
       rootStore.dialogue.endDialogue();
@@ -43,18 +54,27 @@ describe('First vertical slice', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Trigger dialogue' }));
+    revealActiveDialogueLine(rootStore);
+
+    expect(screen.getByRole('heading', { name: 'Оповідь' })).toBeInTheDocument();
+    expect(screen.getByText('The wardens at the gate read faces before they read papers.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Далі|Завершити сцену/ }));
+    revealActiveDialogueLine(rootStore);
 
     expect(screen.getByRole('heading', { name: 'Gate Guard' })).toBeInTheDocument();
     expect(screen.getByText('Halt. State your business before the city gate.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Show the gate pass.' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show the pilgrim seal.' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Offer a respectful greeting.' }));
+    revealActiveDialogueLine(rootStore);
     expect(screen.getByText('Manners still matter on this road. I can let you through.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
+    fireEvent.click(screen.getByRole('button', { name: /Далі|Завершити сцену/ }));
+    revealActiveDialogueLine(rootStore);
     expect(screen.getByText('Do not cause trouble inside the walls.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
+    fireEvent.click(screen.getByRole('button', { name: /Далі|Завершити сцену/ }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Move to Dusty Clearing' }));
 
@@ -115,5 +135,5 @@ describe('First vertical slice', () => {
     expect(screen.getByRole('dialog', { name: 'Character Menu' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Inventory' }));
     expect(screen.getByText('Pilgrim Seal')).toBeInTheDocument();
-  });
+  }, 10000);
 });

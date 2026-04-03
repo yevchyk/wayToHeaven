@@ -4,6 +4,7 @@ import { hasNarrativeAssetOfKind } from '@content/registries/assetRegistry';
 import { locationContentRegistry } from '@content/registries/locationRegistry';
 import { sceneGenerationRegistry } from '@content/registries/sceneGenerationRegistry';
 import { itemContentRegistry } from '@content/items';
+import { questRegistry } from '@content/registries/questRegistry';
 import {
   characterInstanceRegistry,
   characterTemplateRegistry,
@@ -46,6 +47,7 @@ const effectReferenceValidator = new EffectReferenceValidator(
       dialogues: {},
       sceneFlows: {},
       items: itemContentRegistry,
+      quests: questRegistry,
       locations: locationContentRegistry,
       characterTemplates: characterTemplateRegistry,
       characterInstances: characterInstanceRegistry,
@@ -63,6 +65,7 @@ const sceneGenerationValidator = new SceneGenerationValidator(effectReferenceVal
   hasSpeakerId: (speakerId) => speakerId in narrativeCharacterRegistry,
   hasAssetOfKind: hasNarrativeAssetOfKind,
   hasSceneFlowId: (sceneFlowId) => authoredSceneIds.has(sceneFlowId),
+  hasItemId: (itemId) => itemId in itemContentRegistry,
 });
 const sceneGenerationSceneFlows = Object.values(sceneGenerationRegistry).flatMap((document) =>
   Object.values(importSceneGenerationDocument(document, { validator: sceneGenerationValidator }).flows),

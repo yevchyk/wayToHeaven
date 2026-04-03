@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import type { SceneFlowSnapshot } from '@engine/types/save';
 import type {
   SceneFlowPresentationState,
   SceneFlowRouteRuntime,
@@ -13,20 +14,25 @@ function uniqueValues(values: readonly string[]) {
 }
 
 function cloneStageState(stage: NonNullable<SceneFlowPresentationState['currentStage']>) {
+  const clonePlacedCharacter = <T extends { placement?: object }>(character: T) => ({
+    ...character,
+    ...(character.placement ? { placement: { ...character.placement } } : {}),
+  });
+
   return {
     ...(stage.characters
       ? {
-          characters: stage.characters.map((character) => ({ ...character })),
+          characters: stage.characters.map((character) => clonePlacedCharacter(character)),
         }
       : {}),
     ...(stage.extra
       ? {
-          extra: stage.extra.map((character) => ({ ...character })),
+          extra: stage.extra.map((character) => clonePlacedCharacter(character)),
         }
       : {}),
-    ...(stage.left !== undefined ? { left: stage.left ? { ...stage.left } : null } : {}),
-    ...(stage.center !== undefined ? { center: stage.center ? { ...stage.center } : null } : {}),
-    ...(stage.right !== undefined ? { right: stage.right ? { ...stage.right } : null } : {}),
+    ...(stage.left !== undefined ? { left: stage.left ? clonePlacedCharacter(stage.left) : null } : {}),
+    ...(stage.center !== undefined ? { center: stage.center ? clonePlacedCharacter(stage.center) : null } : {}),
+    ...(stage.right !== undefined ? { right: stage.right ? clonePlacedCharacter(stage.right) : null } : {}),
     ...(stage.focusCharacterId ? { focusCharacterId: stage.focusCharacterId } : {}),
     ...(stage.backgroundId ? { backgroundId: stage.backgroundId } : {}),
     ...(stage.cgId ? { cgId: stage.cgId } : {}),
@@ -65,6 +71,26 @@ function cloneRouteRuntime(routeRuntime: SceneFlowRouteRuntime | null) {
 
 function buildTransitionKey(flowId: string, transitionId: string) {
   return `${flowId}:${transitionId}`;
+}
+
+function parseTrailingSequence(value: string, prefix: string) {
+  if (!value.startsWith(prefix)) {
+    return 0;
+  }
+
+  const parsed = Number(value.slice(prefix.length));
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function cloneSession(session: SceneFlowSession): SceneFlowSession {
+  return {
+    ...session,
+    visibleTransitionIds: [...session.visibleTransitionIds],
+    visitedNodeIds: [...session.visitedNodeIds],
+    presentation: clonePresentationState(session.presentation),
+    routeRuntime: cloneRouteRuntime(session.routeRuntime),
+  };
 }
 
 export class SceneFlowStore {
@@ -156,6 +182,10 @@ export class SceneFlowStore {
     return this.activeSession?.presentation.backgroundId ?? this.ambientPresentation.backgroundId;
   }
 
+  get currentBackgroundStyle() {
+    return this.activeSession?.presentation.backgroundStyle ?? this.ambientPresentation.backgroundStyle;
+  }
+
   get currentMusicId() {
     return this.activeSession?.presentation.musicId ?? this.ambientPresentation.musicId;
   }
@@ -228,6 +258,15 @@ export class SceneFlowStore {
     return this.routePhase === 'awaitingDirection';
   }
 
+  get snapshot(): SceneFlowSnapshot {
+    return {
+      flowStack: this.flowStack.map((session) => cloneSession(session)),
+      visitedHubFlowIds: [...this.visitedHubFlowIds],
+      triggeredHubTransitionKeys: [...this.triggeredHubTransitionKeys],
+      ambientPresentation: clonePresentationState(this.ambientPresentation),
+    };
+  }
+
   createSession(
     input: Omit<SceneFlowSession, 'sessionId'>,
   ): SceneFlowSession {
@@ -288,6 +327,27 @@ export class SceneFlowStore {
     };
     this.sessionSequence = 0;
     this.routeLogSequence = 0;
+  }
+
+  restore(snapshot: SceneFlowSnapshot) {
+    this.flowStack = snapshot.flowStack.map((session) => cloneSession(session));
+    this.visitedHubFlowIds = [...snapshot.visitedHubFlowIds];
+    this.triggeredHubTransitionKeys = [...snapshot.triggeredHubTransitionKeys];
+    this.ambientPresentation = clonePresentationState(snapshot.ambientPresentation);
+    this.sessionSequence = this.flowStack.reduce(
+      (highestSequence, session) =>
+        Math.max(highestSequence, parseTrailingSequence(session.sessionId, 'scene-flow-session-')),
+      0,
+    );
+    this.routeLogSequence = this.flowStack.reduce((highestSequence, session) => {
+      const nextHighestSequence = session.routeRuntime?.eventLog.reduce(
+        (highestEventSequence, entry) =>
+          Math.max(highestEventSequence, parseTrailingSequence(entry.id, 'travel-log-')),
+        0,
+      ) ?? 0;
+
+      return Math.max(highestSequence, nextHighestSequence);
+    }, 0);
   }
 
   markHubFlowVisited(flowId: string) {

@@ -1,41 +1,10 @@
-export const GAME_STATS = [
-  'pragmatism',
-  'humanity',
-  'submission',
-  'domination',
-  'altruism',
-  'egoism',
-  'restraint',
-  'lust',
-  'corruption',
-] as const;
-
-export type GameStatKey = (typeof GAME_STATS)[number];
-
-export type GameStatSnapshot = Record<GameStatKey, number>;
-
-export type GameStatUnlockSnapshot = Record<GameStatKey, boolean>;
-
-export const DEFAULT_GAME_STATS: GameStatSnapshot = {
-  pragmatism: 0,
-  humanity: 0,
-  submission: 0,
-  domination: 0,
-  altruism: 0,
-  egoism: 0,
-  restraint: 0,
-  lust: 0,
-  corruption: 0,
-};
-
-export const DEFAULT_UNLOCKED_STATS: GameStatUnlockSnapshot = {
-  pragmatism: false,
-  humanity: false,
-  submission: false,
-  domination: false,
-  altruism: false,
-  egoism: false,
-  restraint: false,
-  lust: false,
-  corruption: false,
-};
+export {
+  DEFAULT_NARRATIVE_PROFILE as DEFAULT_GAME_STATS,
+  DEFAULT_UNLOCKED_NARRATIVE_PROFILE as DEFAULT_UNLOCKED_STATS,
+  NARRATIVE_PROFILE_KEYS as GAME_STATS,
+} from '@engine/types/profile';
+export type {
+  NarrativeProfileKey as GameStatKey,
+  NarrativeProfileSnapshot as GameStatSnapshot,
+  NarrativeProfileUnlockSnapshot as GameStatUnlockSnapshot,
+} from '@engine/types/profile';

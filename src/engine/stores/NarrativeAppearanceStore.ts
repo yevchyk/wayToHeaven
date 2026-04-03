@@ -2,6 +2,7 @@ import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
 import type { NarrativeCharacterOutfitDefinition } from '@engine/types/narrative';
+import type { AppearanceSnapshot } from '@engine/types/save';
 
 export class NarrativeAppearanceStore {
   readonly rootStore: GameRootStore;
@@ -32,11 +33,21 @@ export class NarrativeAppearanceStore {
     return this.rootStore.getNarrativeCharacterById(characterId)?.outfits?.[outfitId] ?? null;
   }
 
+  get snapshot(): AppearanceSnapshot {
+    return {
+      outfitOverridesByCharacterId: { ...this.outfitOverridesByCharacterId },
+    };
+  }
+
   setCharacterOutfit(characterId: string, outfitId: string) {
     this.outfitOverridesByCharacterId = {
       ...this.outfitOverridesByCharacterId,
       [characterId]: outfitId,
     };
+  }
+
+  restore(snapshot: AppearanceSnapshot) {
+    this.outfitOverridesByCharacterId = { ...snapshot.outfitOverridesByCharacterId };
   }
 
   reset() {

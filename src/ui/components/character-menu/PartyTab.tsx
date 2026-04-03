@@ -1,6 +1,7 @@
 import { Button, Chip, Stack, Typography } from '@mui/material';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import { PanelSection } from '@ui/components/shell/PanelSection';
 
 interface PartyTabProps {
   rootStore: GameRootStore;
@@ -8,35 +9,32 @@ interface PartyTabProps {
 
 export function PartyTab({ rootStore }: PartyTabProps) {
   return (
-    <Stack spacing={1.25}>
+    <Stack spacing={1}>
       {rootStore.party.members.map((member) => {
         const isSelected = rootStore.party.selectedCharacterId === member.unitId;
         const isActive = rootStore.party.activePartyIds.includes(member.unitId);
 
         return (
-          <Button
+          <PanelSection
             key={member.unitId}
-            onClick={() => rootStore.party.setSelectedCharacter(member.unitId)}
-            sx={{
-              justifyContent: 'space-between',
-              px: 2,
-              py: 1.5,
-              borderRadius: 2.5,
-            }}
-            variant={isSelected ? 'contained' : 'outlined'}
+            description={`HP ${member.currentHp}/${member.derivedStats.maxHp} • Mana ${member.currentMana}/${member.derivedStats.maxMana}`}
+            title={member.name}
+            tone={isSelected ? 'accent' : 'overlay'}
+            action={<Chip label={isActive ? 'Active' : 'Reserve'} size="small" variant="outlined" />}
           >
-            <Stack alignItems="flex-start" spacing={0.35}>
-              <Typography variant="subtitle1">{member.name}</Typography>
+            <Button
+              aria-label={member.name}
+              fullWidth
+              onClick={() => rootStore.party.setSelectedCharacter(member.unitId)}
+              sx={{ justifyContent: 'space-between' }}
+              variant={isSelected ? 'contained' : 'outlined'}
+            >
+              <span>{isSelected ? 'Selected' : 'Focus character'}</span>
               <Typography color="text.secondary" variant="caption">
-                HP {member.currentHp}/{member.derivedStats.maxHp} | Mana {member.currentMana}/{member.derivedStats.maxMana}
+                Level {member.level}
               </Typography>
-            </Stack>
-            <Chip
-              label={isActive ? 'Active' : 'Reserve'}
-              size="small"
-              variant="outlined"
-            />
-          </Button>
+            </Button>
+          </PanelSection>
         );
       })}
     </Stack>

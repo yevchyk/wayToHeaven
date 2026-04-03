@@ -1,4 +1,4 @@
-import { Box, CssBaseline, ThemeProvider } from '@mui/material';
+import { Box, CssBaseline, GlobalStyles, ThemeProvider } from '@mui/material';
 import type { Preview } from '@storybook/react-vite';
 
 import { theme } from '../src/app/theme/theme';
@@ -11,6 +11,20 @@ const preview: Preview = {
     (Story) => (
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <GlobalStyles
+          styles={{
+            'html, body, #storybook-root': {
+              minHeight: '100%',
+            },
+            body: {
+              overflowY: 'auto',
+              overflowX: 'hidden',
+            },
+            '#storybook-root': {
+              overflow: 'visible',
+            },
+          }}
+        />
         <Box
           sx={{
             minHeight: '100vh',

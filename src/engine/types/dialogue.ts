@@ -2,8 +2,12 @@ import type { Condition } from '@engine/types/conditions';
 import type { GameEffect } from '@engine/types/effects';
 import type { FlagValue } from '@engine/types/flags';
 import type { MetaSnapshot } from '@engine/types/meta';
-import type { GameStatKey, GameStatSnapshot } from '@engine/types/stats';
 import type { ActionTone } from '@engine/types/actions';
+import type {
+  NarrativeProfileKey,
+  NarrativeProfileSnapshot,
+  NarrativeProfileUnlockSnapshot,
+} from '@engine/types/profile';
 
 export const CHARACTER_EMOTIONS = [
   'neutral',
@@ -18,6 +22,7 @@ export const CHARACTER_EMOTIONS = [
   'afraid',
   'soft',
   'composed',
+  'waking',
   'thinking',
   'playful',
   'cold',
@@ -57,6 +62,12 @@ export const CHARACTER_EMOTIONS = [
   'hurt',
   'humiliated',
   'disappointed',
+  'careful',
+  'cool',
+  'shaken',
+  'distant',
+  'guarded',
+  'clear',
 ] as const;
 
 export type CharacterEmotion = (typeof CHARACTER_EMOTIONS)[number];
@@ -77,11 +88,20 @@ export interface AdultMarkerConfig {
 
 export type AdultMarker = AdultMarkerLevel | AdultMarkerConfig;
 
+export interface StageCharacterPlacement {
+  x: number;
+  y?: number;
+  scale?: number;
+  zIndex?: number;
+  opacity?: number;
+}
+
 export interface StageSlotCharacter {
   speakerId: string;
   emotion?: CharacterEmotion;
   portraitId?: string;
   outfitId?: string;
+  placement?: StageCharacterPlacement;
 }
 
 export interface StageCharacter {
@@ -92,6 +112,7 @@ export interface StageCharacter {
   isVisible?: boolean;
   id?: string;
   side?: SpeakerSide;
+  placement?: StageCharacterPlacement;
 }
 
 export interface StageState {
@@ -208,11 +229,13 @@ export interface DialogueRuntimeState {
   currentDialogueId: string | null;
   currentNodeId: string | null;
   flags: Record<string, FlagValue | undefined>;
-  stats: GameStatSnapshot;
+  profile: NarrativeProfileSnapshot;
   meta: MetaSnapshot;
   currentBackgroundId: string | null;
   currentMusicId: string | null;
   currentCgId: string | null;
   currentOverlayId: string | null;
-  unlockedStats: Record<GameStatKey, boolean>;
+  unlockedProfile: NarrativeProfileUnlockSnapshot;
+  stats?: NarrativeProfileSnapshot;
+  unlockedStats?: Record<NarrativeProfileKey, boolean>;
 }

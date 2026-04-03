@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import type { WorldSnapshot } from '@engine/types/save';
 import type { WorldVisit } from '@engine/types/world';
 
 export class WorldStore {
@@ -24,6 +25,16 @@ export class WorldStore {
 
   get canMove() {
     return this.availableTransitionNodeIds.length > 0;
+  }
+
+  get snapshot(): WorldSnapshot {
+    return {
+      currentLocationId: this.currentLocationId,
+      currentNodeId: this.currentNodeId,
+      availableTransitionNodeIds: [...this.availableTransitionNodeIds],
+      visitHistory: this.visitHistory.map((visit) => ({ ...visit })),
+      triggeredInteractionNodeIds: [...this.triggeredInteractionNodeIds],
+    };
   }
 
   loadLocation(
@@ -89,6 +100,14 @@ export class WorldStore {
 
   hasTriggeredInteraction(nodeId: string) {
     return this.triggeredInteractionNodeIds.includes(nodeId);
+  }
+
+  restore(snapshot: WorldSnapshot) {
+    this.currentLocationId = snapshot.currentLocationId;
+    this.currentNodeId = snapshot.currentNodeId;
+    this.availableTransitionNodeIds = [...snapshot.availableTransitionNodeIds];
+    this.visitHistory = snapshot.visitHistory.map((visit) => ({ ...visit }));
+    this.triggeredInteractionNodeIds = [...snapshot.triggeredInteractionNodeIds];
   }
 
   reset() {

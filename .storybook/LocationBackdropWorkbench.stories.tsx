@@ -5,17 +5,23 @@ import {
   chapter1CityLocationBackdropEntries,
   chapter1SceneMetaBackdropEntries,
   chapter1TravelBackdropEntries,
-  type LocationBackdropWorkbenchEntry,
 } from '../src/content/locations';
+import { chapter1BackgroundPromptWorkbenchData } from '../src/content/storybook/backgroundProfiles/chapter1BackgroundPromptWorkbench';
+import {
+  sceneGenerationBackgroundWorkbenchEntries,
+  storybookBackgroundSections,
+} from '../src/content/storybook/narrativeAuthoringWorkbench';
+import type { BackgroundWorkbenchEntry } from '../src/engine/types/authoring';
+import { BackgroundPromptWorkbench } from '../src/ui/components/location-backdrop/BackgroundPromptWorkbench';
 import { LocationBackdropWorkbenchCard } from '../src/ui/components/location-backdrop/LocationBackdropWorkbenchCard';
 
 const meta = {
   title: 'Location Backdrop/Workbench',
-  component: LocationBackdropWorkbenchCard,
+  component: BackgroundPromptWorkbench,
   parameters: {
     layout: 'fullscreen',
   },
-} satisfies Meta<typeof LocationBackdropWorkbenchCard>;
+} satisfies Meta<typeof BackgroundPromptWorkbench>;
 
 export default meta;
 
@@ -53,8 +59,8 @@ function WorkbenchGuide() {
       <Stack spacing={0.5}>
         <Typography variant="h4">Fast Background Workflow</Typography>
         <Typography color="text.secondary" variant="body2">
-          Drop the `.png` or `.webp`, refresh Storybook, then decide whether the problem is the image, the chosen
-          `backgroundId`, or the scene content around it.
+          Storybook is the fast visual QA pass for backgrounds. The scene itself should be shaped in
+          `Documentation`, then implemented in authored `sceneGeneration`, and only then checked here.
         </Typography>
       </Stack>
 
@@ -75,17 +81,16 @@ function WorkbenchGuide() {
           }}
         >
           <Typography sx={{ fontWeight: 700 }} variant="body2">
-            1. Куди кидати background
+            1. Prompt authoring flow
           </Typography>
           <Typography variant="body2">
-            Шлях завжди такий: <CodeInline>{'src/content/chapters/chapter-1/images/backgrounds/<name>.png'}</CodeInline>{' '}
-            або <CodeInline>{'src/content/chapters/chapter-1/images/backgrounds/<name>.webp'}</CodeInline>
+            Починай з `master location` і `room / zone`, а не з порожнього prompt-полотна.
           </Typography>
           <Typography variant="body2">
-            Якщо `backgroundId` уже правильний, достатньо просто підкласти файл у цей path.
+            Якщо є канонічний beat, стартуй із `Scene Preset`, а далі докручуй саме `scene effects`.
           </Typography>
           <Typography variant="body2">
-            Якщо хочеш інше імʼя файлу, міняй не Storybook, а `backgroundId` або `defaultBackgroundId` у content-файлі.
+            `General vibe`, `situation`, `style pack`, `variant` тепер це advanced overrides, а не головний authoring flow.
           </Typography>
         </Stack>
 
@@ -99,7 +104,35 @@ function WorkbenchGuide() {
           }}
         >
           <Typography sx={{ fontWeight: 700 }} variant="body2">
-            2. Де правити локацію
+            2. Куди кидати background
+          </Typography>
+          <Typography variant="body2">
+            Для `chapter-1/*`: <CodeInline>{'src/content/chapters/chapter-1/images/backgrounds/<name>.png'}</CodeInline>{' '}
+            або <CodeInline>{'src/content/chapters/chapter-1/images/backgrounds/<name>.webp'}</CodeInline>
+          </Typography>
+          <Typography variant="body2">
+            Для legacy `prologue/*`: <CodeInline>{'src/content/prologue/images/backgrounds/<name>.png'}</CodeInline>{' '}
+            або <CodeInline>{'src/content/prologue/images/backgrounds/<name>.webp'}</CodeInline>
+          </Typography>
+          <Typography variant="body2">
+            Якщо `backgroundId` уже правильний, достатньо просто підкласти файл у відповідний path.
+          </Typography>
+          <Typography variant="body2">
+            Якщо хочеш інше імʼя файлу, міняй asset id у content-файлі, а не сам Storybook.
+          </Typography>
+        </Stack>
+
+        <Stack
+          spacing={1}
+          sx={{
+            p: 1.5,
+            borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: 'rgba(255,255,255,0.02)',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700 }} variant="body2">
+            3. Де правити локацію
           </Typography>
           <Typography variant="body2">
             City scene: прав `backgroundId`, `description`, `actions[*].text`, `actions[*].description`.
@@ -108,7 +141,13 @@ function WorkbenchGuide() {
             Travel board: прав `backgroundId`, `description`, `nodes[*].title`, `nodes[*].description`.
           </Typography>
           <Typography variant="body2">
-            Scene meta: прав `defaultBackgroundId`, `title`, `description`. Для окремих кадрів усередині сцени йди в dialogue file.
+            Scene meta: прав `defaultBackgroundId`, `title`, `description`. Якщо сцена вже authored через `scene-generation`,
+            не дублюй цей сенс у legacy dialogue layer.
+          </Typography>
+          <Typography variant="body2">
+            Scene generation: прав `meta.defaultBackgroundId`, `meta.defaultBackgroundStyle`, `scene.backgroundId`,
+            `scene.backgroundStyle`, `node.backgroundId` або `node.sceneChange.background.image/style` залежно від рівня,
+            на якому міняється кадр.
           </Typography>
         </Stack>
 
@@ -122,7 +161,36 @@ function WorkbenchGuide() {
           }}
         >
           <Typography sx={{ fontWeight: 700 }} variant="body2">
-            3. Як швидко зрозуміти, що саме слабке
+            4. Як читати новий prompt composer
+          </Typography>
+          <Typography variant="body2">
+            `Scene effects` це швидкий authoring layer для станів типу `Thorn Estate / Dining Hall / blood border + shadow`.
+          </Typography>
+          <Typography variant="body2">
+            `Scene Preset` дає канонічний старт із runtime-сцени, але не блокує новий стан кімнати.
+          </Typography>
+          <Typography variant="body2">
+            `Location block` тримає канонічний простір: маєток, кімната, шахтний уступ, храмовий берег, міський вузол.
+          </Typography>
+          <Typography variant="body2">
+            `General vibe`, `situation`, `style pack`, `variant` потрібні, коли scene effects вже не вистачає.
+          </Typography>
+          <Typography variant="body2">
+            `Runtime Style Token` можна прямо переносити в `backgroundStyle`, якщо ефект має жити в runtime, а не лише в prompt.
+          </Typography>
+        </Stack>
+
+        <Stack
+          spacing={1}
+          sx={{
+            p: 1.5,
+            borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: 'rgba(255,255,255,0.02)',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700 }} variant="body2">
+            5. Як швидко зрозуміти, що саме слабке
           </Typography>
           <Typography variant="body2">
             Якщо сам кадр слабкий, міняй сам файл картинки: `.png` або `.webp`.
@@ -133,8 +201,62 @@ function WorkbenchGuide() {
           <Typography variant="body2">
             Якщо картинка ок, але локація все одно “порожня”, майже завжди треба посилювати `description` і варіанти дій.
           </Typography>
+          <Typography variant="body2">
+            Для authored VN-сцен спершу дивись на beat-level background swap, а вже потім на `defaultBackgroundId`.
+          </Typography>
+          <Typography variant="body2">
+            Якщо note в `Documentation` описує лише маленький beat усередині великої сцени, зазвичай треба правити
+            `node.backgroundId`, а не `scene.backgroundId`.
+          </Typography>
         </Stack>
       </Box>
+
+      <Stack
+        spacing={1}
+        sx={{
+          p: 1.5,
+          borderRadius: 3,
+          border: '1px solid rgba(255,255,255,0.08)',
+          backgroundColor: 'rgba(255,255,255,0.02)',
+        }}
+      >
+          <Typography sx={{ fontWeight: 700 }} variant="body2">
+          6. Чим перевіряти зараз
+        </Typography>
+        <Typography variant="body2">
+          Інтерактивний режим: <CodeInline>{'pnpm storybook'}</CodeInline>
+        </Typography>
+        <Typography variant="body2">
+          Надійна перевірка збірки: <CodeInline>{'pnpm build-storybook'}</CodeInline>
+        </Typography>
+        <Typography variant="body2">
+          Поточний Storybook 10 тут не дає стабільного `--smoke-test`, тому для fast verification орієнтуйся на static
+          build, а не на CLI smoke mode.
+        </Typography>
+      </Stack>
+
+      <Stack
+        spacing={1}
+        sx={{
+          p: 1.5,
+          borderRadius: 3,
+          border: '1px solid rgba(255,255,255,0.08)',
+          backgroundColor: 'rgba(255,255,255,0.02)',
+        }}
+      >
+          <Typography sx={{ fontWeight: 700 }} variant="body2">
+          7. Як читати scene note
+        </Typography>
+        <Typography variant="body2">
+          `Де` у note підказує location name і базовий background.
+        </Typography>
+        <Typography variant="body2">
+          `Що відбувається` зазвичай розкладається на `scene.description` плюс окремі `node.text`.
+        </Typography>
+        <Typography variant="body2">
+          `Навіщо сцена` не вставляй у runtime дослівно; воно має стати переходами, умовами, наслідками і виборами.
+        </Typography>
+      </Stack>
     </Stack>
   );
 }
@@ -146,7 +268,7 @@ function BackdropGrid({
 }: {
   title: string;
   description: string;
-  entries: LocationBackdropWorkbenchEntry[];
+  entries: BackgroundWorkbenchEntry[];
 }) {
   return (
     <Stack spacing={2}>
@@ -160,8 +282,9 @@ function BackdropGrid({
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
           gap: 2,
+          alignItems: 'stretch',
         }}
       >
         {entries.map((entry) => (
@@ -171,6 +294,15 @@ function BackdropGrid({
     </Stack>
   );
 }
+
+export const PrologueLocationStateComposer: Story = {
+  render: () => (
+    <Stack spacing={3}>
+      <WorkbenchGuide />
+      <BackgroundPromptWorkbench data={chapter1BackgroundPromptWorkbenchData} />
+    </Stack>
+  ),
+};
 
 export const CitySceneBackgrounds: Story = {
   render: () => (
@@ -207,6 +339,30 @@ export const SceneDefaultBackgrounds: Story = {
         entries={chapter1SceneMetaBackdropEntries}
         title="Scene Default Backgrounds"
       />
+    </Stack>
+  ),
+};
+
+export const AuthoredSceneGenerationBackgrounds: Story = {
+  render: () => (
+    <Stack spacing={3}>
+      <WorkbenchGuide />
+      {storybookBackgroundSections.map((section) => {
+        const entries = sceneGenerationBackgroundWorkbenchEntries.filter((entry) => entry.sectionId === section.id);
+
+        if (entries.length === 0) {
+          return null;
+        }
+
+        return (
+          <BackdropGrid
+            description={section.description}
+            entries={entries}
+            key={section.id}
+            title={section.title}
+          />
+        );
+      })}
     </Stack>
   ),
 };

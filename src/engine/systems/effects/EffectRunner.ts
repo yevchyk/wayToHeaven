@@ -5,6 +5,7 @@ import type {
   EffectExecutionResult,
   GameEffect,
 } from '@engine/types/effects';
+import type { NarrativeProfileKey } from '@engine/types/profile';
 
 type EffectType = GameEffect['type'];
 
@@ -22,6 +23,13 @@ function asEffectArray(result: ReturnType<ScriptRegistry['execute']>) {
   }
 
   return Array.isArray(result) ? result : [result];
+}
+
+function resolveRelationshipTarget(effect: Extract<GameEffect, { type: 'changeRelationship' }>) {
+  return {
+    relationshipId: effect.relationshipId ?? effect.key ?? null,
+    axis: effect.axis ?? 'affinity',
+  };
 }
 
 export class EffectRunner {
@@ -45,8 +53,11 @@ export class EffectRunner {
 
   run(effect: GameEffect): EffectExecutionResult {
     const handler = this.handlers[effect.type] as EffectHandler<typeof effect.type>;
+    const result = handler(effect as Extract<GameEffect, { type: typeof effect.type }>);
 
-    return handler(effect as Extract<GameEffect, { type: typeof effect.type }>);
+    this.rootStore.debug.recordEffect(result);
+
+    return result;
   }
 
   runMany(effects: readonly GameEffect[]): EffectBatchResult {
@@ -96,8 +107,66 @@ export class EffectRunner {
           status: 'applied',
         };
       },
+      addQuest: (effect) => {
+        this.rootStore.quests.addQuest(effect.questId);
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      advanceQuest: (effect) => {
+        this.rootStore.quests.advanceQuest(effect.questId, effect.delta ?? 1);
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      completeQuest: (effect) => {
+        this.rootStore.quests.completeQuest(effect.questId);
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
       changeStat: (effect) => {
-        this.rootStore.stats.changeStat(effect.key, effect.delta);
+        this.applyProfileChange(effect.key, 'changeStat', () => {
+          this.rootStore.profile.changeProfileValue(effect.key, effect.delta);
+        });
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      changeProfile: (effect) => {
+        this.applyProfileChange(effect.key, 'changeProfile', () => {
+          this.rootStore.profile.changeProfileValue(effect.key, effect.delta);
+        });
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      changeRelationship: (effect) => {
+        const target = resolveRelationshipTarget(effect);
+
+        if (!target.relationshipId) {
+          return {
+            effect,
+            status: 'skipped',
+            details: 'changeRelationship effect is missing both relationshipId and key.',
+          };
+        }
+
+        this.rootStore.relationships.changeRelationshipValue(
+          target.relationshipId,
+          target.axis,
+          effect.delta,
+        );
 
         return {
           effect,
@@ -105,7 +174,19 @@ export class EffectRunner {
         };
       },
       setStat: (effect) => {
-        this.rootStore.stats.setStat(effect.key, effect.value);
+        this.applyProfileChange(effect.key, 'setStat', () => {
+          this.rootStore.profile.setProfileValue(effect.key, effect.value);
+        });
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      setProfile: (effect) => {
+        this.applyProfileChange(effect.key, 'setProfile', () => {
+          this.rootStore.profile.setProfileValue(effect.key, effect.value);
+        });
 
         return {
           effect,
@@ -113,7 +194,19 @@ export class EffectRunner {
         };
       },
       unlockStat: (effect) => {
-        this.rootStore.stats.unlockStat(effect.key);
+        this.applyProfileChange(effect.key, 'unlockStat', () => {
+          this.rootStore.profile.unlockProfile(effect.key);
+        });
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      unlockProfile: (effect) => {
+        this.applyProfileChange(effect.key, 'unlockProfile', () => {
+          this.rootStore.profile.unlockProfile(effect.key);
+        });
 
         return {
           effect,
@@ -218,6 +311,14 @@ export class EffectRunner {
       },
       startTravelBoard: (effect) => {
         this.rootStore.travelBoardController.startBoard(effect.boardId, effect.startNodeId);
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
+      startMinigame: (effect) => {
+        this.rootStore.miniGameController.startMinigame(effect.minigameId);
 
         return {
           effect,
@@ -358,5 +459,25 @@ export class EffectRunner {
         };
       },
     };
+  }
+
+  private applyProfileChange(
+    key: NarrativeProfileKey,
+    source: string,
+    apply: () => void,
+  ) {
+    const previousValue = this.rootStore.profile.getProfileValue(key);
+    const previousUnlocked = this.rootStore.profile.isUnlocked(key);
+
+    apply();
+
+    this.rootStore.debug.recordStatChange({
+      key,
+      source,
+      previousValue,
+      nextValue: this.rootStore.profile.getProfileValue(key),
+      previousUnlocked,
+      nextUnlocked: this.rootStore.profile.isUnlocked(key),
+    });
   }
 }

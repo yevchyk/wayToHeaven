@@ -7,6 +7,7 @@ describe('WorldController', () => {
     rootStore.worldController.loadLocation('pilgrim-road');
 
     expect(rootStore.world.currentNodeId).toBe('road-entry');
+    expect(rootStore.seenContent.hasDiscoveredLocationEntry('world:pilgrim-road')).toBe(true);
     expect(rootStore.worldController.moveToNode('ambush-site')).toBe(false);
     expect(rootStore.world.currentNodeId).toBe('road-entry');
   });

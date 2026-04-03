@@ -8,4 +8,5 @@ export {
   chapter1SceneMetaBackdropEntries,
   chapter1TravelBackdropEntries,
 } from './chapter1LocationBackdropWorkbench';
+export type { BackgroundWorkbenchEntry } from '@engine/types/authoring';
 export type { LocationBackdropWorkbenchEntry } from './chapter1LocationBackdropWorkbench';

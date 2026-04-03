@@ -62,7 +62,7 @@ export const TravelBoardScreen = observer(function TravelBoardScreen() {
         spacing={3}
         sx={{
           position: 'relative',
-          minHeight: '100svh',
+          minHeight: '100%',
           px: { xs: 2, sm: 3, md: 4, xl: 6 },
           py: { xs: 3, md: 4 },
         }}

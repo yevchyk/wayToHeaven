@@ -2,6 +2,7 @@ import { Button, Chip, Stack, Typography } from '@mui/material';
 
 import type { EquipmentSlot } from '@engine/types/appearance';
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import { PanelSection } from '@ui/components/shell/PanelSection';
 
 const EQUIPMENT_SLOTS: EquipmentSlot[] = ['costume', 'headwear', 'weapon', 'aura'];
 
@@ -19,70 +20,55 @@ interface EquipmentTabProps {
 export function EquipmentTab({ rootStore, unitId, readOnly, onFeedback }: EquipmentTabProps) {
   if (!unitId) {
     return (
-      <Typography color="text.secondary" variant="body2">
-        No party member is selected.
-      </Typography>
+      <PanelSection tone="sunken">
+        <Typography color="text.secondary" variant="body2">
+          No party member is selected.
+        </Typography>
+      </PanelSection>
     );
   }
 
   return (
-    <Stack spacing={1.5}>
+    <Stack spacing={1}>
       {EQUIPMENT_SLOTS.map((slot) => {
         const item = rootStore.party.getEquippedItem(unitId, slot);
         const visual = item?.equipment?.visual;
         const replaceHair = item?.equipment?.replaceHair ?? false;
 
         return (
-          <Stack
+          <PanelSection
             key={slot}
-            spacing={1}
-            sx={{
-              p: 2,
-              borderRadius: 2.5,
-              border: '1px solid rgba(255,255,255,0.08)',
-              backgroundColor: 'rgba(255,255,255,0.02)',
-            }}
+            description={item?.description ?? 'No item is equipped in this slot.'}
+            title={formatSlotLabel(slot)}
+            tone="overlay"
+            action={<Chip label={item ? item.name : 'Empty'} size="small" variant="outlined" />}
           >
-            <Stack alignItems="center" direction="row" justifyContent="space-between">
-              <Typography variant="subtitle1">
-                {formatSlotLabel(slot)}
+            <Stack spacing={0.85}>
+              <Typography color="text.secondary" sx={{ fontSize: '0.78rem' }} variant="caption">
+                Preview layer: {visual?.layer ?? item?.equipment?.slot ?? slot}
+                {visual?.assetId ? ` • Asset ${visual.assetId}` : ' • No asset'}
+                {slot === 'headwear' ? ` • replaceHair ${replaceHair ? 'true' : 'false'}` : ''}
               </Typography>
-              <Chip
-                label={item ? item.name : 'Empty'}
-                size="small"
-                color={item ? 'primary' : 'default'}
-                variant="outlined"
-              />
+
+              <Stack direction="row" spacing={1}>
+                <Button
+                  disabled={!item || readOnly}
+                  onClick={() => {
+                    const result = rootStore.party.unequipItem(unitId, slot);
+
+                    onFeedback(
+                      result.unequipped
+                        ? `${item?.name ?? 'Item'} moved back to inventory.`
+                        : result.message ?? `Could not unequip ${slot}.`,
+                    );
+                  }}
+                  variant="outlined"
+                >
+                  Unequip
+                </Button>
+              </Stack>
             </Stack>
-
-            <Typography color="text.secondary" variant="body2">
-              {item?.description ?? 'No item is equipped in this slot.'}
-            </Typography>
-
-            <Typography color="text.secondary" variant="caption">
-              Preview layer: {visual?.layer ?? item?.equipment?.slot ?? slot}
-              {visual?.assetId ? ` | Asset ${visual.assetId}` : ' | No asset'}
-              {slot === 'headwear' ? ` | replaceHair ${replaceHair ? 'true' : 'false'}` : ''}
-            </Typography>
-
-            <Stack direction="row" spacing={1}>
-              <Button
-                disabled={!item || readOnly}
-                onClick={() => {
-                  const result = rootStore.party.unequipItem(unitId, slot);
-
-                  onFeedback(
-                    result.unequipped
-                      ? `${item?.name ?? 'Item'} moved back to inventory.`
-                      : result.message ?? `Could not unequip ${slot}.`,
-                  );
-                }}
-                variant="outlined"
-              >
-                Unequip
-              </Button>
-            </Stack>
-          </Stack>
+          </PanelSection>
         );
       })}
     </Stack>

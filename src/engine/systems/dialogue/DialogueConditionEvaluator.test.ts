@@ -1,14 +1,14 @@
 import { GameRootStore } from '@engine/stores/GameRootStore';
 
 describe('DialogueConditionEvaluator tag conditions', () => {
-  it('supports stat threshold conditions for narrative choices', () => {
+  it('supports profile threshold conditions for narrative choices', () => {
     const rootStore = new GameRootStore();
 
-    rootStore.stats.setStat('pragmatism', 2);
+    rootStore.profile.setProfileValue('pragmatism', 2);
 
     expect(
       rootStore.dialogueConditionEvaluator.evaluate({
-        type: 'statGte',
+        type: 'profileGte',
         key: 'pragmatism',
         value: 1,
       }),
@@ -18,6 +18,29 @@ describe('DialogueConditionEvaluator tag conditions', () => {
         type: 'statLte',
         key: 'pragmatism',
         value: 1,
+      }),
+    ).toBe(false);
+  });
+
+  it('supports inventory count conditions for authored scene gating', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.inventory.addItem('basic-potion', 2);
+
+    expect(
+      rootStore.dialogueConditionEvaluator.evaluate({
+        type: 'inventory',
+        itemId: 'basic-potion',
+        operator: 'gte',
+        value: 1,
+      }),
+    ).toBe(true);
+    expect(
+      rootStore.dialogueConditionEvaluator.evaluate({
+        type: 'inventory',
+        itemId: 'basic-potion',
+        operator: 'lt',
+        value: 2,
       }),
     ).toBe(false);
   });

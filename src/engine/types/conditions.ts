@@ -1,6 +1,6 @@
 import type { FlagValue } from '@engine/types/flags';
 import type { MetaKey } from '@engine/types/meta';
-import type { GameStatKey } from '@engine/types/stats';
+import type { NarrativeProfileKey } from '@engine/types/profile';
 import type { TagId } from '@engine/types/tags';
 
 export type NumericComparisonOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
@@ -25,6 +25,13 @@ export interface MetaCondition {
   value: number;
 }
 
+export interface InventoryCondition {
+  type: 'inventory';
+  itemId: string;
+  operator: NumericComparisonOperator;
+  value: number;
+}
+
 export interface TagCondition {
   type: 'tag';
   tag: TagId;
@@ -41,13 +48,25 @@ export interface FlagEqualsCondition {
 
 export interface StatGteCondition {
   type: 'statGte';
-  key: GameStatKey;
+  key: NarrativeProfileKey;
   value: number;
 }
 
 export interface StatLteCondition {
   type: 'statLte';
-  key: GameStatKey;
+  key: NarrativeProfileKey;
+  value: number;
+}
+
+export interface ProfileGteCondition {
+  type: 'profileGte';
+  key: NarrativeProfileKey;
+  value: number;
+}
+
+export interface ProfileLteCondition {
+  type: 'profileLte';
+  key: NarrativeProfileKey;
   value: number;
 }
 
@@ -66,9 +85,12 @@ export interface MetaLteCondition {
 export type Condition =
   | FlagCondition
   | MetaCondition
+  | InventoryCondition
   | TagCondition
   | FlagEqualsCondition
   | StatGteCondition
   | StatLteCondition
+  | ProfileGteCondition
+  | ProfileLteCondition
   | MetaGteCondition
   | MetaLteCondition;

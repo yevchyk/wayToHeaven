@@ -62,6 +62,30 @@ export const chapter1UndergroundRouteSceneGenerationDocument = {
           },
           choices: [
             {
+              id: 'forked-passage__maintenance-duct',
+              text: 'Сухий технічний жолоб',
+              conditions: [
+                {
+                  type: 'flagEquals',
+                  flagId: 'chapter1.travel.maintenanceDuctNoticed',
+                  value: true,
+                },
+              ],
+              nextNodeId: 'maintenance-duct',
+            },
+            {
+              id: 'forked-passage__lost-pilgrim',
+              text: 'Піти на тихе людське дихання',
+              conditions: [
+                {
+                  type: 'flagEquals',
+                  flagId: 'chapter1.travel.lostPilgrimHeard',
+                  value: true,
+                },
+              ],
+              nextNodeId: 'lost-pilgrim',
+            },
+            {
               id: 'forked-passage__shackled-guard',
               text: 'Верхня гілка',
               nextNodeId: 'shackled-guard',
@@ -72,6 +96,67 @@ export const chapter1UndergroundRouteSceneGenerationDocument = {
               nextNodeId: 'buried-cache',
             },
           ],
+        },
+        'maintenance-duct': {
+          id: 'maintenance-duct',
+          type: 'event',
+          title: 'Maintenance Duct',
+          text: 'A dry maintenance seam lets you slip past the worst of the flooded masonry without testing either steel or luck.',
+          encounter: {
+            kind: 'effects',
+            effects: [
+              {
+                type: 'setFlag',
+                flagId: 'chapter1.travel.usedMaintenanceDuct',
+                value: true,
+              },
+            ],
+          },
+          route: {
+            x: 57,
+            y: 18,
+            hidden: true,
+            oneTime: true,
+          },
+          nextNodeId: 'collapsed-camp',
+        },
+        'lost-pilgrim': {
+          id: 'lost-pilgrim',
+          type: 'event',
+          title: 'Lost Pilgrim',
+          text: 'Behind a cracked slab, a half-drowned pilgrim novice still breathes and presses a small road bundle into your hands before disappearing toward the dark.',
+          encounter: {
+            kind: 'effects',
+            effects: [
+              {
+                type: 'setFlag',
+                flagId: 'chapter1.travel.lostPilgrimAided',
+                value: true,
+              },
+              {
+                type: 'giveItem',
+                itemId: 'travel-ration',
+                quantity: 1,
+              },
+              {
+                type: 'changeMeta',
+                key: 'morale',
+                delta: 1,
+              },
+              {
+                type: 'changeMeta',
+                key: 'reputation',
+                delta: 1,
+              },
+            ],
+          },
+          route: {
+            x: 57,
+            y: 52,
+            hidden: true,
+            oneTime: true,
+          },
+          nextNodeId: 'collapsed-camp',
         },
         'shackled-guard': {
           id: 'shackled-guard',

@@ -7,6 +7,7 @@ import { alpha } from '@mui/material/styles';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
 import type { CitySceneAction, CitySceneData } from '@engine/types/city';
+import { getNarrativeAccessibleText } from '@engine/utils/narrativeHtml';
 import { getCityActionToneStyle } from '@ui/components/city/cityActionToneStyles';
 import {
   formatSpeakerLabel,
@@ -20,6 +21,7 @@ import {
   renderNarrativeBackdropArchitectureLayer,
 } from '@ui/components/narrative/narrativeBackdrop';
 import { NarrativePortraitFigure } from '@ui/components/narrative/NarrativePortraitFigure';
+import { NarrativeRichText } from '@ui/components/rich-text/NarrativeRichText';
 import { SceneFlowPresentationShell } from '@ui/components/scene-flow/SceneFlowPresentationShell';
 import { SectionCard } from '@ui/components/SectionCard';
 
@@ -127,6 +129,7 @@ function resolveActionPreview(
 
   if (action.nextSceneId) {
     const targetScene = rootStore.getCitySceneById(action.nextSceneId) ?? null;
+    const fallbackText = getNarrativeAccessibleText(action.text) || action.id;
 
     return {
       kind: 'scene',
@@ -136,7 +139,7 @@ function resolveActionPreview(
         rootStore,
         targetScene?.backgroundId ?? currentScene.backgroundId ?? null,
         'background',
-        targetScene?.locationName ?? action.text,
+        targetScene?.locationName ?? fallbackText,
       ),
       characters: [],
     };
@@ -145,6 +148,7 @@ function resolveActionPreview(
   if (action.dialogueId) {
     const dialogue = rootStore.getDialogueById(action.dialogueId);
     const characters = resolvePreviewCharacters(rootStore, action);
+    const fallbackText = getNarrativeAccessibleText(action.text) || action.id;
 
     return {
       kind: 'dialogue',
@@ -154,11 +158,13 @@ function resolveActionPreview(
         rootStore,
         dialogue?.meta?.defaultBackgroundId ?? currentScene.backgroundId ?? null,
         'background',
-        action.text,
+        fallbackText,
       ),
       characters,
     };
   }
+
+  const fallbackText = getNarrativeAccessibleText(action.text) || action.id;
 
   return {
     kind: 'event',
@@ -168,7 +174,7 @@ function resolveActionPreview(
       rootStore,
       currentScene.backgroundId ?? null,
       'background',
-      action.text,
+      fallbackText,
     ),
     characters: [],
   };
@@ -252,7 +258,7 @@ export const CitySceneScreen = observer(function CitySceneScreen() {
         spacing={{ xs: 2.5, lg: 3 }}
         sx={{
           position: 'relative',
-          minHeight: '100svh',
+          minHeight: '100%',
           px: { xs: 2, sm: 3, md: 4, xl: 6 },
           pt: { xs: 12, md: 14 },
           pb: { xs: 3, md: 4 },
@@ -514,7 +520,7 @@ function LocalActionRow({
 
   return (
     <Button
-      aria-label={action.text}
+      aria-label={getNarrativeAccessibleText(action.text) || action.id}
       data-testid={`city-action-${action.id}`}
       data-tone={action.tone ?? 'neutral'}
       onClick={onChoose}
@@ -538,9 +544,11 @@ function LocalActionRow({
       variant="outlined"
       {...previewHandlers}
     >
-      <Typography sx={{ color: '#fbf6ea', fontWeight: 700 }} variant="body1">
-        {action.text}
-      </Typography>
+      <NarrativeRichText
+        component="div"
+        html={action.text}
+        sx={{ color: '#fbf6ea', fontSize: '1rem', fontWeight: 700, pr: 1.25 }}
+      />
       <ArrowOutwardRoundedIcon sx={{ color: toneStyle.accent, fontSize: 18, flexShrink: 0 }} />
     </Button>
   );
@@ -569,7 +577,7 @@ function DestinationStripCard({
 
   return (
     <Button
-      aria-label={action.text}
+      aria-label={getNarrativeAccessibleText(action.text) || action.id}
       data-testid={`city-action-${action.id}`}
       data-tone={action.tone ?? 'neutral'}
       onClick={onChoose}
@@ -626,17 +634,16 @@ function DestinationStripCard({
           {targetScene?.districtLabel ?? currentScene.cityName}
         </Typography>
 
-        <Typography
+        <NarrativeRichText
+          component="h3"
+          html={targetScene?.locationName ?? action.text}
           sx={{
             color: '#fff7ea',
             fontFamily: '"Spectral", Georgia, serif',
             fontSize: '1.35rem',
             lineHeight: 0.98,
           }}
-          variant="h5"
-        >
-          {targetScene?.locationName ?? action.text}
-        </Typography>
+        />
       </Stack>
     </Button>
   );
@@ -731,17 +738,16 @@ function ActionPreviewPanel({ preview }: { preview: ActionPreview | null }) {
         </Typography>
 
         <Stack spacing={0.65} sx={{ mt: 'auto', alignItems: 'flex-start' }}>
-          <Typography
+          <NarrativeRichText
+            component="div"
+            html={preview.title}
             sx={{
               color: '#fff7ea',
               fontFamily: '"Spectral", Georgia, serif',
               fontSize: { xs: '1.55rem', md: '1.8rem' },
               lineHeight: 0.98,
             }}
-            variant="h4"
-          >
-            {preview.title}
-          </Typography>
+          />
 
           {secondaryCharacters.map((character) => (
             <Typography key={character.id} sx={{ color: alpha('#f3efe7', 0.88), fontSize: '0.96rem' }} variant="body2">

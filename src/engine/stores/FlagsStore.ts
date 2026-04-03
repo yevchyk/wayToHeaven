@@ -1,10 +1,19 @@
 import { observable, makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import type { FlagsSnapshot } from '@engine/types/save';
 import type { FlagValue } from '@engine/types/flags';
 
 function uniqueValues(values: string[]) {
   return Array.from(new Set(values));
+}
+
+function getLegacyRelationshipId(flagId: string) {
+  if (!flagId.startsWith('relationship.')) {
+    return null;
+  }
+
+  return flagId.replace(/^relationship\./, '') || null;
 }
 
 export class FlagsStore {
@@ -30,6 +39,17 @@ export class FlagsStore {
     );
   }
 
+  get snapshot(): FlagsSnapshot {
+    return {
+      booleanFlags: Object.fromEntries(this.booleanFlags.entries()),
+      numericFlags: Object.fromEntries(this.numericFlags.entries()),
+      stringFlags: Object.fromEntries(this.stringFlags.entries()),
+      setFlags: Object.fromEntries(
+        Array.from(this.setFlags.entries()).map(([flagId, values]) => [flagId, [...values]]),
+      ),
+    };
+  }
+
   private clearPrimitiveFlag(flagId: string) {
     this.booleanFlags.delete(flagId);
     this.numericFlags.delete(flagId);
@@ -37,6 +57,15 @@ export class FlagsStore {
   }
 
   setFlag(flagId: string, value: FlagValue) {
+    const legacyRelationshipId = getLegacyRelationshipId(flagId);
+
+    if (legacyRelationshipId && typeof value === 'number') {
+      this.clearPrimitiveFlag(flagId);
+      this.rootStore.relationships.setRelationshipValue(legacyRelationshipId, 'affinity', value);
+
+      return;
+    }
+
     this.clearPrimitiveFlag(flagId);
 
     if (typeof value === 'boolean') {
@@ -65,7 +94,17 @@ export class FlagsStore {
       return numericValue;
     }
 
-    return this.stringFlags.get(flagId);
+    const stringValue = this.stringFlags.get(flagId);
+
+    if (stringValue !== undefined) {
+      return stringValue;
+    }
+
+    const legacyRelationshipId = getLegacyRelationshipId(flagId);
+
+    return legacyRelationshipId
+      ? this.rootStore.relationships.getRelationshipValue(legacyRelationshipId, 'affinity')
+      : undefined;
   }
 
   setBooleanFlag(flagId: string, value: boolean) {
@@ -77,14 +116,37 @@ export class FlagsStore {
   }
 
   setNumericFlag(flagId: string, value: number) {
+    const legacyRelationshipId = getLegacyRelationshipId(flagId);
+
+    if (legacyRelationshipId) {
+      this.numericFlags.delete(flagId);
+      this.rootStore.relationships.setRelationshipValue(legacyRelationshipId, 'affinity', value);
+
+      return;
+    }
+
     this.numericFlags.set(flagId, value);
   }
 
   changeNumericFlag(flagId: string, delta: number) {
+    const legacyRelationshipId = getLegacyRelationshipId(flagId);
+
+    if (legacyRelationshipId) {
+      this.rootStore.relationships.changeRelationshipValue(legacyRelationshipId, 'affinity', delta);
+
+      return;
+    }
+
     this.numericFlags.set(flagId, this.getNumericFlag(flagId) + delta);
   }
 
   getNumericFlag(flagId: string, fallback = 0) {
+    const legacyRelationshipId = getLegacyRelationshipId(flagId);
+
+    if (legacyRelationshipId) {
+      return this.rootStore.relationships.getRelationshipValue(legacyRelationshipId, 'affinity');
+    }
+
     return this.numericFlags.get(flagId) ?? fallback;
   }
 
@@ -126,5 +188,22 @@ export class FlagsStore {
     this.numericFlags.clear();
     this.stringFlags.clear();
     this.setFlags.clear();
+  }
+
+  restore(snapshot: FlagsSnapshot) {
+    this.clearAll();
+
+    Object.entries(snapshot.booleanFlags).forEach(([flagId, value]) => {
+      this.booleanFlags.set(flagId, value);
+    });
+    Object.entries(snapshot.numericFlags).forEach(([flagId, value]) => {
+      this.setNumericFlag(flagId, value);
+    });
+    Object.entries(snapshot.stringFlags).forEach(([flagId, value]) => {
+      this.stringFlags.set(flagId, value);
+    });
+    Object.entries(snapshot.setFlags).forEach(([flagId, values]) => {
+      this.setFlags.set(flagId, uniqueValues([...values]));
+    });
   }
 }

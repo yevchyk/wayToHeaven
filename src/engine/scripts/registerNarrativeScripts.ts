@@ -20,7 +20,7 @@ export function registerNarrativeScripts(scriptRegistry: ScriptRegistry) {
       value: true,
     },
     {
-      type: 'changeStat',
+      type: 'changeProfile',
       key: 'pragmatism',
       delta: 1,
     },

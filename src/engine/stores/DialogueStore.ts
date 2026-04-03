@@ -7,9 +7,20 @@ import type {
   DialogueNode,
   StageState,
 } from '@engine/types/dialogue';
-import type { DialogueSkipMode } from '@engine/types/playerShell';
+import type { DialogueRuntimeSnapshot } from '@engine/types/save';
+import type { BacklogEntry, DialogueSkipMode } from '@engine/types/playerShell';
 import type { SceneFlowNode } from '@engine/types/sceneFlow';
 import type { ScreenId } from '@engine/types/ui';
+import {
+  getDialogueRevealDelayMs,
+  getNextDialogueRevealCharacterCount,
+} from '@engine/systems/dialogue/dialogueReveal';
+import {
+  countNarrativeVisibleCharacters,
+  getNarrativePlainText,
+  prepareDialogueNarrativeHtml,
+  sliceNarrativeHtml,
+} from '@engine/utils/narrativeHtml';
 
 function isSequenceSourceType(sourceType: string | null) {
   return sourceType === 'dialogue' || sourceType === 'sceneGeneration';
@@ -19,9 +30,11 @@ export class DialogueStore {
   readonly rootStore: GameRootStore;
 
   revealedCharacterCount = 0;
+  activeTextPageIndex = 0;
   autoModeEnabled = false;
   skipMode: DialogueSkipMode = 'off';
   currentNodeWasSeenOnEnter = false;
+  textPageBreakCharacterCounts: number[] = [];
 
   private revealTimerId: ReturnType<typeof setTimeout> | null = null;
   private advanceTimerId: ReturnType<typeof setTimeout> | null = null;
@@ -147,10 +160,96 @@ export class DialogueStore {
     return this.currentNode?.text ?? this.currentSceneFlowNode?.text ?? null;
   }
 
-  get displayedText() {
-    const text = this.currentText ?? '';
+  get currentPreparedTextHtml() {
+    return prepareDialogueNarrativeHtml(this.currentText ?? '');
+  }
 
-    return text.slice(0, this.revealedCharacterCount);
+  get textPageCharacterBreaks() {
+    const visibleCharacterCount = countNarrativeVisibleCharacters(this.currentPreparedTextHtml);
+
+    return this.textPageBreakCharacterCounts
+      .map((breakpoint) => Math.max(0, Math.min(visibleCharacterCount, Math.floor(breakpoint))))
+      .filter((breakpoint, index, list) =>
+        breakpoint > 0 &&
+        breakpoint < visibleCharacterCount &&
+        (index === 0 || breakpoint !== list[index - 1]),
+      );
+  }
+
+  get textPageStarts() {
+    return [0, ...this.textPageCharacterBreaks];
+  }
+
+  get textPageEnds() {
+    return [...this.textPageCharacterBreaks, this.currentVisibleCharacterCount];
+  }
+
+  get textPageCount() {
+    return this.textPageEnds.length;
+  }
+
+  get currentVisibleCharacterCount() {
+    return countNarrativeVisibleCharacters(this.currentPreparedTextHtml);
+  }
+
+  get currentTextPageStart() {
+    if (this.textPageCount === 0) {
+      return 0;
+    }
+
+    const safePageIndex = Math.max(0, Math.min(this.activeTextPageIndex, this.textPageCount - 1));
+
+    return this.textPageStarts[safePageIndex] ?? 0;
+  }
+
+  get currentTextPageEnd() {
+    if (this.textPageCount === 0) {
+      return 0;
+    }
+
+    const safePageIndex = Math.max(0, Math.min(this.activeTextPageIndex, this.textPageCount - 1));
+
+    return this.textPageEnds[safePageIndex] ?? this.currentVisibleCharacterCount;
+  }
+
+  get currentTextPageVisibleCharacterCount() {
+    return Math.max(0, this.currentTextPageEnd - this.currentTextPageStart);
+  }
+
+  get hasAdditionalTextPages() {
+    return this.activeTextPageIndex < this.textPageCount - 1;
+  }
+
+  get currentPageReserveText() {
+    return getNarrativePlainText(
+      sliceNarrativeHtml(
+        this.currentPreparedTextHtml,
+        this.currentTextPageStart,
+        this.currentTextPageEnd,
+      ),
+    );
+  }
+
+  get displayedText() {
+    return getNarrativePlainText(
+      sliceNarrativeHtml(this.currentPreparedTextHtml, 0, this.revealedCharacterCount),
+    );
+  }
+
+  get displayedTextHtml() {
+    return sliceNarrativeHtml(this.currentPreparedTextHtml, 0, this.revealedCharacterCount);
+  }
+
+  get displayedPageText() {
+    return getNarrativePlainText(this.displayedPageTextHtml);
+  }
+
+  get displayedPageTextHtml() {
+    return sliceNarrativeHtml(
+      this.currentPreparedTextHtml,
+      this.currentTextPageStart,
+      Math.min(this.revealedCharacterCount, this.currentTextPageEnd),
+    );
   }
 
   get currentEmotion() {
@@ -201,10 +300,48 @@ export class DialogueStore {
     return this.getVisibleChoices().length > 0;
   }
 
-  get isTextFullyRevealed() {
-    const text = this.currentText ?? '';
+  get shouldRenderChoiceList() {
+    return this.hasChoices && !this.hasAdditionalTextPages && this.isTextFullyRevealed;
+  }
 
-    return text.length === 0 || this.revealedCharacterCount >= text.length;
+  get choiceContextEntry(): BacklogEntry | null {
+    if (!this.hasChoices) {
+      return null;
+    }
+
+    for (let index = this.rootStore.backlog.entries.length - 1; index >= 0; index -= 1) {
+      const entry = this.rootStore.backlog.entries[index];
+
+      if (!entry || entry.kind !== 'line') {
+        continue;
+      }
+
+      if (entry.flowId !== this.activeFlowId) {
+        continue;
+      }
+
+      if (entry.nodeId === this.currentNodeId) {
+        continue;
+      }
+
+      return entry;
+    }
+
+    return null;
+  }
+
+  get hasNextSequenceStep() {
+    if (this.currentNode?.nextNodeId || this.currentNode?.nextSceneId) {
+      return true;
+    }
+
+    return (this.currentSceneFlowNode?.transitions ?? []).some((transition) =>
+      Boolean(transition.nextNodeId || transition.nextSceneId || transition.openSceneFlowId),
+    );
+  }
+
+  get isTextFullyRevealed() {
+    return this.currentTextPageVisibleCharacterCount === 0 || this.revealedCharacterCount >= this.currentTextPageEnd;
   }
 
   get isCurrentNodeSeen() {
@@ -229,6 +366,20 @@ export class DialogueStore {
 
   get currentFontScale() {
     return this.rootStore.preferences.fontScale;
+  }
+
+  get advanceActionLabel() {
+    return 'Далі';
+  }
+
+  get snapshot(): DialogueRuntimeSnapshot {
+    return {
+      revealedCharacterCount: this.revealedCharacterCount,
+      activeTextPageIndex: this.activeTextPageIndex,
+      autoModeEnabled: this.autoModeEnabled,
+      skipMode: this.skipMode,
+      currentNodeWasSeenOnEnter: this.currentNodeWasSeenOnEnter,
+    };
   }
 
   startScene(sceneId: string) {
@@ -298,6 +449,31 @@ export class DialogueStore {
     return this.rootStore.sceneFlowController.advanceSequence();
   }
 
+  setTextPageBreakCharacterCounts(breakpoints: number[]) {
+    const nextBreakpoints = breakpoints
+      .map((breakpoint) => Math.max(0, Math.floor(breakpoint)))
+      .sort((left, right) => left - right);
+
+    if (
+      nextBreakpoints.length === this.textPageBreakCharacterCounts.length &&
+      nextBreakpoints.every((breakpoint, index) => breakpoint === this.textPageBreakCharacterCounts[index])
+    ) {
+      return;
+    }
+
+    this.textPageBreakCharacterCounts = nextBreakpoints;
+    this.activeTextPageIndex = this.resolveTextPageIndex(this.activeTextPageIndex);
+
+    if (!this.isActive) {
+      return;
+    }
+
+    this.clearRevealTimer();
+    this.clearAdvanceTimer();
+
+    this.handlePlaybackPreferenceChanged();
+  }
+
   advanceOrReveal() {
     if (this.isUiHidden) {
       this.rootStore.preferences.setHideUi(false);
@@ -306,7 +482,13 @@ export class DialogueStore {
     }
 
     if (!this.isTextFullyRevealed) {
-      this.revealCurrentLine();
+      this.revealCurrentPage();
+
+      return true;
+    }
+
+    if (this.hasAdditionalTextPages) {
+      this.advanceTextPage();
 
       return true;
     }
@@ -319,10 +501,16 @@ export class DialogueStore {
   }
 
   revealCurrentLine() {
-    const text = this.currentText ?? '';
-
     this.clearRevealTimer();
-    this.revealedCharacterCount = text.length;
+    this.clearAdvanceTimer();
+    this.activeTextPageIndex = Math.max(0, this.textPageCount - 1);
+    this.revealedCharacterCount = this.currentVisibleCharacterCount;
+    this.scheduleAdvanceIfNeeded();
+  }
+
+  revealCurrentPage() {
+    this.clearRevealTimer();
+    this.revealedCharacterCount = this.currentTextPageEnd;
     this.scheduleAdvanceIfNeeded();
   }
 
@@ -397,6 +585,7 @@ export class DialogueStore {
   handleNodeEntered(flowId: string, nodeId: string) {
     this.clearRevealTimer();
     this.clearAdvanceTimer();
+    this.activeTextPageIndex = 0;
 
     this.currentNodeWasSeenOnEnter = this.rootStore.seenContent.hasSeenNode(flowId, nodeId);
     this.rootStore.seenContent.markFlowSeen(flowId);
@@ -404,8 +593,7 @@ export class DialogueStore {
 
     this.appendCurrentNodeToBacklog();
 
-    const text = this.currentText ?? '';
-    this.revealedCharacterCount = this.shouldSkipCurrentNodeInstantly() ? text.length : 0;
+    this.revealedCharacterCount = this.shouldSkipCurrentNodeInstantly() ? this.currentTextPageEnd : 0;
 
     if (!this.shouldSkipCurrentNodeInstantly()) {
       this.scheduleRevealTick();
@@ -418,6 +606,8 @@ export class DialogueStore {
     this.clearRevealTimer();
     this.clearAdvanceTimer();
     this.revealedCharacterCount = 0;
+    this.activeTextPageIndex = 0;
+    this.textPageBreakCharacterCounts = [];
     this.currentNodeWasSeenOnEnter = false;
   }
 
@@ -434,7 +624,7 @@ export class DialogueStore {
     }
 
     if (this.shouldSkipCurrentNodeInstantly()) {
-      this.revealCurrentLine();
+      this.revealCurrentPage();
 
       return;
     }
@@ -444,6 +634,23 @@ export class DialogueStore {
 
   reset() {
     this.resetPlaybackState();
+  }
+
+  restore(snapshot: DialogueRuntimeSnapshot) {
+    this.clearRevealTimer();
+    this.clearAdvanceTimer();
+    this.revealedCharacterCount = snapshot.revealedCharacterCount;
+    this.activeTextPageIndex = typeof snapshot.activeTextPageIndex === 'number'
+      ? snapshot.activeTextPageIndex
+      : 0;
+    this.autoModeEnabled = snapshot.autoModeEnabled;
+    this.skipMode = snapshot.skipMode;
+    this.currentNodeWasSeenOnEnter = snapshot.currentNodeWasSeenOnEnter;
+    this.activeTextPageIndex = this.resolveTextPageIndex(this.activeTextPageIndex);
+
+    if (this.isActive) {
+      this.handlePlaybackPreferenceChanged();
+    }
   }
 
   private shouldSkipCurrentNodeInstantly() {
@@ -467,17 +674,49 @@ export class DialogueStore {
     });
   }
 
-  private scheduleRevealTick() {
-    const text = this.currentText ?? '';
-
-    if (!text || this.isTextFullyRevealed || this.hasChoices) {
+  private advanceTextPage() {
+    if (!this.hasAdditionalTextPages) {
       return;
     }
 
-    const stepDelayMs = Math.max(10, Math.floor(1000 / this.rootStore.preferences.textSpeed));
+    this.clearRevealTimer();
+    this.clearAdvanceTimer();
+    this.activeTextPageIndex = Math.min(this.activeTextPageIndex + 1, this.textPageCount - 1);
+    this.revealedCharacterCount = Math.max(this.revealedCharacterCount, this.currentTextPageStart);
+
+    if (this.shouldSkipCurrentNodeInstantly()) {
+      this.revealCurrentPage();
+
+      return;
+    }
+
+    if (!this.isTextFullyRevealed) {
+      this.scheduleRevealTick();
+
+      return;
+    }
+
+    this.scheduleAdvanceIfNeeded();
+  }
+
+  private scheduleRevealTick() {
+    if (this.currentTextPageVisibleCharacterCount === 0 || this.isTextFullyRevealed) {
+      return;
+    }
+
+    const nextRevealCharacterCount = getNextDialogueRevealCharacterCount(
+      getNarrativePlainText(this.currentPreparedTextHtml),
+      this.revealedCharacterCount,
+      this.currentTextPageEnd,
+    );
+    const revealedCharacterDelta = Math.max(1, nextRevealCharacterCount - this.revealedCharacterCount);
+    const stepDelayMs = getDialogueRevealDelayMs(
+      this.rootStore.preferences.textSpeed,
+      revealedCharacterDelta,
+    );
 
     this.revealTimerId = globalThis.setTimeout(() => {
-      this.revealedCharacterCount = Math.min(text.length, this.revealedCharacterCount + 1);
+      this.revealedCharacterCount = nextRevealCharacterCount;
 
       if (this.isTextFullyRevealed) {
         this.clearRevealTimer();
@@ -493,7 +732,7 @@ export class DialogueStore {
   private scheduleAdvanceIfNeeded() {
     this.clearAdvanceTimer();
 
-    if (!this.isActive || this.hasChoices || !this.isTextFullyRevealed) {
+    if (!this.isActive || !this.isTextFullyRevealed || (this.hasChoices && !this.hasAdditionalTextPages)) {
       return;
     }
 
@@ -508,7 +747,17 @@ export class DialogueStore {
     }
 
     this.advanceTimerId = globalThis.setTimeout(() => {
-      if (!this.isActive || this.hasChoices) {
+      if (!this.isActive || !this.isTextFullyRevealed) {
+        return;
+      }
+
+      if (this.hasAdditionalTextPages) {
+        this.advanceTextPage();
+
+        return;
+      }
+
+      if (this.hasChoices) {
         return;
       }
 
@@ -520,9 +769,47 @@ export class DialogueStore {
     this.clearRevealTimer();
     this.clearAdvanceTimer();
     this.revealedCharacterCount = 0;
+    this.activeTextPageIndex = 0;
     this.autoModeEnabled = false;
     this.skipMode = 'off';
+    this.textPageBreakCharacterCounts = [];
     this.currentNodeWasSeenOnEnter = false;
+  }
+
+  private resolveTextPageIndex(candidateIndex: number) {
+    if (this.textPageCount <= 1) {
+      return 0;
+    }
+
+    const clampedIndex = Math.max(0, Math.min(candidateIndex, this.textPageCount - 1));
+    const currentPageStart = this.getTextPageStart(clampedIndex);
+    const currentPageEnd = this.getTextPageEnd(clampedIndex);
+
+    if (
+      this.revealedCharacterCount >= currentPageStart &&
+      this.revealedCharacterCount <= currentPageEnd
+    ) {
+      return clampedIndex;
+    }
+
+    for (let index = 0; index < this.textPageCount; index += 1) {
+      const pageStart = this.getTextPageStart(index);
+      const pageEnd = this.getTextPageEnd(index);
+
+      if (this.revealedCharacterCount >= pageStart && this.revealedCharacterCount <= pageEnd) {
+        return index;
+      }
+    }
+
+    return clampedIndex;
+  }
+
+  private getTextPageStart(pageIndex: number) {
+    return this.textPageStarts[pageIndex] ?? 0;
+  }
+
+  private getTextPageEnd(pageIndex: number) {
+    return this.textPageEnds[pageIndex] ?? this.currentVisibleCharacterCount;
   }
 
   private clearRevealTimer() {

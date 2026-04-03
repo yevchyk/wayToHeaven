@@ -1,6 +1,7 @@
 import { observable, makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import type { InventorySnapshot } from '@engine/types/save';
 import type { InventoryEntryDetails, InventoryItem, ItemUseResult } from '@engine/types/item';
 
 export class InventoryStore {
@@ -46,6 +47,12 @@ export class InventoryStore {
 
   get totalItemCount() {
     return this.entries.reduce((total, entry) => total + entry.quantity, 0);
+  }
+
+  get snapshot(): InventorySnapshot {
+    return {
+      itemCounts: Object.fromEntries(this.itemCounts.entries()),
+    };
   }
 
   getItemCount(itemId: string) {
@@ -137,5 +144,15 @@ export class InventoryStore {
 
   clear() {
     this.itemCounts.clear();
+  }
+
+  restore(snapshot: InventorySnapshot) {
+    this.clear();
+
+    Object.entries(snapshot.itemCounts).forEach(([itemId, quantity]) => {
+      if (quantity > 0) {
+        this.itemCounts.set(itemId, quantity);
+      }
+    });
   }
 }

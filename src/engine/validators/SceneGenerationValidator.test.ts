@@ -4,6 +4,7 @@ import allFeaturesSceneGenerationExample from '../../domain-logic/scene-generati
 import sceneGenerationExample from '../../domain-logic/scene-generation/chapter1-prologue.scenes.json';
 import { GameRootStore } from '@engine/stores/GameRootStore';
 import { SceneGenerationValidator } from '@engine/validators/SceneGenerationValidator';
+import { itemContentRegistry } from '@content/items';
 
 describe('SceneGenerationValidator', () => {
   it('accepts the all-features canonical scene-generation example', () => {
@@ -12,6 +13,7 @@ describe('SceneGenerationValidator', () => {
       hasSpeakerId: (speakerId) => speakerId in rootStore.narrativeCharacterRegistry,
       hasAssetOfKind: hasNarrativeAssetOfKind,
       hasSceneFlowId: (sceneFlowId) => sceneFlowId in rootStore.sceneFlowRegistry,
+      hasItemId: (itemId) => itemId in itemContentRegistry,
     });
 
     expect(validator.validate(allFeaturesSceneGenerationExample)).toEqual([]);
@@ -21,6 +23,7 @@ describe('SceneGenerationValidator', () => {
     const validator = new SceneGenerationValidator(undefined, {
       hasSpeakerId: (speakerId) => speakerId in narrativeCharacterRegistry,
       hasAssetOfKind: () => true,
+      hasItemId: (itemId) => itemId in itemContentRegistry,
     });
 
     expect(validator.validate(sceneGenerationExample)).toEqual([]);
@@ -30,6 +33,7 @@ describe('SceneGenerationValidator', () => {
     const validator = new SceneGenerationValidator(undefined, {
       hasSpeakerId: (speakerId) => speakerId === 'mirella',
       hasAssetOfKind: () => false,
+      hasSceneFlowId: () => false,
     });
 
     const invalidDocument = {
@@ -123,5 +127,147 @@ describe('SceneGenerationValidator', () => {
     expect(codes.has('missingSfxReference')).toBe(true);
     expect(codes.has('missingJumpNodeReference')).toBe(true);
     expect(codes.has('unsupportedTransition')).toBe(true);
+  });
+
+  it('rejects inventory conditions that reference missing items', () => {
+    const validator = new SceneGenerationValidator(undefined, {
+      hasItemId: (itemId) => itemId in itemContentRegistry,
+    });
+
+    const issues = validator.validate({
+      id: 'scene-generation-missing-item-condition',
+      schemaVersion: 1,
+      title: 'Missing Item Condition',
+      meta: {
+        chapterId: 'chapter-1',
+      },
+      scenes: {
+        gate: {
+          id: 'gate',
+          startNodeId: 'intro',
+          conditions: [
+            {
+              type: 'inventory',
+              itemId: 'missing-comb',
+              operator: 'gte',
+              value: 1,
+            },
+          ],
+          onConditionFail: {
+            end: true,
+          },
+          nodes: {
+            intro: {
+              id: 'intro',
+              type: 'narration',
+              text: 'Blocked by a missing item ref.',
+              isEnd: true,
+            },
+          },
+        },
+      },
+    });
+
+    expect(issues.some((issue) => issue.code === 'missingItemReference')).toBe(true);
+  });
+
+  it('validates authored stage placement coordinates and rejects broken placement payloads', () => {
+    const validator = new SceneGenerationValidator(undefined, {
+      hasSpeakerId: (speakerId) => speakerId in narrativeCharacterRegistry,
+      hasAssetOfKind: () => true,
+    });
+
+    const validIssues = validator.validate({
+      id: 'scene-generation-stage-placement-valid',
+      schemaVersion: 1,
+      title: 'Valid Stage Placement',
+      meta: {
+        chapterId: 'chapter-1',
+      },
+      scenes: {
+        stage: {
+          id: 'stage',
+          startNodeId: 'intro',
+          stage: {
+            characters: [
+              {
+                speakerId: 'mirella',
+                placement: {
+                  x: 12,
+                  scale: 0.92,
+                },
+              },
+              {
+                speakerId: 'father',
+                placement: {
+                  x: 86,
+                  y: 6,
+                  scale: 1.14,
+                  zIndex: 5,
+                  opacity: 0.74,
+                },
+              },
+            ],
+            focusCharacterId: 'father',
+          },
+          nodes: {
+            intro: {
+              id: 'intro',
+              type: 'dialogue',
+              speakerId: 'father',
+              text: 'Placement is valid.',
+              isEnd: true,
+            },
+          },
+        },
+      },
+    });
+
+    expect(validIssues).toEqual([]);
+
+    const invalidIssues = validator.validate({
+      id: 'scene-generation-stage-placement-invalid',
+      schemaVersion: 1,
+      title: 'Invalid Stage Placement',
+      meta: {
+        chapterId: 'chapter-1',
+      },
+      scenes: {
+        stage: {
+          id: 'stage',
+          startNodeId: 'intro',
+          stage: {
+            characters: [
+              {
+                speakerId: 'mirella',
+                placement: {
+                  x: 128,
+                  scale: 0,
+                  zIndex: 1.5,
+                  opacity: 2,
+                },
+              },
+            ],
+          },
+          nodes: {
+            intro: {
+              id: 'intro',
+              type: 'narration',
+              text: 'Broken placement.',
+              isEnd: true,
+            },
+          },
+        },
+      },
+    });
+
+    expect(invalidIssues.filter((issue) => issue.code === 'invalidStageCharacter').map((issue) => issue.path)).toEqual(
+      expect.arrayContaining([
+        'scenes.stage.stage.characters[0].placement.x',
+        'scenes.stage.stage.characters[0].placement.scale',
+        'scenes.stage.stage.characters[0].placement.zIndex',
+        'scenes.stage.stage.characters[0].placement.opacity',
+      ]),
+    );
   });
 });

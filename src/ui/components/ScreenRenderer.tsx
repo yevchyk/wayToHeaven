@@ -5,6 +5,7 @@ import { BattleScreen } from '@ui/screens/BattleScreen';
 import { CitySceneScreen } from '@ui/screens/CitySceneScreen';
 import { DialogueScreen } from '@ui/screens/DialogueScreen';
 import { MainMenuScreen } from '@ui/screens/MainMenuScreen';
+import { MiniGameScreen } from '@ui/screens/MiniGameScreen';
 import { TravelBoardScreen } from '@ui/screens/TravelBoardScreen';
 import { WorldScreen } from '@ui/screens/WorldScreen';
 
@@ -17,6 +18,8 @@ export const ScreenRenderer = observer(function ScreenRenderer() {
       return <BattleScreen />;
     case 'dialogue':
       return <DialogueScreen />;
+    case 'minigame':
+      return <MiniGameScreen />;
     case 'city':
       return <CitySceneScreen />;
     case 'travelBoard':

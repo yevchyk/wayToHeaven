@@ -16,6 +16,7 @@ import type {
   CombatLogEntry,
 } from '@engine/types/battle';
 import type { EffectTargetScope, GameEffect, ResourceKey } from '@engine/types/effects';
+import type { BattleStoreSnapshot } from '@engine/types/save';
 import type { ScreenId } from '@engine/types/ui';
 import type { BattleUnitRuntime } from '@engine/types/unit';
 
@@ -114,6 +115,14 @@ export class BattleStore {
     return this.phase === 'enemyThinking';
   }
 
+  get snapshot(): BattleStoreSnapshot {
+    return {
+      battleRuntime: this.battleRuntime ? cloneBattleRuntime(this.battleRuntime) : null,
+      returnScreenId: this.returnScreenId,
+      pendingBattleTemplateId: this.pendingBattleTemplateId,
+    };
+  }
+
   startBattle(templateId: string, options: { skipIntro?: boolean } = {}) {
     this.rootStore.assertBattleTemplateValid(templateId);
     const template = this.rootStore.getBattleTemplateById(templateId);
@@ -145,6 +154,7 @@ export class BattleStore {
     this.battleRuntime = cloneBattleRuntime(this.rootStore.battleResolver.createBattleRuntime(templateId));
     this.rootStore.ui.setScreen('battle');
     this.beginCurrentTurn();
+    void this.rootStore.saves.autoSave(template.title ?? templateId);
 
     return this.battleRuntime;
   }
@@ -344,6 +354,16 @@ export class BattleStore {
     this.battleRuntime = null;
     this.returnScreenId = null;
     this.pendingBattleTemplateId = null;
+  }
+
+  restore(snapshot: BattleStoreSnapshot) {
+    this.battleRuntime = snapshot.battleRuntime ? cloneBattleRuntime(snapshot.battleRuntime) : null;
+    this.returnScreenId = snapshot.returnScreenId;
+    this.pendingBattleTemplateId = snapshot.pendingBattleTemplateId;
+
+    if (this.battleRuntime) {
+      this.syncAlliesBackToParty();
+    }
   }
 
   private resolveAndAdvance(selection: BattleActionSelection) {

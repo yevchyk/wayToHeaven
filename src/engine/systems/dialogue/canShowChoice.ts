@@ -7,13 +7,14 @@ import type {
 import type { DialogueChoice } from '@engine/types/dialogue';
 import type { FlagValue } from '@engine/types/flags';
 import type { MetaKey } from '@engine/types/meta';
-import type { GameStatKey } from '@engine/types/stats';
+import type { NarrativeProfileKey } from '@engine/types/profile';
 import type { TagId } from '@engine/types/tags';
 
 export interface DialogueConditionState {
   getFlag(flagId: string): FlagValue | undefined;
   getMeta(key: MetaKey): number;
-  getStat(key: GameStatKey): number;
+  getProfileValue(key: NarrativeProfileKey): number;
+  getItemCount(itemId: string): number;
   hasTag(tag: TagId, targetScope: ConditionTargetScope, targetId?: string): boolean;
 }
 
@@ -63,6 +64,8 @@ export function evaluateDialogueCondition(condition: Condition, state: DialogueC
     }
     case 'meta':
       return evaluateNumeric(state.getMeta(condition.key), condition.value, condition.operator);
+    case 'inventory':
+      return evaluateNumeric(state.getItemCount(condition.itemId), condition.value, condition.operator);
     case 'tag': {
       const hasTag = state.hasTag(condition.tag, condition.targetScope, condition.targetId);
 
@@ -70,10 +73,12 @@ export function evaluateDialogueCondition(condition: Condition, state: DialogueC
     }
     case 'flagEquals':
       return state.getFlag(condition.flagId) === condition.value;
+    case 'profileGte':
     case 'statGte':
-      return state.getStat(condition.key) >= condition.value;
+      return state.getProfileValue(condition.key) >= condition.value;
+    case 'profileLte':
     case 'statLte':
-      return state.getStat(condition.key) <= condition.value;
+      return state.getProfileValue(condition.key) <= condition.value;
     case 'metaGte':
       return state.getMeta(condition.key) >= condition.value;
     case 'metaLte':

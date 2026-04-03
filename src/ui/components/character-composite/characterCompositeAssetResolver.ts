@@ -25,23 +25,26 @@ export function humanizeContentAssetLabel(value: string) {
 }
 
 function buildConventionalModulePaths(assetId: string) {
-  if (!assetId.startsWith('chapter-')) {
+  if (!assetId.startsWith('chapter-') && !assetId.startsWith('prologue/')) {
     return [];
   }
 
-  const [chapterId, ...restParts] = assetId.split('/');
+  const [rootId, ...restParts] = assetId.split('/');
   const relativeAssetPath = restParts.join('/');
 
-  if (!relativeAssetPath) {
+  if (!rootId || !relativeAssetPath) {
     return [];
   }
 
+  const rootImagePath = rootId.startsWith('chapter-')
+    ? `/src/content/chapters/${rootId}/images`
+    : `/src/content/${rootId}/images`;
   const assetBasePath = relativeAssetPath.replace(/\.(png|webp|jpg|jpeg|avif|svg)$/i, '');
   const explicitPath = /\.(png|webp|jpg|jpeg|avif|svg)$/i.test(relativeAssetPath)
-    ? [`/src/content/chapters/${chapterId}/images/${relativeAssetPath}`]
+    ? [`${rootImagePath}/${relativeAssetPath}`]
     : [];
   const extensionVariants = IMAGE_EXTENSIONS.map(
-    (extension) => `/src/content/chapters/${chapterId}/images/${assetBasePath}.${extension}`,
+    (extension) => `${rootImagePath}/${assetBasePath}.${extension}`,
   );
 
   return uniqueValues([...explicitPath, ...extensionVariants].map(normalizeModulePath));

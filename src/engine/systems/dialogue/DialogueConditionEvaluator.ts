@@ -18,7 +18,8 @@ export class DialogueConditionEvaluator {
     return evaluateDialogueCondition(condition, {
       getFlag: (flagId) => this.rootStore.flags.getFlag(flagId),
       getMeta: (key) => this.rootStore.meta[key],
-      getStat: (key) => this.rootStore.stats.getStat(key),
+      getProfileValue: (key) => this.rootStore.profile.getProfileValue(key),
+      getItemCount: (itemId) => this.rootStore.inventory.getItemCount(itemId),
       hasTag: (tag, targetScope, targetId) =>
         this.rootStore.party.hasTagInScope(targetScope, tag, targetId),
     });
@@ -36,7 +37,8 @@ export class DialogueConditionEvaluator {
     return getVisibleChoices(choices, {
       getFlag: (flagId) => this.rootStore.flags.getFlag(flagId),
       getMeta: (key) => this.rootStore.meta[key],
-      getStat: (key) => this.rootStore.stats.getStat(key),
+      getProfileValue: (key) => this.rootStore.profile.getProfileValue(key),
+      getItemCount: (itemId) => this.rootStore.inventory.getItemCount(itemId),
       hasTag: (tag, targetScope, targetId) =>
         this.rootStore.party.hasTagInScope(targetScope, tag, targetId),
     });
@@ -46,7 +48,8 @@ export class DialogueConditionEvaluator {
     return canShowChoice(choice, {
       getFlag: (flagId) => this.rootStore.flags.getFlag(flagId),
       getMeta: (key) => this.rootStore.meta[key],
-      getStat: (key) => this.rootStore.stats.getStat(key),
+      getProfileValue: (key) => this.rootStore.profile.getProfileValue(key),
+      getItemCount: (itemId) => this.rootStore.inventory.getItemCount(itemId),
       hasTag: (tag, targetScope, targetId) =>
         this.rootStore.party.hasTagInScope(targetScope, tag, targetId),
     });

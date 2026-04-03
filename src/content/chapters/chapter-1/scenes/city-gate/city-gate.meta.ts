@@ -4,10 +4,10 @@ import { chapter1BackgroundIds } from '../../assets';
 
 export const chapter1CityGateSceneMeta: SceneMeta = {
   id: 'chapter-1/scene/city-gate',
-  title: 'Gate Check',
+  title: 'Gate Check Sandbox',
   chapterId: 'chapter-1',
-  sceneOrder: 4,
+  sceneOrder: 90,
   mainSceneFlowId: 'chapter-1/scene/city-gate',
-  description: 'The guard tests the player’s composure at the city checkpoint.',
+  description: 'Prototype city checkpoint kept as a systems sandbox and not used in the Chapter 1 main route.',
   defaultBackgroundId: chapter1BackgroundIds.cityGate,
 };

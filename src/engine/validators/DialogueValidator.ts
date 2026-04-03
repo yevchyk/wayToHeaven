@@ -31,6 +31,7 @@ export type DialogueValidationErrorCode =
   | 'missingTravelBoardReference'
   | 'missingLocationReference'
   | 'missingLocationNodeReference'
+  | 'missingQuestReference'
   | 'missingScriptReference';
 
 export interface DialogueValidationError {

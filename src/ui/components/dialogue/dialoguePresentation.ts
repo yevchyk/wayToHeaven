@@ -8,6 +8,7 @@ import type {
   CharacterEmotion,
   SpeakerSide,
   StageCharacter,
+  StageCharacterPlacement,
   StageState,
   StageSlotCharacter,
 } from '@engine/types/dialogue';
@@ -24,6 +25,7 @@ interface CharacterCandidate {
   portraitId: string | null;
   preferredSide: SpeakerSide | null;
   outfitId: string | null;
+  placement: StageCharacterPlacement | null;
   isVisible: boolean;
   placeholderPreset: 'default' | 'dress' | 'dress-torn' | 'dress-ripped';
 }
@@ -34,6 +36,7 @@ interface CharacterCandidateInput {
   portraitId?: string;
   preferredSide?: SpeakerSide | null;
   outfitId?: string | null;
+  placement?: StageCharacterPlacement;
   isVisible?: boolean;
 }
 
@@ -88,6 +91,7 @@ export interface DialogueStagePortrait {
   speakerId: string;
   displayName: string;
   outfitId: string | null;
+  placement: StageCharacterPlacement | null;
   placeholderPreset: 'default' | 'dress' | 'dress-torn' | 'dress-ripped';
   portrait: DialoguePortraitVisual;
   isActive: boolean;
@@ -339,6 +343,7 @@ function toCandidateInput(
     emotion?: CharacterEmotion;
     portraitId?: string;
     outfitId?: string | null;
+    placement?: StageCharacterPlacement;
     isVisible?: boolean;
   },
   preferredSide?: SpeakerSide | null,
@@ -357,6 +362,10 @@ function toCandidateInput(
 
   if (entry.outfitId !== undefined) {
     candidateInput.outfitId = entry.outfitId;
+  }
+
+  if (entry.placement) {
+    candidateInput.placement = { ...entry.placement };
   }
 
   if (entry.isVisible !== undefined) {
@@ -406,6 +415,7 @@ function upsertCandidate(
     portraitId: nextPortraitId,
     preferredSide: nextPreferredSide,
     outfitId: nextOutfitId ?? null,
+    placement: entry.placement ? { ...entry.placement } : existing?.placement ?? null,
     isVisible: entry.isVisible ?? existing?.isVisible ?? true,
     placeholderPreset: nextOutfit?.placeholderPreset ?? existing?.placeholderPreset ?? 'default',
   };
@@ -545,6 +555,64 @@ function buildOrderedStageSpeakerIds(runtime: DialoguePresentationRuntime) {
   return orderedSpeakerIds;
 }
 
+function sortPresentationCandidates(
+  rootStore: GameRootStore,
+  candidates: CharacterCandidate[],
+) {
+  const indexedCandidates = candidates.map((candidate, index) => ({ candidate, index }));
+  const hasAuthoredPlacement = indexedCandidates.some(({ candidate }) => Boolean(candidate.placement));
+
+  if (hasAuthoredPlacement) {
+    return indexedCandidates
+      .sort((leftEntry, rightEntry) => {
+        const leftPlacement = leftEntry.candidate.placement;
+        const rightPlacement = rightEntry.candidate.placement;
+
+        if (leftPlacement && rightPlacement) {
+          if (leftPlacement.x !== rightPlacement.x) {
+            return leftPlacement.x - rightPlacement.x;
+          }
+
+          if ((leftPlacement.zIndex ?? 0) !== (rightPlacement.zIndex ?? 0)) {
+            return (leftPlacement.zIndex ?? 0) - (rightPlacement.zIndex ?? 0);
+          }
+
+          return leftEntry.index - rightEntry.index;
+        }
+
+        if (leftPlacement) {
+          return -1;
+        }
+
+        if (rightPlacement) {
+          return 1;
+        }
+
+        return leftEntry.index - rightEntry.index;
+      })
+      .map(({ candidate }) => candidate);
+  }
+
+  const heroineIndex = indexedCandidates.findIndex(({ candidate }) => isHeroineCandidate(rootStore, candidate.speakerId));
+
+  if (heroineIndex <= 0) {
+    return indexedCandidates.map(({ candidate }) => candidate);
+  }
+
+  const heroineCandidate = indexedCandidates[heroineIndex]?.candidate ?? null;
+
+  if (!heroineCandidate) {
+    return indexedCandidates.map(({ candidate }) => candidate);
+  }
+
+  return [
+    heroineCandidate,
+    ...indexedCandidates
+      .filter((_, index) => index !== heroineIndex)
+      .map(({ candidate }) => candidate),
+  ];
+}
+
 function buildStagePortrait(
   rootStore: GameRootStore,
   candidate: CharacterCandidate,
@@ -554,6 +622,7 @@ function buildStagePortrait(
     speakerId: candidate.speakerId,
     displayName: candidate.displayName,
     outfitId: candidate.outfitId,
+    placement: candidate.placement,
     placeholderPreset: candidate.placeholderPreset,
     portrait: resolveNarrativePortraitVisual(rootStore, {
       speakerId: candidate.speakerId,
@@ -736,9 +805,11 @@ export function resolvePresentationStagePortraits(
 
   const activeSpeakerId = runtime.currentStage?.focusCharacterId ?? runtime.currentSpeakerId ?? null;
 
-  return orderedSpeakerIds
+  const visibleCandidates = orderedSpeakerIds
     .map((speakerId) => candidates.get(speakerId) ?? null)
     .filter((candidate): candidate is CharacterCandidate => Boolean(candidate))
-    .filter((candidate) => candidate.isVisible !== false)
+    .filter((candidate) => candidate.isVisible !== false);
+
+  return sortPresentationCandidates(rootStore, visibleCandidates)
     .map((candidate) => buildStagePortrait(rootStore, candidate, activeSpeakerId));
 }

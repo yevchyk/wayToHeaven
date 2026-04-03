@@ -86,6 +86,7 @@ interface SceneGenerationValidatorOptions {
   hasSpeakerId?: (speakerId: string) => boolean;
   hasAssetOfKind?: (assetId: string, kind: NarrativeAssetKind) => boolean;
   hasSceneFlowId?: (sceneFlowId: string) => boolean;
+  hasItemId?: (itemId: string) => boolean;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -120,6 +121,10 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
+function isIntegerNumber(value: unknown): value is number {
+  return isFiniteNumber(value) && Number.isInteger(value);
+}
+
 function hasJumpToNodeEffect(effects: unknown) {
   return Array.isArray(effects) && effects.some((effect) => isRecord(effect) && effect.type === 'jumpToNode');
 }
@@ -129,6 +134,7 @@ export class SceneGenerationValidator {
   private readonly hasSpeakerId: SceneGenerationValidatorOptions['hasSpeakerId'];
   private readonly hasAssetOfKind: SceneGenerationValidatorOptions['hasAssetOfKind'];
   private readonly hasSceneFlowId: SceneGenerationValidatorOptions['hasSceneFlowId'];
+  private readonly hasItemId: SceneGenerationValidatorOptions['hasItemId'];
 
   constructor(
     effectReferenceValidator: EffectReferenceValidator = new EffectReferenceValidator(),
@@ -138,6 +144,7 @@ export class SceneGenerationValidator {
     this.hasSpeakerId = options.hasSpeakerId;
     this.hasAssetOfKind = options.hasAssetOfKind;
     this.hasSceneFlowId = options.hasSceneFlowId;
+    this.hasItemId = options.hasItemId;
   }
 
   validate(document: unknown) {
@@ -942,6 +949,74 @@ export class SceneGenerationValidator {
       issues,
       context,
     );
+    this.validateStagePlacement(value.placement, `${path}.placement`, issues, context);
+  }
+
+  private validateStagePlacement(
+    value: unknown,
+    path: string,
+    issues: SceneGenerationValidationIssue[],
+    context: { sceneId?: string; nodeId?: string },
+  ) {
+    if (value === undefined) {
+      return;
+    }
+
+    if (!isRecord(value)) {
+      issues.push({
+        code: 'invalidStageCharacter',
+        message: `Stage placement at "${path}" must be an object.`,
+        path,
+        ...context,
+      });
+
+      return;
+    }
+
+    if (!isFiniteNumber(value.x) || value.x < 0 || value.x > 100) {
+      issues.push({
+        code: 'invalidStageCharacter',
+        message: `Stage placement x at "${path}" must be a finite number between 0 and 100.`,
+        path: `${path}.x`,
+        ...context,
+      });
+    }
+
+    if (value.y !== undefined && !isFiniteNumber(value.y)) {
+      issues.push({
+        code: 'invalidStageCharacter',
+        message: `Stage placement y at "${path}" must be a finite number when provided.`,
+        path: `${path}.y`,
+        ...context,
+      });
+    }
+
+    if (value.scale !== undefined && (!isFiniteNumber(value.scale) || value.scale <= 0)) {
+      issues.push({
+        code: 'invalidStageCharacter',
+        message: `Stage placement scale at "${path}" must be a positive finite number when provided.`,
+        path: `${path}.scale`,
+        ...context,
+      });
+    }
+
+    if (value.zIndex !== undefined && !isIntegerNumber(value.zIndex)) {
+      issues.push({
+        code: 'invalidStageCharacter',
+        message: `Stage placement zIndex at "${path}" must be an integer when provided.`,
+        path: `${path}.zIndex`,
+        ...context,
+      });
+    }
+
+    if (value.opacity !== undefined && (!isFiniteNumber(value.opacity) || value.opacity < 0 || value.opacity > 1)) {
+      issues.push({
+        code: 'invalidStageCharacter',
+        message: `Stage placement opacity at "${path}" must be a finite number between 0 and 1.`,
+        path: `${path}.opacity`,
+        ...context,
+      });
+    }
   }
 
   private validateBackgroundPatch(
@@ -1443,8 +1518,33 @@ export class SceneGenerationValidator {
         }
 
         return;
+      case 'inventory':
+        if (!isNonEmptyString(conditionValue.itemId) || !NUMERIC_OPERATORS.includes(conditionValue.operator as NumericComparisonOperator) || typeof conditionValue.value !== 'number') {
+          issues.push({
+            code: 'invalidConditionsStructure',
+            message: `Inventory condition at "${conditionPath}" is missing required fields.`,
+            path: conditionPath,
+            ...context,
+          });
+
+          return;
+        }
+
+        if (this.hasItemId && !this.hasItemId(conditionValue.itemId)) {
+          issues.push({
+            code: 'missingItemReference',
+            message: `Inventory condition at "${conditionPath}" references missing item "${conditionValue.itemId}".`,
+            path: `${conditionPath}.itemId`,
+            targetId: conditionValue.itemId,
+            ...context,
+          });
+        }
+
+        return;
       case 'metaGte':
       case 'metaLte':
+      case 'profileGte':
+      case 'profileLte':
       case 'statGte':
       case 'statLte':
         if (!isNonEmptyString(conditionValue.key) || typeof conditionValue.value !== 'number') {
@@ -1722,7 +1822,15 @@ export class SceneGenerationValidator {
     knownSceneIds: ReadonlySet<string>,
     context: { sceneId?: string; nodeId?: string; choiceId?: string },
   ) {
-    if (knownSceneIds.has(sceneFlowId) || this.hasSceneFlowId?.(sceneFlowId)) {
+    if (knownSceneIds.has(sceneFlowId)) {
+      return;
+    }
+
+    if (!this.hasSceneFlowId) {
+      return;
+    }
+
+    if (this.hasSceneFlowId(sceneFlowId)) {
       return;
     }
 

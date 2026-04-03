@@ -1,5 +1,11 @@
 import type { GameRootStore } from '@engine/stores/GameRootStore';
 import type { SceneFlowStore } from '@engine/stores/SceneFlowStore';
+import {
+  buildCityLocationLibraryEntryId,
+  buildSceneLocationLibraryEntryId,
+  buildTravelLocationLibraryEntryId,
+  collectCharacterIdsFromSceneFlowNode,
+} from '@engine/systems/library/libraryDiscovery';
 import { applyScenePresentationPatch } from '@engine/systems/scenes/applyScenePresentationPatch';
 import type {
   SceneFlowData,
@@ -223,6 +229,7 @@ export class SceneFlowController {
     }
 
     this.syncPresentationFromNode(node, session.sessionId);
+    this.discoverNodeContent(node, session.sessionId);
     this.applyEffects(node.onEnterEffects);
 
     const jumpTarget = this.store.consumePendingJumpNodeId(session.sessionId);
@@ -437,6 +444,12 @@ export class SceneFlowController {
 
   setBackground(backgroundId: string | null) {
     this.store.setPresentation({ backgroundId });
+    this.rootStore.debug.recordPresentation({
+      flowId: this.store.activeFlowId,
+      nodeId: this.store.currentNodeId,
+      source: 'setBackground',
+      snapshot: this.store.activeSession?.presentation ?? this.store.ambientPresentation,
+    });
   }
 
   playMusic(musicId: string) {
@@ -445,28 +458,64 @@ export class SceneFlowController {
       action: 'switch',
       loop: true,
     });
+    this.rootStore.debug.recordPresentation({
+      flowId: this.store.activeFlowId,
+      nodeId: this.store.currentNodeId,
+      source: 'playMusic',
+      snapshot: this.store.activeSession?.presentation ?? this.store.ambientPresentation,
+    });
   }
 
   stopMusic() {
     this.store.setPresentation({ musicId: null });
     this.rootStore.audio.stopMusic();
+    this.rootStore.debug.recordPresentation({
+      flowId: this.store.activeFlowId,
+      nodeId: this.store.currentNodeId,
+      source: 'stopMusic',
+      snapshot: this.store.activeSession?.presentation ?? this.store.ambientPresentation,
+    });
   }
 
   showCg(cgId: string) {
     this.store.setPresentation({ cgId });
+    this.rootStore.debug.recordPresentation({
+      flowId: this.store.activeFlowId,
+      nodeId: this.store.currentNodeId,
+      source: 'showCg',
+      snapshot: this.store.activeSession?.presentation ?? this.store.ambientPresentation,
+    });
   }
 
   hideCg() {
     this.store.setPresentation({ cgId: null });
+    this.rootStore.debug.recordPresentation({
+      flowId: this.store.activeFlowId,
+      nodeId: this.store.currentNodeId,
+      source: 'hideCg',
+      snapshot: this.store.activeSession?.presentation ?? this.store.ambientPresentation,
+    });
   }
 
   setOverlay(overlayId: string | null) {
     this.store.setPresentation({ overlayId });
+    this.rootStore.debug.recordPresentation({
+      flowId: this.store.activeFlowId,
+      nodeId: this.store.currentNodeId,
+      source: 'setOverlay',
+      snapshot: this.store.activeSession?.presentation ?? this.store.ambientPresentation,
+    });
   }
 
   playSfx(sfxId: string) {
     this.store.setPresentation({ lastSfxId: sfxId });
     this.rootStore.audio.playSfx(sfxId);
+    this.rootStore.debug.recordPresentation({
+      flowId: this.store.activeFlowId,
+      nodeId: this.store.currentNodeId,
+      source: 'playSfx',
+      snapshot: this.store.activeSession?.presentation ?? this.store.ambientPresentation,
+    });
   }
 
   queueJumpToNode(nodeId: string) {
@@ -516,6 +565,8 @@ export class SceneFlowController {
       ? this.store.replaceTopSession(sessionInput)
       : this.store.pushSession(sessionInput);
 
+    this.discoverFlowContent(flow, sessionInput.sceneId);
+
     if (flow.mode === 'hub') {
       this.store.markHubFlowVisited(flow.id);
     }
@@ -533,7 +584,45 @@ export class SceneFlowController {
       this.refreshVisibleTransitions(nextSession.sessionId);
     }
 
+    if (!previousSession) {
+      void this.rootStore.saves.autoSave(flow.title);
+    }
+
     return nextSession;
+  }
+
+  private discoverFlowContent(flow: SceneFlowData, sceneId: string | null) {
+    if (flow.mode === 'hub') {
+      this.rootStore.seenContent.markLocationEntryDiscovered(
+        buildCityLocationLibraryEntryId(flow.id),
+      );
+
+      return;
+    }
+
+    if (flow.mode === 'route') {
+      this.rootStore.seenContent.markLocationEntryDiscovered(
+        buildTravelLocationLibraryEntryId(flow.id),
+      );
+
+      return;
+    }
+
+    if (sceneId && this.rootStore.getSceneById(sceneId)) {
+      this.rootStore.seenContent.markLocationEntryDiscovered(
+        buildSceneLocationLibraryEntryId(sceneId),
+      );
+    }
+  }
+
+  private discoverNodeContent(node: SceneFlowNode, sessionId: string) {
+    const session = this.requireSession(sessionId);
+    const characterIds = collectCharacterIdsFromSceneFlowNode(
+      node,
+      session.presentation.currentStage,
+    ).filter((characterId) => Boolean(this.rootStore.getNarrativeCharacterById(characterId)));
+
+    this.rootStore.seenContent.markCharactersDiscovered(characterIds);
   }
 
   private buildPresentationState(flow: SceneFlowData): SceneFlowPresentationState {
@@ -556,7 +645,7 @@ export class SceneFlowController {
       overlayId: flow.defaultOverlayId ?? null,
       lastSfxId: null,
       currentStage: flow.defaultStage ?? null,
-      backgroundStyle: null,
+      backgroundStyle: flow.defaultBackgroundStyle ?? null,
       activeTransition: flow.defaultTransition ?? null,
     };
   }
@@ -583,6 +672,8 @@ export class SceneFlowController {
   }
 
   private syncPresentationFromNode(node: SceneFlowNode, sessionId: string) {
+    let didChangePresentation = false;
+
     if (node.presentationPatch) {
       const session = this.requireSession(sessionId);
 
@@ -590,6 +681,7 @@ export class SceneFlowController {
         applyScenePresentationPatch(session.presentation, node.presentationPatch),
         sessionId,
       );
+      didChangePresentation = true;
 
       this.rootStore.audio.applyMusicAction(
         node.presentationPatch.music,
@@ -618,30 +710,37 @@ export class SceneFlowController {
 
     if (node.stage) {
       this.store.setPresentation({ currentStage: node.stage }, sessionId);
+      didChangePresentation = true;
     }
 
     if (node.backgroundId) {
       this.store.setPresentation({ backgroundId: node.backgroundId }, sessionId);
+      didChangePresentation = true;
     }
 
     if (node.stage?.backgroundId) {
       this.store.setPresentation({ backgroundId: node.stage.backgroundId }, sessionId);
+      didChangePresentation = true;
     }
 
     if (node.cgId) {
       this.store.setPresentation({ cgId: node.cgId }, sessionId);
+      didChangePresentation = true;
     }
 
     if (node.stage?.cgId) {
       this.store.setPresentation({ cgId: node.stage.cgId }, sessionId);
+      didChangePresentation = true;
     }
 
     if (node.overlayId) {
       this.store.setPresentation({ overlayId: node.overlayId }, sessionId);
+      didChangePresentation = true;
     }
 
     if (node.stage?.overlayId) {
       this.store.setPresentation({ overlayId: node.stage.overlayId }, sessionId);
+      didChangePresentation = true;
     }
 
     if (node.music) {
@@ -649,10 +748,12 @@ export class SceneFlowController {
 
       if ((musicMode === 'play' || musicMode === 'switch') && node.music.musicId) {
         this.store.setPresentation({ musicId: node.music.musicId }, sessionId);
+        didChangePresentation = true;
       }
 
       if (musicMode === 'stop') {
         this.store.setPresentation({ musicId: null }, sessionId);
+        didChangePresentation = true;
       }
 
       this.rootStore.audio.applyMusicAction(node.music, this.requireSession(sessionId).presentation.musicId);
@@ -660,6 +761,7 @@ export class SceneFlowController {
 
     if (node.transition) {
       this.store.setPresentation({ activeTransition: node.transition }, sessionId);
+      didChangePresentation = true;
     }
 
     const sfxEntries = Array.isArray(node.sfx) ? node.sfx : node.sfx ? [node.sfx] : [];
@@ -680,6 +782,18 @@ export class SceneFlowController {
 
     if (lastSfx) {
       this.store.setPresentation({ lastSfxId: lastSfx.sfxId ?? lastSfx.id ?? null }, sessionId);
+      didChangePresentation = true;
+    }
+
+    if (didChangePresentation) {
+      const session = this.requireSession(sessionId);
+
+      this.rootStore.debug.recordPresentation({
+        flowId: session.flowId,
+        nodeId: node.id,
+        source: 'syncPresentationFromNode',
+        snapshot: session.presentation,
+      });
     }
   }
 
@@ -853,6 +967,7 @@ export class SceneFlowController {
     }
 
     return node.transitions
+      .filter((transition) => this.rootStore.dialogueConditionEvaluator.evaluateAll(transition.conditions))
       .map((transition) => transition.nextNodeId)
       .filter((nextNodeId): nextNodeId is string => Boolean(nextNodeId))
       .filter((nextNodeId) => !routeRuntime.visitedNodeIds.includes(nextNodeId));
@@ -1086,7 +1201,11 @@ export class SceneFlowController {
       node.transitions.forEach((transition) => {
         const neighborNodeId = transition.nextNodeId;
 
-        if (!neighborNodeId || visited.has(neighborNodeId)) {
+        if (
+          !neighborNodeId ||
+          visited.has(neighborNodeId) ||
+          !this.rootStore.dialogueConditionEvaluator.evaluateAll(transition.conditions)
+        ) {
           return;
         }
 

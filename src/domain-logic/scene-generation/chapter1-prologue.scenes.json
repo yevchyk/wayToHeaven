@@ -24,22 +24,43 @@
           {
             "speakerId": "lady-sera",
             "emotion": "soft",
-            "portraitId": "chapter-1/portraits/lady-sera/soft.webp"
+            "portraitId": "chapter-1/portraits/lady-sera/soft.webp",
+            "placement": {
+              "x": 14,
+              "y": 2,
+              "scale": 1.02,
+              "opacity": 0.8
+            }
           },
           {
             "speakerId": "mirella",
             "emotion": "neutral",
-            "portraitId": "chapter-1/portraits/mirella/neutral.webp"
+            "portraitId": "chapter-1/portraits/mirella/neutral.webp",
+            "placement": {
+              "x": 46,
+              "scale": 1.14,
+              "zIndex": 4
+            }
           },
           {
             "speakerId": "kael",
             "emotion": "playful",
-            "portraitId": "chapter-1/portraits/kael/playful.webp"
+            "portraitId": "chapter-1/portraits/kael/playful.webp",
+            "placement": {
+              "x": 72,
+              "y": 3,
+              "scale": 0.96,
+              "opacity": 0.86
+            }
           },
           {
             "speakerId": "sir-raust",
             "emotion": "stern",
-            "portraitId": "chapter-1/portraits/sir-raust/stern.webp"
+            "portraitId": "chapter-1/portraits/sir-raust/stern.webp",
+            "placement": {
+              "x": 90,
+              "scale": 1.06
+            }
           }
         ],
         "focusCharacterId": "mirella"
@@ -48,7 +69,7 @@
         "n1": {
           "id": "n1",
           "type": "narration",
-          "text": "Ранковий стіл дому Торнів виглядає спокійним, але в розмові вже відчувається тиск родини.",
+          "text": "<p>Ранковий стіл дому Торнів виглядає спокійним, але в розмові вже відчувається <strong>тиск родини</strong>.</p>",
           "nextNodeId": "n5"
         },
         "n5": {
@@ -58,11 +79,11 @@
           "speakerSide": "center",
           "emotion": "thinking",
           "portraitId": "chapter-1/portraits/mirella/thinking.webp",
-          "text": "Мірелла переводить погляд між леді Серою, Каелем і Раустом, намагаючись зрозуміти, хто тут справді має рацію.",
+          "text": "<p>Мірелла переводить погляд між леді Серою, Каелем і Раустом, намагаючись зрозуміти, хто тут справді має рацію.</p><p><em>Тиша за столом вже працює як зброя.</em></p>",
           "choices": [
             {
               "id": "n5_c1",
-              "text": "Підтримати Рауста про честь.",
+              "text": "Підтримати Рауста про <strong>честь</strong>.",
               "effects": [
                 {
                   "type": "changeStat",
@@ -99,17 +120,34 @@
                 {
                   "speakerId": "lady-sera",
                   "emotion": "afraid",
-                  "portraitId": "chapter-1/portraits/lady-sera/afraid.webp"
+                  "portraitId": "chapter-1/portraits/lady-sera/afraid.webp",
+                  "placement": {
+                    "x": 12,
+                    "y": 4,
+                    "scale": 0.94,
+                    "opacity": 0.7
+                  }
                 },
                 {
                   "speakerId": "mirella",
                   "emotion": "angry",
-                  "portraitId": "chapter-1/portraits/mirella/thinking.webp"
+                  "portraitId": "chapter-1/portraits/mirella/thinking.webp",
+                  "placement": {
+                    "x": 52,
+                    "scale": 1.2,
+                    "zIndex": 6
+                  }
                 },
                 {
                   "speakerId": "kael",
                   "emotion": "nervous",
-                  "portraitId": "chapter-1/portraits/kael/nervous.webp"
+                  "portraitId": "chapter-1/portraits/kael/nervous.webp",
+                  "placement": {
+                    "x": 78,
+                    "y": 6,
+                    "scale": 0.9,
+                    "opacity": 0.66
+                  }
                 }
               ],
               "focusCharacterId": "mirella"
@@ -147,12 +185,23 @@
           {
             "speakerId": "servant-lyna",
             "emotion": "soft",
-            "portraitId": "chapter-1/portraits/servant-lyna/soft.webp"
+            "portraitId": "chapter-1/portraits/servant-lyna/soft.webp",
+            "placement": {
+              "x": 24,
+              "scale": 0.92,
+              "opacity": 0.84
+            }
           },
           {
             "speakerId": "mirella",
             "emotion": "neutral",
-            "portraitId": "chapter-1/portraits/mirella/neutral.webp"
+            "portraitId": "chapter-1/portraits/mirella/neutral.webp",
+            "placement": {
+              "x": 74,
+              "y": 2,
+              "scale": 1.08,
+              "zIndex": 4
+            }
           }
         ],
         "focusCharacterId": "mirella"
@@ -165,7 +214,7 @@
           "speakerSide": "left",
           "emotion": "soft",
           "portraitId": "chapter-1/portraits/servant-lyna/soft.webp",
-          "text": "Пані, я приготувала одяг до виїзду. Якщо хочете, я ще раз перевірю застібки.",
+          "text": "<p>Пані, я приготувала одяг до виїзду. Якщо хочете, я ще раз перевірю застібки.</p>",
           "nextNodeId": "n10"
         },
         "n10": {

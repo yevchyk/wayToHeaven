@@ -1,6 +1,7 @@
 import type { CitySceneData } from '@engine/types/city';
 import type { SceneMeta } from '@engine/types/narrative';
 import type { TravelBoardData } from '@engine/types/travel';
+import type { BackgroundWorkbenchEntry } from '@engine/types/authoring';
 
 import { chapter1AwakeningSceneMeta } from '@content/chapters/chapter-1/scenes/awakening/awakening.meta';
 import { chapter1CityGateSceneMeta } from '@content/chapters/chapter-1/scenes/city-gate/city-gate.meta';
@@ -10,18 +11,9 @@ import { citySceneRegistry } from '@content/registries/citySceneRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 
 export type LocationBackdropWorkbenchKind = 'cityScene' | 'travelBoard' | 'sceneMeta';
-
-export interface LocationBackdropWorkbenchEntry {
-  id: string;
+export type LocationBackdropWorkbenchEntry = BackgroundWorkbenchEntry & {
   kind: LocationBackdropWorkbenchKind;
-  title: string;
-  subtitle: string;
-  description: string;
-  backgroundId: string | null;
-  contentFilePath: string;
-  assetFieldPath: string;
-  improvementHints: string[];
-}
+};
 
 function buildCitySceneEntry(scene: CitySceneData, contentFilePath: string): LocationBackdropWorkbenchEntry {
   return {
@@ -30,9 +22,12 @@ function buildCitySceneEntry(scene: CitySceneData, contentFilePath: string): Loc
     title: scene.locationName,
     subtitle: [scene.cityName, scene.districtLabel].filter(Boolean).join(' · '),
     description: scene.description ?? 'No scene description yet.',
+    storyContext:
+      'Open city exploration after the heroine survives the fall and reaches Ashen Reach, looking for shelter, leverage, rumors, and a way to move deeper into the chapter route.',
     backgroundId: scene.backgroundId ?? null,
     contentFilePath,
     assetFieldPath: 'backgroundId',
+    promptFlavor: 'cityScene',
     improvementHints: [
       'Поміняй `description`, щоб одразу підсилити атмосферу сцени в хедері та hover-preview.',
       'Переглянь `actions`: саме вони продають, що тут можна робити і який настрій у локації.',
@@ -48,9 +43,12 @@ function buildTravelBoardEntry(board: TravelBoardData, contentFilePath: string):
     title: board.title,
     subtitle: 'Travel Route',
     description: board.description ?? 'No route description yet.',
+    storyContext:
+      'This route covers the dangerous push out from the temple-side undercity toward the outer roads, where the player gambles for supplies, survival, and momentum after the awakening arc.',
     backgroundId: board.backgroundId ?? null,
     contentFilePath,
     assetFieldPath: 'backgroundId',
+    promptFlavor: 'travelBoard',
     improvementHints: [
       'Покращуй `description`, щоб route мав сильний загальний вайб ще до першого кроку.',
       'Якщо хочеш, щоб сама локація відчувалася живою, дописуй `nodes[*].title` і `nodes[*].description`.',
@@ -70,9 +68,11 @@ function buildSceneMetaEntry(
     title: sceneMeta.title,
     subtitle: 'Scene Default Background',
     description: sceneMeta.description ?? 'No scene description yet.',
+    storyContext: sceneMeta.description ?? 'Main story scene in the current chapter route.',
     backgroundId: sceneMeta.defaultBackgroundId ?? null,
     contentFilePath,
     assetFieldPath: 'defaultBackgroundId',
+    promptFlavor: 'sceneMeta',
     improvementHints: [
       'Це default background для всієї сцени; якщо окремі вузли мають інші фони, прав їх у scene-generation пакеті.',
       `Main scene-flow source: ${mainFlowFilePath}`,

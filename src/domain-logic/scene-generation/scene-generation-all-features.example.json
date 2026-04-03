@@ -13,17 +13,30 @@
         {
           "speakerId": "mirella",
           "emotion": "afraid",
-          "portraitId": "chapter-1/portraits/mirella/afraid.webp"
+          "portraitId": "chapter-1/portraits/mirella/afraid.webp",
+          "placement": {
+            "x": 18,
+            "scale": 1.08
+          }
         },
         {
           "speakerId": "old-prisoner",
           "emotion": "neutral",
-          "portraitId": "chapter-1/portraits/old-prisoner/neutral.webp"
+          "portraitId": "chapter-1/portraits/old-prisoner/neutral.webp",
+          "placement": {
+            "x": 52,
+            "scale": 0.96,
+            "opacity": 0.74
+          }
         },
         {
           "speakerId": "guard",
           "emotion": "cold",
-          "portraitId": "chapter-1/portraits/guard/cold.webp"
+          "portraitId": "chapter-1/portraits/guard/cold.webp",
+          "placement": {
+            "x": 86,
+            "scale": 1.04
+          }
         }
       ],
       "focusCharacterId": "mirella"
@@ -51,17 +64,32 @@
           {
             "speakerId": "old-prisoner",
             "emotion": "neutral",
-            "portraitId": "chapter-1/portraits/old-prisoner/neutral.webp"
+            "portraitId": "chapter-1/portraits/old-prisoner/neutral.webp",
+            "placement": {
+              "x": 18,
+              "y": 3,
+              "scale": 0.94,
+              "opacity": 0.72
+            }
           },
           {
             "speakerId": "mirella",
             "emotion": "afraid",
-            "portraitId": "chapter-1/portraits/mirella/afraid.webp"
+            "portraitId": "chapter-1/portraits/mirella/afraid.webp",
+            "placement": {
+              "x": 52,
+              "scale": 1.18,
+              "zIndex": 5
+            }
           },
           {
             "speakerId": "guard",
             "emotion": "cold",
-            "portraitId": "chapter-1/portraits/guard/cold.webp"
+            "portraitId": "chapter-1/portraits/guard/cold.webp",
+            "placement": {
+              "x": 84,
+              "scale": 1.02
+            }
           }
         ],
         "focusCharacterId": "mirella"
@@ -70,7 +98,7 @@
         "intro": {
           "id": "intro",
           "type": "narration",
-          "text": "Scene-level defaults set the first background, music, CG, overlay, and stage. This opening node demonstrates SFX and bootstrap effects.",
+          "text": "<p>Scene-level defaults set the first <strong>background</strong>, music, CG, overlay, and stage.</p><p>This opening node demonstrates <em>SFX</em> and bootstrap effects.</p>",
           "tags": ["bootstrap"],
           "sfx": [
             {
@@ -163,12 +191,23 @@
                 {
                   "speakerId": "old-prisoner",
                   "emotion": "soft",
-                  "portraitId": "chapter-1/portraits/old-prisoner/soft.webp"
+                  "portraitId": "chapter-1/portraits/old-prisoner/soft.webp",
+                  "placement": {
+                    "x": 24,
+                    "scale": 0.88,
+                    "opacity": 0.62
+                  }
                 },
                 {
                   "speakerId": "mirella",
                   "emotion": "trembling",
-                  "portraitId": "chapter-1/portraits/mirella/trembling.webp"
+                  "portraitId": "chapter-1/portraits/mirella/trembling.webp",
+                  "placement": {
+                    "x": 68,
+                    "y": 5,
+                    "scale": 1.26,
+                    "zIndex": 6
+                  }
                 }
               ],
               "focusCharacterId": "mirella"
@@ -217,12 +256,12 @@
           "speakerSide": "center",
           "emotion": "thinking",
           "portraitId": "chapter-1/portraits/mirella/thinking.webp",
-          "text": "Each option below demonstrates a supported condition bundle, tone, transition, or effect family.",
+          "text": "<p>Each option below demonstrates a supported <strong>condition bundle</strong>, tone, transition, or effect family.</p><p><code>text</code> fields may carry safe authored HTML.</p>",
           "choices": [
             {
               "id": "c_stats_and_inventory",
               "tone": "social",
-              "text": "Flags, meta, stats, tags, items, and resource restoration.",
+              "text": "Flags, meta, stats, tags, items, and <code>resource restoration</code>.",
               "conditions": [
                 {
                   "type": "flagEquals",
@@ -508,13 +547,13 @@
           "speakerSide": "center",
           "emotion": "defiant",
           "portraitId": "chapter-1/portraits/mirella/defiant.webp",
-          "text": "Choices can either continue to another node or transfer to a completely new scene.",
+          "text": "Choices can either continue to another node or transfer to a completely new scene. The follow-up also demonstrates scene-level replacement via inventory conditions.",
           "choices": [
             {
               "id": "t_choice_continue",
               "tone": "travel",
-              "text": "Continue straight into the hub scene.",
-              "nextSceneId": "scene_city_hub"
+              "text": "Continue into an inventory-gated follow-up scene.",
+              "nextSceneId": "scene_inventory_gate"
             },
             {
               "id": "t_choice_note",
@@ -535,6 +574,32 @@
           "id": "t_note",
           "type": "narration",
           "text": "Intermediate explanation nodes are still useful in transition-heavy flows.",
+          "nextSceneId": "scene_inventory_gate"
+        }
+      }
+    },
+    "scene_inventory_gate": {
+      "id": "scene_inventory_gate",
+      "mode": "sequence",
+      "title": "Inventory-Gated Replacement",
+      "description": "Flow-level conditions can read inventory counts and replace the entire target scene when the requirement is not met.",
+      "startNodeId": "gate_intro",
+      "conditions": [
+        {
+          "type": "inventory",
+          "itemId": "basic-potion",
+          "operator": "gte",
+          "value": 1
+        }
+      ],
+      "onConditionFail": {
+        "nextSceneId": "scene_city_hub"
+      },
+      "nodes": {
+        "gate_intro": {
+          "id": "gate_intro",
+          "type": "narration",
+          "text": "Because the runtime can read inventory, this whole scene appears only when the player is carrying the required item. Otherwise the flow skips directly to the city hub.",
           "nextSceneId": "scene_city_hub"
         }
       }

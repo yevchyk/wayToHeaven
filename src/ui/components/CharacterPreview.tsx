@@ -1,8 +1,10 @@
 import { observer } from 'mobx-react-lite';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Chip, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 import type { CharacterPreviewLayer, CharacterPreviewModel } from '@engine/types/appearance';
 import { buildCharacterPreviewLayers } from '@engine/utils/buildCharacterPreviewLayers';
+import { shellTokens } from '@ui/components/shell/shellTokens';
 
 function hashString(value: string) {
   return value.split('').reduce((total, char) => total + char.charCodeAt(0), 0);
@@ -108,6 +110,9 @@ export const CharacterPreview = observer(function CharacterPreview({
   height = 460,
 }: CharacterPreviewProps) {
   const layers = character ? buildCharacterPreviewLayers(character) : [];
+  const equippedItems = character
+    ? Object.values(character.equippedItems).filter((item): item is NonNullable<typeof item> => Boolean(item))
+    : [];
 
   if (!character) {
     return (
@@ -117,9 +122,9 @@ export const CharacterPreview = observer(function CharacterPreview({
         spacing={1}
         sx={{
           minHeight: height,
-          borderRadius: 3,
-          border: '1px dashed rgba(255,255,255,0.14)',
-          backgroundColor: 'rgba(255,255,255,0.02)',
+          borderRadius: shellTokens.radius.md,
+          border: `1px solid ${shellTokens.border.subtle}`,
+          background: 'linear-gradient(180deg, rgba(19, 25, 35, 0.54) 0%, rgba(11, 15, 22, 0.72) 100%)',
         }}
       >
         <Typography variant="h6">No Character Selected</Typography>
@@ -138,12 +143,64 @@ export const CharacterPreview = observer(function CharacterPreview({
         height,
         width: '100%',
         overflow: 'hidden',
-        borderRadius: 4,
-        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: shellTokens.radius.md,
+        border: `1px solid ${shellTokens.border.strong}`,
         background:
-          'linear-gradient(180deg, rgba(23, 28, 41, 0.94), rgba(17, 13, 22, 0.98))',
+          'linear-gradient(180deg, rgba(26, 33, 43, 0.92) 0%, rgba(16, 21, 28, 0.96) 44%, rgba(9, 13, 18, 0.98) 100%)',
+        boxShadow: shellTokens.shadow.inset,
       }}
     >
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'radial-gradient(circle at 50% 20%, rgba(236, 242, 248, 0.18) 0%, rgba(236, 242, 248, 0) 34%), linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)',
+          pointerEvents: 'none',
+        }}
+      />
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 12,
+          borderRadius: shellTokens.radius.md,
+          border: `1px solid ${alpha('#eef5fb', 0.08)}`,
+          background:
+            'linear-gradient(180deg, rgba(12, 16, 22, 0.18) 0%, rgba(12, 16, 22, 0) 24%, rgba(12, 16, 22, 0.22) 100%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        spacing={1}
+        sx={{
+          position: 'absolute',
+          top: 12,
+          left: 12,
+          right: 12,
+          zIndex: 3,
+        }}
+      >
+        <Stack spacing={0.25}>
+          <Typography
+            sx={{
+              color: alpha('#eef5fb', 0.54),
+              fontSize: '0.66rem',
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Portrait Composite
+          </Typography>
+          <Typography sx={{ color: shellTokens.text.primary, fontSize: '0.9rem' }}>
+            Runtime shell preview
+          </Typography>
+        </Stack>
+        <Chip label={`${layers.length} layers`} size="small" variant="outlined" />
+      </Stack>
+
       {layers.map((layer) => (
         <Box
           key={`${character.unitId}-${layer.id}-${layer.assetId}`}
@@ -162,6 +219,44 @@ export const CharacterPreview = observer(function CharacterPreview({
           }}
         />
       ))}
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 'auto 0 0 0',
+          zIndex: 2,
+          px: 1.1,
+          py: 0.95,
+          background: `linear-gradient(180deg, ${alpha('#070a0f', 0)} 0%, ${alpha('#070a0f', 0.82)} 34%, ${alpha('#070a0f', 0.94)} 100%)`,
+        }}
+      >
+        <Stack spacing={0.7}>
+          <Stack alignItems="center" direction="row" justifyContent="space-between" spacing={1}>
+            <Typography sx={{ color: shellTokens.text.primary, fontSize: '0.96rem' }}>
+              {character.name}
+            </Typography>
+            <Typography color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+              {equippedItems.length > 0 ? `${equippedItems.length} equipped` : 'Base rig'}
+            </Typography>
+          </Stack>
+
+          <Stack direction="row" flexWrap="wrap" gap={0.55}>
+            {equippedItems.length > 0 ? (
+              equippedItems.map((item) => (
+                <Chip key={`${character.unitId}-${item.itemId}`} label={item.itemName} size="small" variant="outlined" />
+              ))
+            ) : (
+              <Chip label="No equipment layers" size="small" variant="outlined" />
+            )}
+          </Stack>
+
+          <Stack direction="row" flexWrap="wrap" gap={0.55}>
+            {layers.map((layer) => (
+              <Chip key={`${character.unitId}-${layer.id}`} label={layer.id} size="small" variant="outlined" />
+            ))}
+          </Stack>
+        </Stack>
+      </Box>
     </Box>
   );
 });

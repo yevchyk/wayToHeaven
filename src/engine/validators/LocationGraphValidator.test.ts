@@ -27,6 +27,7 @@ describe('LocationGraphValidator', () => {
       dialogues: {},
       sceneFlows: {},
       items: {},
+      quests: {},
       locations: {
         [existingLocation.id]: existingLocation,
       },
