@@ -2,23 +2,57 @@ import type { GameRootStore } from '@engine/stores/GameRootStore';
 import type { SceneFlowStore } from '@engine/stores/SceneFlowStore';
 import {
   buildCityLocationLibraryEntryId,
+  buildSceneReplayLibraryEntryId,
   buildSceneLocationLibraryEntryId,
   buildTravelLocationLibraryEntryId,
   collectCharacterIdsFromSceneFlowNode,
 } from '@engine/systems/library/libraryDiscovery';
 import { applyScenePresentationPatch } from '@engine/systems/scenes/applyScenePresentationPatch';
+import type { GameEffect } from '@engine/types/effects';
 import type {
   SceneFlowData,
   SceneFlowFallbackTarget,
   SceneFlowNode,
+  SceneFlowPlaybackMode,
   SceneFlowPresentationState,
   SceneFlowRouteRuntime,
   SceneFlowSession,
   SceneFlowTransition,
 } from '@engine/types/sceneFlow';
 import type { ScreenId } from '@engine/types/ui';
+import { getHoursFromTimeCost } from '@engine/types/time';
 
 type RandomSource = () => number;
+
+const PREVIEW_SAFE_EFFECT_TYPES: ReadonlySet<GameEffect['type']> = new Set([
+  'setFlag',
+  'setCharacterOutfit',
+  'changeMeta',
+  'addQuest',
+  'advanceQuest',
+  'completeQuest',
+  'changeStat',
+  'changeProfile',
+  'changeRelationship',
+  'setStat',
+  'setProfile',
+  'unlockStat',
+  'unlockProfile',
+  'addTag',
+  'removeTag',
+  'giveItem',
+  'removeItem',
+  'restoreResource',
+  'setBackground',
+  'playMusic',
+  'stopMusic',
+  'playSfx',
+  'showCG',
+  'hideCG',
+  'setOverlay',
+  'clearOverlay',
+  'jumpToNode',
+]);
 
 function uniqueValues(values: readonly string[]) {
   return Array.from(new Set(values));
@@ -60,7 +94,12 @@ export class SceneFlowController {
     return this.rootStore.sceneFlow;
   }
 
-  startScene(sceneId: string) {
+  startScene(
+    sceneId: string,
+    options: {
+      playbackMode?: SceneFlowPlaybackMode;
+    } = {},
+  ) {
     const scene = this.rootStore.getSceneById(sceneId);
 
     if (!scene) {
@@ -71,6 +110,7 @@ export class SceneFlowController {
       return this.startSceneFlow(scene.mainSceneFlowId, {
         sceneId,
         replaceTop: true,
+        ...(options.playbackMode !== undefined ? { playbackMode: options.playbackMode } : {}),
       });
     }
 
@@ -83,6 +123,7 @@ export class SceneFlowController {
       sceneId?: string;
       replaceTop?: boolean;
       startNodeId?: string;
+      playbackMode?: SceneFlowPlaybackMode;
     } = {},
   ) {
     return this.startFlow(flowId, options);
@@ -93,6 +134,7 @@ export class SceneFlowController {
     options: {
       sceneId?: string;
       replaceTop?: boolean;
+      playbackMode?: SceneFlowPlaybackMode;
     } = {},
   ) {
     const dialogue = this.rootStore.getDialogueById(dialogueId);
@@ -106,10 +148,17 @@ export class SceneFlowController {
     return this.startFlow(dialogueId, {
       replaceTop: options.replaceTop ?? false,
       sceneId: options.sceneId ?? dialogue.meta?.sceneId ?? null,
+      ...(options.playbackMode !== undefined ? { playbackMode: options.playbackMode } : {}),
     });
   }
 
-  startCityScene(sceneId: string, options: { replaceTop?: boolean } = {}) {
+  startCityScene(
+    sceneId: string,
+    options: {
+      replaceTop?: boolean;
+      playbackMode?: SceneFlowPlaybackMode;
+    } = {},
+  ) {
     const scene = this.rootStore.getCitySceneById(sceneId);
 
     if (!scene) {
@@ -120,10 +169,18 @@ export class SceneFlowController {
 
     return this.startFlow(sceneId, {
       replaceTop: options.replaceTop ?? true,
+      ...(options.playbackMode !== undefined ? { playbackMode: options.playbackMode } : {}),
     });
   }
 
-  startTravelBoard(boardId: string, startNodeId?: string, options: { replaceTop?: boolean } = {}) {
+  startTravelBoard(
+    boardId: string,
+    startNodeId?: string,
+    options: {
+      replaceTop?: boolean;
+      playbackMode?: SceneFlowPlaybackMode;
+    } = {},
+  ) {
     const board = this.rootStore.getTravelBoardById(boardId);
 
     if (!board) {
@@ -135,6 +192,7 @@ export class SceneFlowController {
     return this.startFlow(boardId, {
       replaceTop: options.replaceTop ?? false,
       startNodeId: startNodeId ?? board.startNodeId,
+      ...(options.playbackMode !== undefined ? { playbackMode: options.playbackMode } : {}),
     });
   }
 
@@ -151,6 +209,12 @@ export class SceneFlowController {
     const shouldRestoreScreen = this.rootStore.ui.activeScreen === poppedScreenId;
 
     const parentSession = this.store.activeSession;
+
+    if (!parentSession && this.store.isPreviewActive) {
+      this.rootStore.finishScenePreview();
+
+      return;
+    }
 
     if (parentSession) {
       this.rootStore.audio.syncSceneFlowPresentation();
@@ -202,7 +266,10 @@ export class SceneFlowController {
     const resolvedNodeTarget = this.resolveNodeTarget(flow, targetNodeId);
 
     if (resolvedNodeTarget.kind === 'sceneFlow') {
-      this.startSceneFlow(resolvedNodeTarget.flowId, { replaceTop: true });
+      this.startSceneFlow(resolvedNodeTarget.flowId, {
+        replaceTop: true,
+        playbackMode: session.playbackMode,
+      });
 
       return false;
     }
@@ -271,7 +338,10 @@ export class SceneFlowController {
     }
 
     if (nextTransition?.nextSceneId) {
-      this.startSceneFlow(nextTransition.nextSceneId, { replaceTop: true });
+      this.startSceneFlow(nextTransition.nextSceneId, {
+        replaceTop: true,
+        playbackMode: session.playbackMode,
+      });
 
       return true;
     }
@@ -290,6 +360,7 @@ export class SceneFlowController {
       return false;
     }
 
+    this.applyTimeCost(transition.timeCost);
     this.applyEffects(transition.effects);
 
     if (flow.mode === 'hub' && transition.once) {
@@ -311,13 +382,16 @@ export class SceneFlowController {
     }
 
     if (transition.openSceneFlowId) {
-      this.openReferencedFlow(transition.openSceneFlowId);
+      this.openReferencedFlow(transition.openSceneFlowId, session.playbackMode);
 
       return true;
     }
 
     if (transition.nextSceneId) {
-      this.startSceneFlow(transition.nextSceneId, { replaceTop: true });
+      this.startSceneFlow(transition.nextSceneId, {
+        replaceTop: true,
+        playbackMode: session.playbackMode,
+      });
 
       return true;
     }
@@ -528,6 +602,7 @@ export class SceneFlowController {
       replaceTop?: boolean;
       sceneId?: string | null;
       startNodeId?: string;
+      playbackMode?: SceneFlowPlaybackMode;
     } = {},
   ): SceneFlowSession | null {
     const resolvedFlowStart = this.resolveFlowStart(flowId, options.startNodeId);
@@ -546,10 +621,12 @@ export class SceneFlowController {
 
     const currentScreenId = this.rootStore.ui.activeScreen;
     const previousSession = this.store.activeSession;
+    const playbackMode = options.playbackMode ?? 'live';
     const startNodeId = resolvedFlowStart.nodeId;
     const sessionInput: Omit<SceneFlowSession, 'sessionId'> = {
       flowId: flow.id,
       mode: flow.mode,
+      playbackMode,
       sourceType: flow.source.type,
       sceneId: options.sceneId ?? (flow.source.type === 'sceneGeneration' ? flow.id : null),
       currentNodeId: startNodeId,
@@ -565,7 +642,10 @@ export class SceneFlowController {
       ? this.store.replaceTopSession(sessionInput)
       : this.store.pushSession(sessionInput);
 
-    this.discoverFlowContent(flow, sessionInput.sceneId);
+    if (playbackMode === 'live') {
+      this.discoverFlowContent(flow, sessionInput.sceneId);
+      this.unlockReplaySceneIfNeeded(flow, sessionInput.sceneId);
+    }
 
     if (flow.mode === 'hub') {
       this.store.markHubFlowVisited(flow.id);
@@ -584,7 +664,7 @@ export class SceneFlowController {
       this.refreshVisibleTransitions(nextSession.sessionId);
     }
 
-    if (!previousSession) {
+    if (!previousSession && playbackMode === 'live') {
       void this.rootStore.saves.autoSave(flow.title);
     }
 
@@ -617,6 +697,11 @@ export class SceneFlowController {
 
   private discoverNodeContent(node: SceneFlowNode, sessionId: string) {
     const session = this.requireSession(sessionId);
+
+    if (session.playbackMode !== 'live') {
+      return;
+    }
+
     const characterIds = collectCharacterIdsFromSceneFlowNode(
       node,
       session.presentation.currentStage,
@@ -923,25 +1008,59 @@ export class SceneFlowController {
   }
 
   private applyEffects(effects: SceneFlowTransition['effects'] | SceneFlowNode['onEnterEffects']) {
-    if (effects && effects.length > 0) {
-      this.rootStore.executeEffects(effects);
+    if (!effects || effects.length === 0) {
+      return;
     }
+
+    const activePlaybackMode = this.store.activeSession?.playbackMode ?? 'live';
+    const effectsToApply = activePlaybackMode === 'preview'
+      ? effects.filter((effect) => PREVIEW_SAFE_EFFECT_TYPES.has(effect.type))
+      : effects;
+
+    if (effectsToApply.length === 0) {
+      return;
+    }
+
+    this.rootStore.executeEffects(effectsToApply);
   }
 
-  private openReferencedFlow(flowId: string) {
+  private applyTimeCost(cost: SceneFlowTransition['timeCost'] | undefined) {
+    if (getHoursFromTimeCost(cost) <= 0) {
+      return;
+    }
+
+    this.rootStore.time.advanceByCost(cost);
+  }
+
+  private unlockReplaySceneIfNeeded(flow: SceneFlowData, sceneId: string | null) {
+    if (!sceneId || flow.replay?.enabled !== true) {
+      return;
+    }
+
+    if (flow.replay.unlockOnStart === false) {
+      return;
+    }
+
+    this.rootStore.seenContent.markSceneEntryDiscovered(buildSceneReplayLibraryEntryId(sceneId));
+  }
+
+  private openReferencedFlow(
+    flowId: string,
+    playbackMode: SceneFlowPlaybackMode = this.store.activeSession?.playbackMode ?? 'live',
+  ) {
     if (this.rootStore.getDialogueById(flowId)) {
-      this.startDialogue(flowId);
+      this.startDialogue(flowId, { playbackMode });
 
       return;
     }
 
     if (this.rootStore.getTravelBoardById(flowId)) {
-      this.startTravelBoard(flowId);
+      this.startTravelBoard(flowId, undefined, { playbackMode });
 
       return;
     }
 
-    this.startFlow(flowId);
+    this.startFlow(flowId, { playbackMode });
   }
 
   private refreshVisibleTransitions(sessionId = this.store.activeSession?.sessionId ?? null) {
@@ -1038,6 +1157,7 @@ export class SceneFlowController {
       },
       sessionId,
     );
+    this.applyTimeCost(flow.routeRules?.stepTimeCost);
     this.store.pushRouteLog('movement', `Moved to ${node.title ?? node.id}.`, nodeId, sessionId);
     this.refreshVisibleTransitions(sessionId);
   }
@@ -1056,7 +1176,7 @@ export class SceneFlowController {
     const alreadyResolved = routeRuntime.resolvedNodeIds.includes(node.id);
 
     if (!(alreadyResolved && node.route?.oneTime)) {
-      const resolution = this.resolveRouteEncounter(node);
+      const resolution = this.resolveRouteEncounter(node, session.playbackMode);
 
       this.store.markRouteNodeResolved(node.id, sessionId);
       this.store.pushRouteLog('encounter', resolution.message, node.id, sessionId);
@@ -1092,8 +1212,12 @@ export class SceneFlowController {
     }
   }
 
-  private resolveRouteEncounter(node: SceneFlowNode): RouteEncounterResolution {
+  private resolveRouteEncounter(
+    node: SceneFlowNode,
+    playbackMode: SceneFlowPlaybackMode,
+  ): RouteEncounterResolution {
     const encounter = node.encounter;
+    const isPreview = playbackMode === 'preview';
 
     if (!encounter || encounter.kind === 'none') {
       return {
@@ -1103,7 +1227,7 @@ export class SceneFlowController {
 
     switch (encounter.kind) {
       case 'battle':
-        if (encounter.battleTemplateId) {
+        if (!isPreview && encounter.battleTemplateId) {
           this.rootStore.battle.startBattle(encounter.battleTemplateId);
         }
 
@@ -1112,59 +1236,49 @@ export class SceneFlowController {
         };
       case 'dialogue':
         if (encounter.dialogueId) {
-          this.startDialogue(encounter.dialogueId);
+          this.startDialogue(encounter.dialogueId, { playbackMode });
         }
 
         if (encounter.openSceneFlowId) {
-          this.openReferencedFlow(encounter.openSceneFlowId);
+          this.openReferencedFlow(encounter.openSceneFlowId, playbackMode);
         }
 
-        if (encounter.effects?.length) {
-          this.rootStore.executeEffects(encounter.effects);
-        }
+        this.applyEffects(encounter.effects);
 
         return {
           message: `${node.title ?? node.id} opens a story scene.`,
         };
       case 'loot':
-        if (encounter.itemId) {
+        if (!isPreview && encounter.itemId) {
           this.rootStore.inventory.addItem(encounter.itemId, encounter.itemQuantity ?? 1);
         }
 
-        if (encounter.effects?.length) {
-          this.rootStore.executeEffects(encounter.effects);
-        }
+        this.applyEffects(encounter.effects);
 
         return {
           message: `${node.title ?? node.id} yields a cache worth claiming.`,
         };
       case 'script':
-        if (encounter.scriptId) {
+        if (!isPreview && encounter.scriptId) {
           this.rootStore.executeEffect({
             type: 'runScript',
             scriptId: encounter.scriptId,
           });
         }
 
-        if (encounter.effects?.length) {
-          this.rootStore.executeEffects(encounter.effects);
-        }
+        this.applyEffects(encounter.effects);
 
         return {
           message: `${node.title ?? node.id} reveals an uncertain omen.`,
         };
       case 'effects':
-        if (encounter.effects?.length) {
-          this.rootStore.executeEffects(encounter.effects);
-        }
+        this.applyEffects(encounter.effects);
 
         return {
           message: `${node.title ?? node.id} changes the state of the route.`,
         };
       case 'exit':
-        if (encounter.effects?.length) {
-          this.rootStore.executeEffects(encounter.effects);
-        }
+        this.applyEffects(encounter.effects);
 
         return {
           message: `${node.title ?? node.id} leads out of the route.`,

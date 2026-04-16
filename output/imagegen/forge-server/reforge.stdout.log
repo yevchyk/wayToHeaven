@@ -1,0 +1,337 @@
+venv "D:\Civitai\Packages\reforge\venv\Scripts\Python.exe"
+Python 3.10.17 (main, May 30 2025, 05:32:15) [MSC v.1943 64 bit (AMD64)]
+Version: f1.0.0v2-v1.10.1RC-latest-2514-g7307781a
+Commit hash: 7307781a92aabcb9a239673eeff576be1990eed2
+Installing setuptools
+Installing requirements
+loading WD14-tagger reqs from D:\Civitai\Packages\reforge\extensions\stable-diffusion-webui-wd14-tagger\requirements.txt
+Checking WD14-tagger requirements.
+D:\Civitai\Packages\reforge\extensions-builtin\forge_legacy_preprocessors\install.py:2: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  import pkg_resources
+Installing forge_legacy_preprocessor requirement: insightface
+Installing forge_legacy_preprocessor requirement: handrefinerportable
+Installing forge_legacy_preprocessor requirement: depth_anything
+D:\Civitai\Packages\reforge\extensions-builtin\sd_forge_controlnet\install.py:2: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  import pkg_resources
+Launching Web UI with arguments: 
+Total VRAM 12281 MB, total RAM 32616 MB
+pytorch version: 2.11.0+cu126
+Set vram state to: NORMAL_VRAM
+Device: cuda:0 NVIDIA GeForce RTX 4070 : native
+Hint: your device supports --pin-shared-memory for speed improvements if having 16GB or more VRAM. It may cause issues with 12GB VRAM or less.
+Hint: your device supports --cuda-malloc for a bit less vram usage and small speed improvement
+Hint: your device supports --cuda-stream for potential speed improvements but it may cause issues on some GPUs that have 6-8GB VRAM or less.
+CUDA Stream Activated:  False
+W0411 21:39:54.039000 19660 venv\Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Using pytorch attention
+ControlNet preprocessor location: D:\Civitai\Packages\reforge\models\ControlNetPreprocessor
+Tag Autocomplete: Could not locate model-keyword extension, Lora trigger word completion will be limited to those added through the extra networks menu.
+[-] ADetailer initialized. version: 26.2.0, num models: 10
+== WD14 tagger /gpu:0, uname_result(system='Windows', node='Taras-PC', release='10', version='10.0.19044', machine='AMD64') ==
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+D:\Civitai\Packages\reforge\modules\sd_models.py:657: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead
+  if (isinstance(obj, torch.Tensor) and
+Memory change: 1.66 MB (1.14 GB total)
+Loading model sd\epicrealismXL_pureFix.safetensors [dd21adcc3a] (1 of 1)
+Loading weights [dd21adcc3a] from D:\Civitai\Packages\reforge\models\Stable-diffusion\sd\epicrealismXL_pureFix.safetensors
+[Forge Couple] [0;32mINFO[0m - Loaded Adv. Presets...
+[Forge Couple] [0;32mINFO[0m - Loaded Adv. Presets...
+2026-04-11 21:40:10,602 - ControlNet - [0;32mINFO[0m - ControlNet UI callback registered.
+Running on local URL:  http://127.0.0.1:7860
+
+To create a public link, set `share=True` in `launch()`.
+Startup time: 110.2s (prepare environment: 68.7s, import torch: 21.5s, import gradio: 0.9s, setup paths: 7.5s, initialize shared: 1.3s, other imports: 1.0s, load scripts: 6.7s, create ui: 1.6s, gradio launch: 0.8s).
+WARNING:root:clip missing: ['clip_l.text_projection', 'clip_l.logit_scale']
+Model sd\epicrealismXL_pureFix.safetensors [dd21adcc3a] loaded in 12.7s (memory cleanup: 0.5s, load weights from disk: 1.0s, forge instantiate config: 0.1s, forge load real models: 10.4s, load VAE: 0.2s, calculate empty prompt: 0.3s).
+D:\Civitai\Packages\reforge\modules\sd_models.py:657: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead
+  if (isinstance(obj, torch.Tensor) and
+Memory change: 1.57 MB (6.88 GB total)
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A  4%|▍         | 1/24 [00:00<00:20,  1.10it/s]  8%|▊         | 2/24 [00:01<00:15,  1.43it/s]
+Total progress:  12%|█▎        | 3/24 [00:00<00:04,  4.79it/s][A 12%|█▎        | 3/24 [00:02<00:13,  1.58it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:06,  3.13it/s][A 17%|█▋        | 4/24 [00:02<00:11,  1.75it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.71it/s][A 21%|██        | 5/24 [00:02<00:09,  1.94it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:06,  2.61it/s][A 25%|██▌       | 6/24 [00:03<00:08,  2.12it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.59it/s][A 29%|██▉       | 7/24 [00:03<00:07,  2.29it/s]
+Total progress:  33%|███▎      | 8/24 [00:02<00:06,  2.64it/s][A 33%|███▎      | 8/24 [00:04<00:06,  2.44it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.70it/s][A 38%|███▊      | 9/24 [00:04<00:05,  2.57it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:05,  2.75it/s][A 42%|████▏     | 10/24 [00:04<00:05,  2.65it/s]
+Total progress:  46%|████▌     | 11/24 [00:03<00:04,  2.79it/s][A 46%|████▌     | 11/24 [00:05<00:04,  2.71it/s]
+Total progress:  50%|█████     | 12/24 [00:04<00:04,  2.81it/s][A 50%|█████     | 12/24 [00:05<00:04,  2.77it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  2.84it/s][A 54%|█████▍    | 13/24 [00:05<00:03,  2.82it/s]
+Total progress:  58%|█████▊    | 14/24 [00:04<00:03,  2.87it/s][A 58%|█████▊    | 14/24 [00:06<00:03,  2.86it/s]
+Total progress:  62%|██████▎   | 15/24 [00:05<00:03,  2.89it/s][A 62%|██████▎   | 15/24 [00:06<00:03,  2.88it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  2.90it/s][A 67%|██████▋   | 16/24 [00:06<00:02,  2.89it/s]
+Total progress:  71%|███████   | 17/24 [00:05<00:02,  2.91it/s][A 71%|███████   | 17/24 [00:07<00:02,  2.90it/s]
+Total progress:  75%|███████▌  | 18/24 [00:06<00:02,  2.92it/s][A 75%|███████▌  | 18/24 [00:07<00:02,  2.91it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  2.92it/s][A 79%|███████▉  | 19/24 [00:07<00:01,  2.91it/s]
+Total progress:  83%|████████▎ | 20/24 [00:06<00:01,  2.92it/s][A 83%|████████▎ | 20/24 [00:08<00:01,  2.92it/s]
+Total progress:  88%|████████▊ | 21/24 [00:07<00:01,  2.90it/s][A 88%|████████▊ | 21/24 [00:08<00:01,  2.92it/s]
+Total progress:  92%|█████████▏| 22/24 [00:07<00:00,  2.94it/s][A 92%|█████████▏| 22/24 [00:08<00:00,  2.93it/s]
+Total progress:  96%|█████████▌| 23/24 [00:07<00:00,  2.93it/s][A 96%|█████████▌| 23/24 [00:09<00:00,  2.93it/s]
+Total progress: 100%|██████████| 24/24 [00:08<00:00,  2.93it/s][A100%|██████████| 24/24 [00:09<00:00,  2.93it/s]100%|██████████| 24/24 [00:09<00:00,  2.53it/s]
+
+Total progress: 100%|██████████| 24/24 [00:10<00:00,  2.93it/s][ATotal progress: 100%|██████████| 24/24 [00:10<00:00,  2.36it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:06,  3.39it/s][A  8%|▊         | 2/24 [00:01<00:12,  1.82it/s]
+Total progress:  12%|█▎        | 3/24 [00:01<00:08,  2.62it/s][A 12%|█▎        | 3/24 [00:01<00:10,  1.95it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:08,  2.43it/s][A 17%|█▋        | 4/24 [00:01<00:09,  2.08it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.39it/s][A 21%|██        | 5/24 [00:02<00:08,  2.21it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:07,  2.44it/s][A 25%|██▌       | 6/24 [00:02<00:07,  2.35it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.51it/s][A 29%|██▉       | 7/24 [00:03<00:06,  2.48it/s]
+Total progress:  33%|███▎      | 8/24 [00:03<00:06,  2.60it/s][A 33%|███▎      | 8/24 [00:03<00:06,  2.59it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.66it/s][A 38%|███▊      | 9/24 [00:03<00:05,  2.59it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:05,  2.65it/s][A 42%|████▏     | 10/24 [00:04<00:05,  2.65it/s]
+Total progress:  46%|████▌     | 11/24 [00:04<00:04,  2.69it/s][A 46%|████▌     | 11/24 [00:04<00:04,  2.72it/s]
+Total progress:  50%|█████     | 12/24 [00:04<00:04,  2.75it/s][A 50%|█████     | 12/24 [00:04<00:04,  2.77it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  2.79it/s][A 54%|█████▍    | 13/24 [00:05<00:03,  2.81it/s]
+Total progress:  58%|█████▊    | 14/24 [00:05<00:03,  2.83it/s][A 58%|█████▊    | 14/24 [00:05<00:03,  2.84it/s]
+Total progress:  62%|██████▎   | 15/24 [00:05<00:03,  2.85it/s][A 62%|██████▎   | 15/24 [00:05<00:03,  2.86it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  2.87it/s][A 67%|██████▋   | 16/24 [00:06<00:02,  2.87it/s]
+Total progress:  71%|███████   | 17/24 [00:06<00:02,  2.88it/s][A 71%|███████   | 17/24 [00:06<00:02,  2.88it/s]
+Total progress:  75%|███████▌  | 18/24 [00:06<00:02,  2.88it/s][A 75%|███████▌  | 18/24 [00:06<00:02,  2.88it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  2.89it/s][A 79%|███████▉  | 19/24 [00:07<00:01,  2.89it/s]
+Total progress:  83%|████████▎ | 20/24 [00:07<00:01,  2.89it/s][A 83%|████████▎ | 20/24 [00:07<00:01,  2.89it/s]
+Total progress:  88%|████████▊ | 21/24 [00:07<00:01,  2.89it/s][A 88%|████████▊ | 21/24 [00:08<00:01,  2.90it/s]
+Total progress:  92%|█████████▏| 22/24 [00:07<00:00,  2.90it/s][A 92%|█████████▏| 22/24 [00:08<00:00,  2.90it/s]
+Total progress:  96%|█████████▌| 23/24 [00:08<00:00,  2.90it/s][A 96%|█████████▌| 23/24 [00:08<00:00,  2.90it/s]
+Total progress: 100%|██████████| 24/24 [00:08<00:00,  2.90it/s][A100%|██████████| 24/24 [00:09<00:00,  2.90it/s]100%|██████████| 24/24 [00:09<00:00,  2.66it/s]
+
+Total progress: 100%|██████████| 24/24 [00:10<00:00,  2.90it/s][ATotal progress: 100%|██████████| 24/24 [00:10<00:00,  2.31it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:06,  3.21it/s][A  8%|▊         | 2/24 [00:01<00:12,  1.76it/s]
+Total progress:  12%|█▎        | 3/24 [00:01<00:08,  2.53it/s][A 12%|█▎        | 3/24 [00:01<00:10,  1.91it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:08,  2.39it/s][A 17%|█▋        | 4/24 [00:02<00:09,  2.06it/s]
+Total progress:  21%|██        | 5/24 [00:02<00:07,  2.38it/s][A 21%|██        | 5/24 [00:02<00:08,  2.20it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:07,  2.42it/s][A 25%|██▌       | 6/24 [00:02<00:07,  2.34it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.50it/s][A 29%|██▉       | 7/24 [00:03<00:06,  2.49it/s]
+Total progress:  33%|███▎      | 8/24 [00:03<00:06,  2.61it/s][A 33%|███▎      | 8/24 [00:03<00:06,  2.61it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.70it/s][A 38%|███▊      | 9/24 [00:03<00:05,  2.70it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:05,  2.76it/s][A 42%|████▏     | 10/24 [00:04<00:05,  2.77it/s]
+Total progress:  46%|████▌     | 11/24 [00:04<00:04,  2.81it/s][A 46%|████▌     | 11/24 [00:04<00:04,  2.82it/s]
+Total progress:  50%|█████     | 12/24 [00:04<00:04,  2.85it/s][A 50%|█████     | 12/24 [00:04<00:04,  2.85it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  2.86it/s][A 54%|█████▍    | 13/24 [00:05<00:03,  2.87it/s]
+Total progress:  58%|█████▊    | 14/24 [00:05<00:03,  2.89it/s][A 58%|█████▊    | 14/24 [00:05<00:03,  2.89it/s]
+Total progress:  62%|██████▎   | 15/24 [00:05<00:03,  2.90it/s][A 62%|██████▎   | 15/24 [00:05<00:03,  2.89it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  2.90it/s][A 67%|██████▋   | 16/24 [00:06<00:02,  2.91it/s]
+Total progress:  71%|███████   | 17/24 [00:06<00:02,  2.92it/s][A 71%|███████   | 17/24 [00:06<00:02,  2.92it/s]
+Total progress:  75%|███████▌  | 18/24 [00:06<00:02,  2.92it/s][A 75%|███████▌  | 18/24 [00:06<00:02,  2.92it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  2.92it/s][A 79%|███████▉  | 19/24 [00:07<00:01,  2.92it/s]
+Total progress:  83%|████████▎ | 20/24 [00:07<00:01,  2.92it/s][A 83%|████████▎ | 20/24 [00:07<00:01,  2.92it/s]
+Total progress:  88%|████████▊ | 21/24 [00:07<00:01,  2.92it/s][A 88%|████████▊ | 21/24 [00:07<00:01,  2.92it/s]
+Total progress:  92%|█████████▏| 22/24 [00:07<00:00,  2.92it/s][A 92%|█████████▏| 22/24 [00:08<00:00,  2.93it/s]
+Total progress:  96%|█████████▌| 23/24 [00:08<00:00,  2.93it/s][A 96%|█████████▌| 23/24 [00:08<00:00,  2.92it/s]
+Total progress: 100%|██████████| 24/24 [00:08<00:00,  2.92it/s][A100%|██████████| 24/24 [00:08<00:00,  2.93it/s]100%|██████████| 24/24 [00:08<00:00,  2.68it/s]
+
+Total progress: 100%|██████████| 24/24 [00:23<00:00,  2.92it/s][ATotal progress: 100%|██████████| 24/24 [00:23<00:00,  1.03it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:05,  4.18it/s][A  8%|▊         | 2/24 [00:01<00:11,  1.87it/s]
+Total progress:  12%|█▎        | 3/24 [00:01<00:08,  2.60it/s][A 12%|█▎        | 3/24 [00:01<00:09,  2.17it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:07,  2.66it/s][A 17%|█▋        | 4/24 [00:01<00:08,  2.35it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.69it/s][A 21%|██        | 5/24 [00:02<00:07,  2.57it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:06,  2.82it/s][A 25%|██▌       | 6/24 [00:02<00:06,  2.77it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:05,  2.95it/s][A 29%|██▉       | 7/24 [00:02<00:05,  2.87it/s]
+Total progress:  33%|███▎      | 8/24 [00:02<00:05,  2.99it/s][A 33%|███▎      | 8/24 [00:03<00:05,  2.98it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:04,  3.07it/s][A 38%|███▊      | 9/24 [00:03<00:04,  3.07it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:04,  3.14it/s][A 42%|████▏     | 10/24 [00:03<00:04,  3.14it/s]
+Total progress:  46%|████▌     | 11/24 [00:03<00:04,  3.18it/s][A 46%|████▌     | 11/24 [00:03<00:04,  3.18it/s]
+Total progress:  50%|█████     | 12/24 [00:03<00:03,  3.21it/s][A 50%|█████     | 12/24 [00:04<00:03,  3.21it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  3.24it/s][A 54%|█████▍    | 13/24 [00:04<00:03,  3.24it/s]
+Total progress:  58%|█████▊    | 14/24 [00:04<00:03,  3.26it/s][A 58%|█████▊    | 14/24 [00:04<00:03,  3.26it/s]
+Total progress:  62%|██████▎   | 15/24 [00:04<00:02,  3.27it/s][A 62%|██████▎   | 15/24 [00:05<00:02,  3.27it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  3.28it/s][A 67%|██████▋   | 16/24 [00:05<00:02,  3.28it/s]
+Total progress:  71%|███████   | 17/24 [00:05<00:02,  3.29it/s][A 71%|███████   | 17/24 [00:05<00:02,  3.28it/s]
+Total progress:  75%|███████▌  | 18/24 [00:05<00:01,  3.29it/s][A 75%|███████▌  | 18/24 [00:06<00:01,  3.29it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  3.29it/s][A 79%|███████▉  | 19/24 [00:06<00:01,  3.29it/s]
+Total progress:  83%|████████▎ | 20/24 [00:06<00:01,  3.29it/s][A 83%|████████▎ | 20/24 [00:06<00:01,  3.29it/s]
+Total progress:  88%|████████▊ | 21/24 [00:06<00:00,  3.29it/s][A 88%|████████▊ | 21/24 [00:06<00:00,  3.29it/s]
+Total progress:  92%|█████████▏| 22/24 [00:06<00:00,  3.29it/s][A 92%|█████████▏| 22/24 [00:07<00:00,  3.29it/s]
+Total progress:  96%|█████████▌| 23/24 [00:07<00:00,  3.29it/s][A 96%|█████████▌| 23/24 [00:07<00:00,  3.29it/s]
+Total progress: 100%|██████████| 24/24 [00:07<00:00,  3.29it/s][A100%|██████████| 24/24 [00:07<00:00,  3.29it/s]100%|██████████| 24/24 [00:07<00:00,  3.04it/s]
+
+Total progress: 100%|██████████| 24/24 [00:08<00:00,  3.29it/s][ATotal progress: 100%|██████████| 24/24 [00:08<00:00,  2.72it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:05,  3.85it/s][A  8%|▊         | 2/24 [00:00<00:10,  2.06it/s]
+Total progress:  12%|█▎        | 3/24 [00:00<00:07,  2.96it/s][A 12%|█▎        | 3/24 [00:01<00:09,  2.20it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:07,  2.74it/s][A 17%|█▋        | 4/24 [00:01<00:08,  2.34it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.69it/s][A 21%|██        | 5/24 [00:02<00:07,  2.48it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:06,  2.72it/s][A 25%|██▌       | 6/24 [00:02<00:06,  2.61it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.79it/s][A 29%|██▉       | 7/24 [00:02<00:06,  2.74it/s]
+Total progress:  33%|███▎      | 8/24 [00:02<00:05,  2.87it/s][A 33%|███▎      | 8/24 [00:03<00:05,  2.87it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.97it/s][A 38%|███▊      | 9/24 [00:03<00:05,  2.98it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:04,  3.05it/s][A 42%|████▏     | 10/24 [00:03<00:04,  3.06it/s]
+Total progress:  46%|████▌     | 11/24 [00:03<00:04,  3.11it/s][A 46%|████▌     | 11/24 [00:04<00:04,  3.12it/s]
+Total progress:  50%|█████     | 12/24 [00:04<00:03,  3.15it/s][A 50%|█████     | 12/24 [00:04<00:03,  3.16it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  3.19it/s][A 54%|█████▍    | 13/24 [00:04<00:03,  3.19it/s]
+Total progress:  58%|█████▊    | 14/24 [00:04<00:03,  3.21it/s][A 58%|█████▊    | 14/24 [00:04<00:03,  3.21it/s]
+Total progress:  62%|██████▎   | 15/24 [00:04<00:02,  3.23it/s][A 62%|██████▎   | 15/24 [00:05<00:02,  3.23it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  3.23it/s][A 67%|██████▋   | 16/24 [00:05<00:02,  3.24it/s]
+Total progress:  71%|███████   | 17/24 [00:05<00:02,  3.24it/s][A 71%|███████   | 17/24 [00:05<00:02,  3.24it/s]
+Total progress:  75%|███████▌  | 18/24 [00:05<00:01,  3.24it/s][A 75%|███████▌  | 18/24 [00:06<00:01,  3.24it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  3.24it/s][A 79%|███████▉  | 19/24 [00:06<00:01,  3.24it/s]
+Total progress:  83%|████████▎ | 20/24 [00:06<00:01,  3.24it/s][A 83%|████████▎ | 20/24 [00:06<00:01,  3.24it/s]
+Total progress:  88%|████████▊ | 21/24 [00:06<00:00,  3.25it/s][A 88%|████████▊ | 21/24 [00:07<00:00,  3.24it/s]
+Total progress:  92%|█████████▏| 22/24 [00:07<00:00,  3.24it/s][A 92%|█████████▏| 22/24 [00:07<00:00,  3.24it/s]
+Total progress:  96%|█████████▌| 23/24 [00:07<00:00,  3.22it/s][A 96%|█████████▌| 23/24 [00:07<00:00,  3.24it/s]
+Total progress: 100%|██████████| 24/24 [00:07<00:00,  3.25it/s][A100%|██████████| 24/24 [00:08<00:00,  3.25it/s]100%|██████████| 24/24 [00:08<00:00,  2.99it/s]
+
+Total progress: 100%|██████████| 24/24 [00:09<00:00,  3.25it/s][ATotal progress: 100%|██████████| 24/24 [00:09<00:00,  2.63it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:05,  3.79it/s][A  8%|▊         | 2/24 [00:00<00:10,  2.06it/s]
+Total progress:  12%|█▎        | 3/24 [00:00<00:07,  2.96it/s][A 12%|█▎        | 3/24 [00:01<00:09,  2.21it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:07,  2.76it/s][A 17%|█▋        | 4/24 [00:01<00:08,  2.35it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.71it/s][A 21%|██        | 5/24 [00:02<00:07,  2.49it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:06,  2.74it/s][A 25%|██▌       | 6/24 [00:02<00:06,  2.64it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.82it/s][A 29%|██▉       | 7/24 [00:02<00:06,  2.77it/s]
+Total progress:  33%|███▎      | 8/24 [00:02<00:05,  2.91it/s][A 33%|███▎      | 8/24 [00:03<00:05,  2.91it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:04,  3.00it/s][A 38%|███▊      | 9/24 [00:03<00:04,  3.02it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:04,  3.09it/s][A 42%|████▏     | 10/24 [00:03<00:04,  3.10it/s]
+Total progress:  46%|████▌     | 11/24 [00:03<00:04,  3.15it/s][A 46%|████▌     | 11/24 [00:03<00:04,  3.16it/s]
+Total progress:  50%|█████     | 12/24 [00:03<00:03,  3.20it/s][A 50%|█████     | 12/24 [00:04<00:03,  3.20it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  3.22it/s][A 54%|█████▍    | 13/24 [00:04<00:03,  3.23it/s]
+Total progress:  58%|█████▊    | 14/24 [00:04<00:03,  3.24it/s][A 58%|█████▊    | 14/24 [00:04<00:03,  3.25it/s]
+Total progress:  62%|██████▎   | 15/24 [00:04<00:02,  3.27it/s][A 62%|██████▎   | 15/24 [00:05<00:02,  3.27it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  3.27it/s][A 67%|██████▋   | 16/24 [00:05<00:02,  3.28it/s]
+Total progress:  71%|███████   | 17/24 [00:05<00:02,  3.29it/s][A 71%|███████   | 17/24 [00:05<00:02,  3.28it/s]
+Total progress:  75%|███████▌  | 18/24 [00:05<00:01,  3.28it/s][A 75%|███████▌  | 18/24 [00:06<00:01,  3.28it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  3.28it/s][A 79%|███████▉  | 19/24 [00:06<00:01,  3.28it/s]
+Total progress:  83%|████████▎ | 20/24 [00:06<00:01,  3.28it/s][A 83%|████████▎ | 20/24 [00:06<00:01,  3.29it/s]
+Total progress:  88%|████████▊ | 21/24 [00:06<00:00,  3.29it/s][A 88%|████████▊ | 21/24 [00:07<00:00,  3.29it/s]
+Total progress:  92%|█████████▏| 22/24 [00:07<00:00,  3.29it/s][A 92%|█████████▏| 22/24 [00:07<00:00,  3.29it/s]
+Total progress:  96%|█████████▌| 23/24 [00:07<00:00,  3.29it/s][A 96%|█████████▌| 23/24 [00:07<00:00,  3.29it/s]
+Total progress: 100%|██████████| 24/24 [00:07<00:00,  3.29it/s][A100%|██████████| 24/24 [00:07<00:00,  3.29it/s]100%|██████████| 24/24 [00:07<00:00,  3.03it/s]
+
+Total progress: 100%|██████████| 24/24 [00:09<00:00,  3.29it/s][ATotal progress: 100%|██████████| 24/24 [00:09<00:00,  2.66it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:05,  3.82it/s][A  8%|▊         | 2/24 [00:00<00:10,  2.06it/s]
+Total progress:  12%|█▎        | 3/24 [00:00<00:07,  2.96it/s][A 12%|█▎        | 3/24 [00:01<00:09,  2.20it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:07,  2.75it/s][A 17%|█▋        | 4/24 [00:01<00:08,  2.35it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.70it/s][A 21%|██        | 5/24 [00:02<00:07,  2.49it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:06,  2.74it/s][A 25%|██▌       | 6/24 [00:02<00:06,  2.63it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.81it/s][A 29%|██▉       | 7/24 [00:02<00:06,  2.77it/s]
+Total progress:  33%|███▎      | 8/24 [00:02<00:05,  2.90it/s][A 33%|███▎      | 8/24 [00:03<00:05,  2.90it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.99it/s][A 38%|███▊      | 9/24 [00:03<00:04,  3.01it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:04,  3.08it/s][A 42%|████▏     | 10/24 [00:03<00:04,  3.08it/s]
+Total progress:  46%|████▌     | 11/24 [00:03<00:04,  3.13it/s][A 46%|████▌     | 11/24 [00:03<00:04,  3.14it/s]
+Total progress:  50%|█████     | 12/24 [00:03<00:03,  3.17it/s][A 50%|█████     | 12/24 [00:04<00:03,  3.18it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  3.20it/s][A 54%|█████▍    | 13/24 [00:04<00:03,  3.20it/s]
+Total progress:  58%|█████▊    | 14/24 [00:04<00:03,  3.22it/s][A 58%|█████▊    | 14/24 [00:04<00:03,  3.22it/s]
+Total progress:  62%|██████▎   | 15/24 [00:04<00:02,  3.23it/s][A 62%|██████▎   | 15/24 [00:05<00:02,  3.23it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  3.24it/s][A 67%|██████▋   | 16/24 [00:05<00:02,  3.24it/s]
+Total progress:  71%|███████   | 17/24 [00:05<00:02,  3.24it/s][A 71%|███████   | 17/24 [00:05<00:02,  3.24it/s]
+Total progress:  75%|███████▌  | 18/24 [00:05<00:01,  3.25it/s][A 75%|███████▌  | 18/24 [00:06<00:01,  3.25it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  3.25it/s][A 79%|███████▉  | 19/24 [00:06<00:01,  3.25it/s]
+Total progress:  83%|████████▎ | 20/24 [00:06<00:01,  3.25it/s][A 83%|████████▎ | 20/24 [00:06<00:01,  3.25it/s]
+Total progress:  88%|████████▊ | 21/24 [00:06<00:00,  3.25it/s][A 88%|████████▊ | 21/24 [00:07<00:00,  3.24it/s]
+Total progress:  92%|█████████▏| 22/24 [00:07<00:00,  3.24it/s][A 92%|█████████▏| 22/24 [00:07<00:00,  3.20it/s]
+Total progress:  96%|█████████▌| 23/24 [00:07<00:00,  3.20it/s][A 96%|█████████▌| 23/24 [00:07<00:00,  3.22it/s]
+Total progress: 100%|██████████| 24/24 [00:07<00:00,  3.22it/s][A100%|██████████| 24/24 [00:08<00:00,  3.21it/s]100%|██████████| 24/24 [00:08<00:00,  2.99it/s]
+
+Total progress: 100%|██████████| 24/24 [00:09<00:00,  3.22it/s][ATotal progress: 100%|██████████| 24/24 [00:09<00:00,  2.66it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:05,  3.71it/s][A  8%|▊         | 2/24 [00:01<00:11,  2.00it/s]
+Total progress:  12%|█▎        | 3/24 [00:00<00:07,  2.87it/s][A 12%|█▎        | 3/24 [00:01<00:10,  2.09it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:07,  2.60it/s][A 17%|█▋        | 4/24 [00:01<00:08,  2.25it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.59it/s][A 21%|██        | 5/24 [00:02<00:07,  2.42it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:06,  2.66it/s][A 25%|██▌       | 6/24 [00:02<00:06,  2.58it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.76it/s][A 29%|██▉       | 7/24 [00:02<00:06,  2.74it/s]
+Total progress:  33%|███▎      | 8/24 [00:02<00:05,  2.87it/s][A 33%|███▎      | 8/24 [00:03<00:05,  2.88it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.98it/s][A 38%|███▊      | 9/24 [00:03<00:05,  2.99it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:04,  3.06it/s][A 42%|████▏     | 10/24 [00:03<00:04,  3.07it/s]
+Total progress:  46%|████▌     | 11/24 [00:03<00:04,  3.12it/s][A 46%|████▌     | 11/24 [00:04<00:04,  3.13it/s]
+Total progress:  50%|█████     | 12/24 [00:04<00:03,  3.16it/s][A 50%|█████     | 12/24 [00:04<00:03,  3.17it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  3.19it/s][A 54%|█████▍    | 13/24 [00:04<00:03,  3.18it/s]
+Total progress:  58%|█████▊    | 14/24 [00:04<00:03,  3.20it/s][A 58%|█████▊    | 14/24 [00:05<00:03,  3.18it/s]
+Total progress:  62%|██████▎   | 15/24 [00:05<00:02,  3.19it/s][A 62%|██████▎   | 15/24 [00:05<00:02,  3.15it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  3.16it/s][A 67%|██████▋   | 16/24 [00:05<00:02,  3.03it/s]
+Total progress:  71%|███████   | 17/24 [00:05<00:02,  2.98it/s][A 71%|███████   | 17/24 [00:06<00:02,  2.96it/s]
+Total progress:  75%|███████▌  | 18/24 [00:06<00:02,  2.97it/s][A 75%|███████▌  | 18/24 [00:06<00:02,  2.84it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  2.83it/s][A 79%|███████▉  | 19/24 [00:06<00:01,  2.83it/s]
+Total progress:  83%|████████▎ | 20/24 [00:06<00:01,  2.85it/s][A 83%|████████▎ | 20/24 [00:07<00:01,  2.83it/s]
+Total progress:  88%|████████▊ | 21/24 [00:07<00:01,  2.84it/s][A 88%|████████▊ | 21/24 [00:07<00:01,  2.84it/s]
+Total progress:  92%|█████████▏| 22/24 [00:07<00:00,  2.85it/s][A 92%|█████████▏| 22/24 [00:07<00:00,  2.85it/s]
+Total progress:  96%|█████████▌| 23/24 [00:07<00:00,  2.86it/s][A 96%|█████████▌| 23/24 [00:08<00:00,  2.86it/s]
+Total progress: 100%|██████████| 24/24 [00:08<00:00,  2.87it/s][A100%|██████████| 24/24 [00:08<00:00,  2.87it/s]100%|██████████| 24/24 [00:08<00:00,  2.81it/s]
+
+Total progress: 100%|██████████| 24/24 [00:09<00:00,  2.87it/s][ATotal progress: 100%|██████████| 24/24 [00:09<00:00,  2.48it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:06,  3.41it/s][A  8%|▊         | 2/24 [00:01<00:12,  1.81it/s]
+Total progress:  12%|█▎        | 3/24 [00:01<00:08,  2.60it/s][A 12%|█▎        | 3/24 [00:01<00:10,  1.94it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:08,  2.42it/s][A 17%|█▋        | 4/24 [00:01<00:09,  2.08it/s]
+Total progress:  21%|██        | 5/24 [00:01<00:07,  2.40it/s][A 21%|██        | 5/24 [00:02<00:08,  2.21it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:07,  2.43it/s][A 25%|██▌       | 6/24 [00:02<00:07,  2.34it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.50it/s][A 29%|██▉       | 7/24 [00:03<00:06,  2.49it/s]
+Total progress:  33%|███▎      | 8/24 [00:03<00:06,  2.61it/s][A 33%|███▎      | 8/24 [00:03<00:06,  2.60it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.69it/s][A 38%|███▊      | 9/24 [00:03<00:05,  2.69it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:05,  2.75it/s][A 42%|████▏     | 10/24 [00:04<00:05,  2.74it/s]
+Total progress:  46%|████▌     | 11/24 [00:04<00:04,  2.79it/s][A 46%|████▌     | 11/24 [00:04<00:04,  2.77it/s]
+Total progress:  50%|█████     | 12/24 [00:04<00:04,  2.78it/s][A 50%|█████     | 12/24 [00:04<00:04,  2.80it/s]
+Total progress:  54%|█████▍    | 13/24 [00:04<00:03,  2.83it/s][A 54%|█████▍    | 13/24 [00:05<00:03,  2.81it/s]
+Total progress:  58%|█████▊    | 14/24 [00:05<00:03,  2.83it/s][A 58%|█████▊    | 14/24 [00:05<00:03,  2.80it/s]
+Total progress:  62%|██████▎   | 15/24 [00:05<00:03,  2.82it/s][A 62%|██████▎   | 15/24 [00:05<00:03,  2.78it/s]
+Total progress:  67%|██████▋   | 16/24 [00:05<00:02,  2.79it/s][A 67%|██████▋   | 16/24 [00:06<00:02,  2.79it/s]
+Total progress:  71%|███████   | 17/24 [00:06<00:02,  2.79it/s][A 71%|███████   | 17/24 [00:06<00:02,  2.81it/s]
+Total progress:  75%|███████▌  | 18/24 [00:06<00:02,  2.82it/s][A 75%|███████▌  | 18/24 [00:06<00:02,  2.82it/s]
+Total progress:  79%|███████▉  | 19/24 [00:06<00:01,  2.83it/s][A 79%|███████▉  | 19/24 [00:07<00:01,  2.85it/s]
+Total progress:  83%|████████▎ | 20/24 [00:07<00:01,  2.85it/s][A 83%|████████▎ | 20/24 [00:07<00:01,  2.84it/s]
+Total progress:  88%|████████▊ | 21/24 [00:07<00:01,  2.84it/s][A 88%|████████▊ | 21/24 [00:08<00:01,  2.84it/s]
+Total progress:  92%|█████████▏| 22/24 [00:08<00:00,  2.84it/s][A 92%|█████████▏| 22/24 [00:08<00:00,  2.86it/s]
+Total progress:  96%|█████████▌| 23/24 [00:08<00:00,  2.86it/s][A 96%|█████████▌| 23/24 [00:08<00:00,  2.85it/s]
+Total progress: 100%|██████████| 24/24 [00:08<00:00,  2.85it/s][A100%|██████████| 24/24 [00:09<00:00,  2.85it/s]100%|██████████| 24/24 [00:09<00:00,  2.64it/s]
+
+Total progress: 100%|██████████| 24/24 [00:10<00:00,  2.85it/s][ATotal progress: 100%|██████████| 24/24 [00:10<00:00,  2.35it/s]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+Checkpoint sd\\waiIllustriousSDXL_v160.safetensors [a5f58eb1c3] not found; loading fallback sd\epicrealismXL_pureFix.safetensors [dd21adcc3a]
+  0%|          | 0/24 [00:00<?, ?it/s]
+Total progress:   0%|          | 0/24 [00:00<?, ?it/s][A
+Total progress:   8%|▊         | 2/24 [00:00<00:08,  2.59it/s][A  8%|▊         | 2/24 [00:01<00:14,  1.56it/s]
+Total progress:  12%|█▎        | 3/24 [00:01<00:09,  2.28it/s][A 12%|█▎        | 3/24 [00:01<00:12,  1.66it/s]
+Total progress:  17%|█▋        | 4/24 [00:01<00:09,  2.10it/s][A 17%|█▋        | 4/24 [00:02<00:10,  1.90it/s]
+Total progress:  21%|██        | 5/24 [00:02<00:08,  2.22it/s][A 21%|██        | 5/24 [00:02<00:09,  2.11it/s]
+Total progress:  25%|██▌       | 6/24 [00:02<00:07,  2.35it/s][A 25%|██▌       | 6/24 [00:02<00:07,  2.30it/s]
+Total progress:  29%|██▉       | 7/24 [00:02<00:06,  2.48it/s][A 29%|██▉       | 7/24 [00:03<00:06,  2.47it/s]
+Total progress:  33%|███▎      | 8/24 [00:03<00:06,  2.61it/s][A 33%|███▎      | 8/24 [00:03<00:06,  2.59it/s]
+Total progress:  38%|███▊      | 9/24 [00:03<00:05,  2.69it/s][A 38%|███▊      | 9/24 [00:03<00:05,  2.69it/s]
+Total progress:  42%|████▏     | 10/24 [00:03<00:05,  2.77it/s][A 42%|████▏     | 10/24 [00:04<00:05,  2.76it/s]
+Total progress:  46%|████▌     | 11/24 [00:04<00:04,  2.76it/s][A 46%|████▌     | 11/24 [00:04<00:04,  2.70it/s]
+Total progress:  50%|█████     | 12/24 [00:04<00:04,  2.74it/s][A 50%|█████     | 12/24 [00:05<00:04,  2.75it/s]
+Total progress:  54%|█████▍    | 13/24 [00:05<00:03,  2.79it/s][A 54%|█████▍    | 13/24 [00:05<00:03,  2.81it/s]
+Total progress:  58%|█████▊    | 14/24 [00:05<00:03,  2.83it/s][A 58%|█████▊    | 14/24 [00:05<00:03,  2.84it/s]
+Total progress:  62%|██████▎   | 15/24 [00:05<00:03,  2.86it/s][A 62%|██████▎   | 15/24 [00:06<00:03,  2.87it/s]
+Total progress:  67%|██████▋   | 16/24 [00:06<00:02,  2.88it/s][A 67%|██████▋   | 16/24 [00:06<00:02,  2.88it/s]
+Total progress:  71%|███████   | 17/24 [00:06<00:02,  2.89it/s][A 71%|███████   | 17/24 [00:06<00:02,  2.90it/s]
+Total progress:  75%|███████▌  | 18/24 [00:06<00:02,  2.91it/s][A 75%|███████▌  | 18/24 [00:07<00:02,  2.91it/s]
+Total progress:  79%|███████▉  | 19/24 [00:07<00:01,  2.92it/s][A 79%|███████▉  | 19/24 [00:07<00:01,  2.92it/s]
+Total progress:  83%|████████▎ | 20/24 [00:07<00:01,  2.92it/s][A 83%|████████▎ | 20/24 [00:07<00:01,  2.93it/s]
+Total progress:  88%|████████▊ | 21/24 [00:07<00:01,  2.93it/s][A 88%|████████▊ | 21/24 [00:08<00:01,  2.93it/s]
+Total progress:  92%|█████████▏| 22/24 [00:08<00:00,  2.93it/s][A 92%|█████████▏| 22/24 [00:08<00:00,  2.93it/s]
+Total progress:  96%|█████████▌| 23/24 [00:08<00:00,  2.93it/s][A 96%|█████████▌| 23/24 [00:08<00:00,  2.93it/s]
+Total progress: 100%|██████████| 24/24 [00:08<00:00,  2.93it/s][A100%|██████████| 24/24 [00:09<00:00,  2.93it/s]100%|██████████| 24/24 [00:09<00:00,  2.62it/s]
+
+Total progress: 100%|██████████| 24/24 [00:10<00:00,  2.93it/s][ATotal progress: 100%|██████████| 24/24 [00:10<00:00,  2.40it/s]

@@ -12,6 +12,7 @@ describe('CitySceneValidator', () => {
       dialogues: {},
       sceneFlows: {},
       items: {},
+      lootTables: {},
       quests: {},
       locations: {},
       characterTemplates: {},

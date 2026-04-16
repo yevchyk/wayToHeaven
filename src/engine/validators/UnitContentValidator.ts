@@ -9,6 +9,7 @@ export type UnitContentValidationIssueCode =
   | 'missingItemReference'
   | 'missingCharacterTemplateReference'
   | 'missingStatusReference'
+  | 'missingLootTableReference'
   | EffectReferenceValidationIssueCode;
 
 export interface UnitContentValidationIssue {
@@ -108,6 +109,15 @@ export class UnitContentValidator {
         });
       }
     });
+
+    if (template.rewardTableId && !this.lookup.hasLootTable(template.rewardTableId)) {
+      issues.push({
+        code: 'missingLootTableReference',
+        message: `Enemy template references missing loot table "${template.rewardTableId}".`,
+        path: 'rewardTableId',
+        targetId: template.rewardTableId,
+      });
+    }
 
     issues.push(...this.effectReferenceValidator.validateEffects(template.rewardEffects, 'rewardEffects'));
 

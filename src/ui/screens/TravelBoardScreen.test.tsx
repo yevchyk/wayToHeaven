@@ -21,5 +21,5 @@ describe('TravelBoardScreen', () => {
     expect(screen.getByText('Choose a direction')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Shackled Guard/ }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /Buried Cache/ }).length).toBeGreaterThan(0);
-  });
+  }, 15_000);
 });

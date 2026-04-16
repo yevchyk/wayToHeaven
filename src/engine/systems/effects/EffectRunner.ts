@@ -6,6 +6,7 @@ import type {
   GameEffect,
 } from '@engine/types/effects';
 import type { NarrativeProfileKey } from '@engine/types/profile';
+import { buildSceneReplayLibraryEntryId } from '@engine/systems/library/libraryDiscovery';
 
 type EffectType = GameEffect['type'];
 
@@ -32,6 +33,27 @@ function resolveRelationshipTarget(effect: Extract<GameEffect, { type: 'changeRe
   };
 }
 
+function shouldSyncReactiveQuests(effect: GameEffect) {
+  switch (effect.type) {
+    case 'setFlag':
+    case 'changeMeta':
+    case 'changeStat':
+    case 'changeProfile':
+    case 'setStat':
+    case 'setProfile':
+    case 'unlockStat':
+    case 'unlockProfile':
+    case 'changeRelationship':
+    case 'addTag':
+    case 'removeTag':
+    case 'giveItem':
+    case 'removeItem':
+      return true;
+    default:
+      return false;
+  }
+}
+
 export class EffectRunner {
   readonly rootStore: GameRootStore;
   readonly scriptRegistry: ScriptRegistry;
@@ -54,6 +76,10 @@ export class EffectRunner {
   run(effect: GameEffect): EffectExecutionResult {
     const handler = this.handlers[effect.type] as EffectHandler<typeof effect.type>;
     const result = handler(effect as Extract<GameEffect, { type: typeof effect.type }>);
+
+    if (result.status === 'applied' && shouldSyncReactiveQuests(effect)) {
+      this.rootStore.quests.syncReactiveQuests();
+    }
 
     this.rootStore.debug.recordEffect(result);
 
@@ -99,6 +125,16 @@ export class EffectRunner {
           status: 'applied',
         };
       },
+      unlockSceneReplay: (effect) => {
+        this.rootStore.seenContent.markSceneEntryDiscovered(
+          buildSceneReplayLibraryEntryId(effect.sceneId),
+        );
+
+        return {
+          effect,
+          status: 'applied',
+        };
+      },
       changeMeta: (effect) => {
         this.rootStore.meta.changeMeta(effect.key, effect.delta);
 
@@ -116,7 +152,7 @@ export class EffectRunner {
         };
       },
       advanceQuest: (effect) => {
-        this.rootStore.quests.advanceQuest(effect.questId, effect.delta ?? 1);
+        this.rootStore.quests.advanceQuest(effect.questId, effect.delta ?? 1, effect.objectiveId);
 
         return {
           effect,
@@ -299,6 +335,125 @@ export class EffectRunner {
               effect,
               status: 'skipped',
               details: 'No matching units could receive the resource restore effect.',
+            };
+      },
+      dealDamage: (effect) => {
+        const damagedInBattle = this.rootStore.battle.hasActiveBattle
+          ? this.rootStore.battle.dealDamageToScope(effect.targetScope, effect.amount, {
+              ...(effect.damageKind !== undefined ? { damageKind: effect.damageKind } : {}),
+              ...(effect.sourceUnitId !== undefined ? { sourceUnitId: effect.sourceUnitId } : {}),
+              ...(effect.targetId !== undefined ? { targetId: effect.targetId } : {}),
+            }).damagedUnitIds
+          : [];
+        const damagedUnitIds =
+          damagedInBattle.length > 0
+            ? damagedInBattle
+            : this.rootStore.party.dealDamageToScope(effect.targetScope, effect.amount, {
+                ...(effect.damageKind !== undefined ? { damageKind: effect.damageKind } : {}),
+                ...(effect.targetId !== undefined ? { targetId: effect.targetId } : {}),
+              }).damagedUnitIds;
+
+        return damagedUnitIds.length > 0
+          ? {
+              effect,
+              status: 'applied',
+            }
+          : {
+              effect,
+              status: 'skipped',
+              details: 'No matching units could receive the damage effect.',
+            };
+      },
+      removeStatus: (effect) => {
+        const removedInBattle = this.rootStore.battle.hasActiveBattle
+          ? this.rootStore.battle.removeStatusFromScope(
+              effect.targetScope,
+              effect.statusType,
+              effect.targetId,
+            )
+          : 0;
+        const removedCount =
+          removedInBattle > 0
+            ? removedInBattle
+            : this.rootStore.party.removeStatusFromScope(
+                effect.targetScope,
+                effect.statusType,
+                effect.targetId,
+              );
+
+        return removedCount > 0
+          ? {
+              effect,
+              status: 'applied',
+            }
+          : {
+              effect,
+              status: 'skipped',
+              details: 'No matching status instances were removed.',
+            };
+      },
+      cleanseStatuses: (effect) => {
+        const removedInBattle = this.rootStore.battle.hasActiveBattle
+          ? this.rootStore.battle.cleanseStatusesFromScope(effect.targetScope, {
+              ...(effect.targetId !== undefined ? { targetId: effect.targetId } : {}),
+              ...(effect.onlyNegative !== undefined ? { onlyNegative: effect.onlyNegative } : {}),
+              ...(effect.category !== undefined ? { category: effect.category } : {}),
+              ...(effect.limit !== undefined ? { limit: effect.limit } : {}),
+            })
+          : 0;
+        const removedCount =
+          removedInBattle > 0
+            ? removedInBattle
+            : this.rootStore.party.cleanseStatusesFromScope(effect.targetScope, {
+                ...(effect.targetId !== undefined ? { targetId: effect.targetId } : {}),
+                ...(effect.onlyNegative !== undefined ? { onlyNegative: effect.onlyNegative } : {}),
+                ...(effect.category !== undefined ? { category: effect.category } : {}),
+                ...(effect.limit !== undefined ? { limit: effect.limit } : {}),
+              });
+
+        return removedCount > 0
+          ? {
+              effect,
+              status: 'applied',
+            }
+          : {
+              effect,
+              status: 'skipped',
+              details: 'No matching statuses were cleansed.',
+            };
+      },
+      advanceTime: (effect) => {
+        if (effect.setDay !== undefined) {
+          this.rootStore.time.setStoryDay(effect.setDay);
+        }
+
+        if (effect.setHour !== undefined) {
+          this.rootStore.time.setTime(
+            effect.setDay ?? this.rootStore.time.day,
+            effect.setHour,
+          );
+        } else if (effect.setSegment !== undefined) {
+          this.rootStore.time.setStorySegment(effect.setSegment);
+        }
+
+        const advancedHours = this.rootStore.time.advanceByCost(effect, {
+          ...(effect.applyDefaultConsequences !== undefined
+            ? { applyDefaultConsequences: effect.applyDefaultConsequences }
+            : {}),
+        });
+
+        return advancedHours > 0 ||
+          effect.setDay !== undefined ||
+          effect.setHour !== undefined ||
+          effect.setSegment !== undefined
+          ? {
+              effect,
+              status: 'applied',
+            }
+          : {
+              effect,
+              status: 'skipped',
+              details: 'advanceTime effect did not change the runtime clock.',
             };
       },
       startBattle: (effect) => {

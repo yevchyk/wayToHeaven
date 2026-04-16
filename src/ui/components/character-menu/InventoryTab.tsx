@@ -57,7 +57,9 @@ export function InventoryTab({ rootStore, unitId, readOnly, onFeedback }: Invent
               <Button
                 disabled={!isUsable}
                 onClick={() => {
-                  const result = inventory.useItem(entry.itemId);
+                  const result = inventory.useItem(entry.itemId, {
+                    ...(unitId ? { targetUnitId: unitId } : {}),
+                  });
 
                   onFeedback(
                     result.consumed

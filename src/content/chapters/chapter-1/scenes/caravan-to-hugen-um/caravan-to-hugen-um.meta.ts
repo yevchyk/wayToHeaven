@@ -4,7 +4,7 @@ export const chapter1CaravanToHugenUmSceneMeta: SceneMeta = {
   id: 'chapter-1/scene/caravan-to-hugen-um',
   title: 'Арка — Караван до Гуген-Уму',
   chapterId: 'chapter-1',
-  sceneOrder: 4,
+  sceneOrder: 6,
   mainSceneFlowId: 'chapter-1/scene/caravan-to-hugen-um',
   description:
     'A long-form caravan arc that turns the fall of the house into hunger, rumor, forced usefulness, and the first road toward Hugen-Um.',

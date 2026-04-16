@@ -17,6 +17,10 @@ import {
   humanizeContentAssetLabel,
   resolveContentImageUrl,
 } from '@ui/components/character-composite/characterCompositeAssetResolver';
+import {
+  resolveDialogueBackdropPlaceholderSourcePath,
+  resolveDialoguePortraitPlaceholderSourcePath,
+} from '@ui/components/dialogue/dialoguePlaceholderAssets';
 
 interface CharacterCandidate {
   speakerId: string;
@@ -116,15 +120,16 @@ function uniqueValues<T>(values: readonly T[]) {
 function resolveAssetUrl(
   rootStore: GameRootStore,
   assetId: string | null,
+  sourcePath: string | undefined,
   dependencies: NarrativePortraitResolverDependencies = defaultNarrativePortraitResolverDependencies,
 ) {
-  if (!assetId) {
+  if (!assetId && !sourcePath) {
     return null;
   }
 
-  const assetDefinition = rootStore.getNarrativeAssetById(assetId);
+  const assetDefinition = assetId ? rootStore.getNarrativeAssetById(assetId) : null;
 
-  return dependencies.resolveImageUrl(assetId, assetDefinition?.sourcePath);
+  return dependencies.resolveImageUrl(assetId, sourcePath ?? assetDefinition?.sourcePath);
 }
 
 function resolveAssetLabel(rootStore: GameRootStore, assetId: string | null, fallbackLabel: string) {
@@ -140,9 +145,10 @@ function buildVisualAsset(
   assetId: string | null,
   kind: 'background' | 'portrait',
   fallbackLabel: string,
+  sourcePath: string | undefined,
   dependencies: NarrativePortraitResolverDependencies = defaultNarrativePortraitResolverDependencies,
 ) {
-  const url = resolveAssetUrl(rootStore, assetId, dependencies);
+  const url = resolveAssetUrl(rootStore, assetId, sourcePath, dependencies);
 
   return {
     type: 'asset' as const,
@@ -152,6 +158,10 @@ function buildVisualAsset(
     url,
     isPlaceholder: !url,
   };
+}
+
+function getCharacterDefaultPortraitId(rootStore: GameRootStore, speakerId: string) {
+  return rootStore.getNarrativeCharacterById(speakerId)?.defaultPortraitId ?? null;
 }
 
 interface ResolvedCanonicalPortrait {
@@ -214,13 +224,41 @@ function resolveFlatPortraitCandidate(
 ) {
   const canonicalPortrait = resolveCanonicalPortraitId(rootStore, speakerId, emotion, outfitId);
   const selectedPortraitId = portraitId ?? canonicalPortrait.assetId;
+  const fallbackPortraitIds = uniqueValues([
+    selectedPortraitId,
+    canonicalPortrait.assetId,
+    getCharacterDefaultPortraitId(rootStore, speakerId),
+  ].filter((value): value is string => Boolean(value)));
+
+  for (const candidatePortraitId of fallbackPortraitIds) {
+    const candidatePortrait = buildVisualAsset(
+      rootStore,
+      candidatePortraitId,
+      'portrait',
+      fallbackLabel,
+      undefined,
+      dependencies,
+    ) as DialogueAssetPortraitVisual;
+
+    if (candidatePortrait.url) {
+      return {
+        portrait: candidatePortrait,
+        canonicalPortraitId: canonicalPortrait.assetId,
+        canonicalSource: canonicalPortrait.source,
+        explicitPortraitId: portraitId,
+      } satisfies ResolvedFlatPortraitCandidate;
+    }
+  }
+
+  const placeholderSourcePath = resolveDialoguePortraitPlaceholderSourcePath(speakerId);
 
   return {
     portrait: buildVisualAsset(
       rootStore,
-      selectedPortraitId,
+      null,
       'portrait',
       fallbackLabel,
+      placeholderSourcePath,
       dependencies,
     ) as DialogueAssetPortraitVisual,
     canonicalPortraitId: canonicalPortrait.assetId,
@@ -244,7 +282,7 @@ function resolveCompositePortrait(
 
   const composition = buildCharacterCompositeLayers(characterComposite, emotion ? { emotion } : {});
   const layers = composition.layers.map((layer) => {
-    const url = resolveAssetUrl(rootStore, layer.assetId, dependencies);
+    const url = resolveAssetUrl(rootStore, layer.assetId, undefined, dependencies);
 
     return {
       ...layer,
@@ -294,11 +332,16 @@ interface ResolveNarrativePortraitOptions {
   fallbackLabel: string;
 }
 
+function resolvePortraitPresentation(rootStore: GameRootStore, speakerId: string) {
+  return rootStore.getNarrativeCharacterById(speakerId)?.portraitPresentation ?? 'flat';
+}
+
 export function resolveNarrativePortraitVisual(
   rootStore: GameRootStore,
   options: ResolveNarrativePortraitOptions,
   dependencies: NarrativePortraitResolverDependencies = defaultNarrativePortraitResolverDependencies,
 ): DialoguePortraitVisual {
+  const portraitPresentation = resolvePortraitPresentation(rootStore, options.speakerId);
   const flatPortrait = resolveFlatPortraitCandidate(
     rootStore,
     options.speakerId,
@@ -308,13 +351,16 @@ export function resolveNarrativePortraitVisual(
     options.fallbackLabel,
     dependencies,
   );
-  const compositePortrait = resolveCompositePortrait(
-    rootStore,
-    options.speakerId,
-    options.emotion,
-    options.fallbackLabel,
-    dependencies,
-  );
+  const compositePortrait =
+    portraitPresentation === 'composite'
+      ? resolveCompositePortrait(
+          rootStore,
+          options.speakerId,
+          options.emotion,
+          options.fallbackLabel,
+          dependencies,
+        )
+      : null;
   const hasExplicitPortraitOverride =
     Boolean(flatPortrait.explicitPortraitId) &&
     flatPortrait.explicitPortraitId !== flatPortrait.canonicalPortraitId;
@@ -322,7 +368,7 @@ export function resolveNarrativePortraitVisual(
     Boolean(flatPortrait.portrait.url) &&
     (hasExplicitPortraitOverride || flatPortrait.canonicalSource === 'outfit');
 
-  if (shouldPreferFlatPortrait) {
+  if (portraitPresentation !== 'composite' || shouldPreferFlatPortrait) {
     return flatPortrait.portrait;
   }
 
@@ -478,7 +524,25 @@ export function resolveNarrativeVisualAsset(
   kind: 'background' | 'portrait',
   fallbackLabel: string,
 ): DialogueVisualAsset {
-  return buildVisualAsset(rootStore, assetId, kind, fallbackLabel);
+  const primaryAsset = buildVisualAsset(
+    rootStore,
+    assetId,
+    kind,
+    fallbackLabel,
+    undefined,
+  );
+
+  if (primaryAsset.url || kind !== 'background') {
+    return primaryAsset;
+  }
+
+  return buildVisualAsset(
+    rootStore,
+    null,
+    kind,
+    fallbackLabel,
+    resolveDialogueBackdropPlaceholderSourcePath(assetId) ?? undefined,
+  );
 }
 
 function buildSlot(

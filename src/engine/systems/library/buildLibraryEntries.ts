@@ -7,11 +7,18 @@ import type { LocationData, LocationNodeType, NodeInteraction } from '@engine/ty
 import {
   buildCityLocationLibraryEntryId,
   buildSceneLocationLibraryEntryId,
+  buildSceneReplayLibraryEntryId,
   buildTravelLocationLibraryEntryId,
   buildWorldLocationLibraryEntryId,
 } from './libraryDiscovery';
 
-export type LibraryTabId = 'characters' | 'locations';
+export type LibraryTabId = 'characters' | 'locations' | 'scenes';
+
+export interface LibraryEntryAction {
+  type: 'previewScene';
+  targetId: string;
+  label: string;
+}
 
 export interface LibraryEntry {
   id: string;
@@ -19,12 +26,17 @@ export interface LibraryEntry {
   subtitle: string;
   description: string;
   imageAssetId: string | null;
-  imageSourcePath?: string;
+  imageSourcePath?: string | undefined;
   tags: string[];
+  action?: LibraryEntryAction | undefined;
 }
 
 function uniqueValues<T>(values: readonly T[]) {
   return Array.from(new Set(values));
+}
+
+function isPresent<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
 }
 
 function formatChapterLabel(chapterId?: string) {
@@ -135,7 +147,7 @@ function buildCharacterTags(character: NarrativeCharacterData) {
       portraitCount > 0 ? `${portraitCount} емоцій` : null,
       outfitCount > 0 ? `${outfitCount} образи` : null,
       character.defaultEmotion ? humanizeWord(character.defaultEmotion) : null,
-    ].filter((value): value is string => Boolean(value)),
+    ].filter(isPresent),
   );
 }
 
@@ -154,7 +166,7 @@ function buildLocationTags(location: LocationData) {
   const interactionLabels = uniqueValues(
     nodes
       .map((node) => (node.interaction ? getInteractionLabel(node.interaction) : null))
-      .filter((value): value is string => Boolean(value)),
+      .filter(isPresent),
   );
   const nodeTypeLabels = uniqueValues(nodes.map((node) => getLocationNodeTypeLabel(node.type)));
 
@@ -185,7 +197,7 @@ function buildCitySceneTags(scene: CitySceneData) {
       scene.districtLabel ?? null,
       scene.statusLabel ?? null,
       `${scene.actions.length} дій`,
-    ].filter((value): value is string => Boolean(value)),
+    ].filter(isPresent),
   );
 }
 
@@ -208,7 +220,7 @@ function buildTravelBoardTags(board: TravelBoardData) {
       board.chapterId ? formatChapterLabel(board.chapterId) : null,
       `${Object.keys(board.nodes).length} вузлів`,
       ...nodeTypeLabels.slice(0, 3),
-    ].filter((value): value is string => Boolean(value)),
+    ].filter(isPresent),
   );
 }
 
@@ -229,8 +241,22 @@ function buildSceneMetaTags(scene: SceneMeta) {
       formatChapterLabel(scene.chapterId),
       `порядок ${scene.sceneOrder}`,
       scene.defaultBackgroundId ? 'має фон' : null,
-    ].filter((value): value is string => Boolean(value)),
+    ].filter(isPresent),
   );
+}
+
+function buildReplaySceneDescription(scene: SceneMeta) {
+  const baseDescription = buildSceneMetaDescription(scene);
+
+  return `${baseDescription}\n\nReplay-mode opens this scene in an isolated preview sandbox, so choices and local consequences can be reviewed without overwriting the live playthrough.`;
+}
+
+function buildReplaySceneTags(scene: SceneMeta) {
+  return uniqueValues([
+    ...buildSceneMetaTags(scene),
+    'scene replay',
+    'preview sandbox',
+  ]);
 }
 
 function getAssetSourcePath(rootStore: GameRootStore, assetId: string | null) {
@@ -245,6 +271,7 @@ export function buildCharacterLibraryEntries(rootStore: GameRootStore): LibraryE
   return Object.values(rootStore.narrativeCharacterRegistry)
     .map((character) => {
       const imageAssetId = character.defaultPortraitId ?? Object.values(character.portraitRefs)[0] ?? null;
+      const imageSourcePath = getAssetSourcePath(rootStore, imageAssetId);
 
       return {
         id: character.id,
@@ -252,7 +279,7 @@ export function buildCharacterLibraryEntries(rootStore: GameRootStore): LibraryE
         subtitle: character.role === 'heroine' ? 'Головна героїня' : 'Персонаж світу',
         description: buildCharacterDescription(character),
         imageAssetId,
-        imageSourcePath: getAssetSourcePath(rootStore, imageAssetId),
+        ...(imageSourcePath ? { imageSourcePath } : {}),
         tags: buildCharacterTags(character),
       };
     })
@@ -266,7 +293,9 @@ export function buildLocationLibraryEntries(rootStore: GameRootStore): LibraryEn
     subtitle: 'Світова локація',
     description: buildLocationDescription(location),
     imageAssetId: location.backgroundId ?? null,
-    imageSourcePath: getAssetSourcePath(rootStore, location.backgroundId ?? null),
+    imageSourcePath:
+      getAssetSourcePath(rootStore, location.backgroundId ?? null) ??
+      undefined,
     tags: buildLocationTags(location),
   }));
 
@@ -276,7 +305,9 @@ export function buildLocationLibraryEntries(rootStore: GameRootStore): LibraryEn
     subtitle: scene.districtLabel ? `${scene.cityName} · ${scene.districtLabel}` : scene.cityName,
     description: buildCitySceneDescription(scene),
     imageAssetId: scene.backgroundId ?? null,
-    imageSourcePath: getAssetSourcePath(rootStore, scene.backgroundId ?? null),
+    imageSourcePath:
+      getAssetSourcePath(rootStore, scene.backgroundId ?? null) ??
+      undefined,
     tags: buildCitySceneTags(scene),
   }));
 
@@ -286,7 +317,9 @@ export function buildLocationLibraryEntries(rootStore: GameRootStore): LibraryEn
     subtitle: 'Маршрут мандрівки',
     description: buildTravelBoardDescription(board),
     imageAssetId: board.backgroundId ?? null,
-    imageSourcePath: getAssetSourcePath(rootStore, board.backgroundId ?? null),
+    imageSourcePath:
+      getAssetSourcePath(rootStore, board.backgroundId ?? null) ??
+      undefined,
     tags: buildTravelBoardTags(board),
   }));
 
@@ -298,11 +331,46 @@ export function buildLocationLibraryEntries(rootStore: GameRootStore): LibraryEn
       : 'Сюжетна сцена',
     description: buildSceneMetaDescription(scene),
     imageAssetId: scene.defaultBackgroundId ?? null,
-    imageSourcePath: getAssetSourcePath(rootStore, scene.defaultBackgroundId ?? null),
+    imageSourcePath:
+      getAssetSourcePath(rootStore, scene.defaultBackgroundId ?? null) ??
+      undefined,
     tags: buildSceneMetaTags(scene),
   }));
 
   return [...worldLocations, ...cityScenes, ...travelBoards, ...sceneEntries].sort((left, right) =>
     left.title.localeCompare(right.title, 'uk'),
   );
+}
+
+export function buildSceneLibraryEntries(rootStore: GameRootStore): LibraryEntry[] {
+  return Object.values(rootStore.sceneRegistry)
+    .filter((scene) => {
+      if (!scene.mainSceneFlowId) {
+        return false;
+      }
+
+      return rootStore.sceneFlowRegistry[scene.mainSceneFlowId]?.replay?.enabled === true;
+    })
+    .map((scene) => {
+      const mainFlow = scene.mainSceneFlowId ? rootStore.sceneFlowRegistry[scene.mainSceneFlowId] : null;
+      const imageAssetId = scene.defaultBackgroundId ?? mainFlow?.defaultBackgroundId ?? null;
+
+      return {
+        id: buildSceneReplayLibraryEntryId(scene.id),
+        title: scene.title,
+        subtitle: formatChapterLabel(scene.chapterId)
+          ? `${formatChapterLabel(scene.chapterId)} · Replay scene`
+          : 'Replay scene',
+        description: buildReplaySceneDescription(scene),
+        imageAssetId,
+        imageSourcePath: getAssetSourcePath(rootStore, imageAssetId) ?? undefined,
+        tags: buildReplaySceneTags(scene),
+        action: {
+          type: 'previewScene' as const,
+          targetId: scene.id,
+          label: 'Preview scene',
+        },
+      };
+    })
+    .sort((left, right) => left.title.localeCompare(right.title, 'uk'));
 }

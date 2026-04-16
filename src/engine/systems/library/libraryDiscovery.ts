@@ -33,6 +33,10 @@ export function buildSceneLocationLibraryEntryId(sceneId: string) {
   return `scene:${sceneId}`;
 }
 
+export function buildSceneReplayLibraryEntryId(sceneId: string) {
+  return `sceneReplay:${sceneId}`;
+}
+
 export function collectCharacterIdsFromStage(stage: StageState | null | undefined) {
   if (!stage) {
     return [];

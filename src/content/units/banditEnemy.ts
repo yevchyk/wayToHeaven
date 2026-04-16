@@ -5,6 +5,9 @@ export const banditEnemyTemplate: EnemyTemplate = {
   kind: 'enemy',
   name: 'Road Bandit',
   description: 'A desperate cutthroat striking from cover.',
+  battleVisual: {
+    portraitSourcePath: 'src/content/shared/placeholders/portraits/rough-man.jpg',
+  },
   faction: 'enemy',
   aiProfile: 'random',
   level: 1,

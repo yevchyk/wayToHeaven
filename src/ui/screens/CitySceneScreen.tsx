@@ -7,6 +7,7 @@ import { alpha } from '@mui/material/styles';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
 import type { CitySceneAction, CitySceneData } from '@engine/types/city';
+import { formatTimeCost } from '@engine/types/time';
 import { getNarrativeAccessibleText } from '@engine/utils/narrativeHtml';
 import { getCityActionToneStyle } from '@ui/components/city/cityActionToneStyles';
 import {
@@ -549,6 +550,19 @@ function LocalActionRow({
         html={action.text}
         sx={{ color: '#fbf6ea', fontSize: '1rem', fontWeight: 700, pr: 1.25 }}
       />
+      {action.timeCost ? (
+        <Typography
+          sx={{
+            color: alpha('#f4ddb0', 0.88),
+            fontSize: '0.72rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            mr: 0.8,
+          }}
+        >
+          {formatTimeCost(action.timeCost)}
+        </Typography>
+      ) : null}
       <ArrowOutwardRoundedIcon sx={{ color: toneStyle.accent, fontSize: 18, flexShrink: 0 }} />
     </Button>
   );
@@ -631,7 +645,9 @@ function DestinationStripCard({
             textTransform: 'uppercase',
           }}
         >
-          {targetScene?.districtLabel ?? currentScene.cityName}
+          {[targetScene?.districtLabel ?? currentScene.cityName, action.timeCost ? formatTimeCost(action.timeCost) : null]
+            .filter(Boolean)
+            .join(' • ')}
         </Typography>
 
         <NarrativeRichText

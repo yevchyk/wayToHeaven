@@ -18,6 +18,7 @@ function normalizeSeenContentSnapshot(
     nodeKeys: [...new Set(snapshot?.nodeKeys ?? [])],
     discoveredCharacterIds: [...new Set(snapshot?.discoveredCharacterIds ?? [])],
     discoveredLocationEntryIds: [...new Set(snapshot?.discoveredLocationEntryIds ?? [])],
+    discoveredSceneEntryIds: [...new Set(snapshot?.discoveredSceneEntryIds ?? [])],
   };
 }
 
@@ -28,6 +29,7 @@ export class SeenContentStore {
   nodeKeys: string[] = [];
   discoveredCharacterIds: string[] = [];
   discoveredLocationEntryIds: string[] = [];
+  discoveredSceneEntryIds: string[] = [];
 
   constructor(rootStore: GameRootStore) {
     this.rootStore = rootStore;
@@ -37,6 +39,7 @@ export class SeenContentStore {
       nodeKeys: [],
       discoveredCharacterIds: [],
       discoveredLocationEntryIds: [],
+      discoveredSceneEntryIds: [],
     });
 
     const normalizedSnapshot = normalizeSeenContentSnapshot(snapshot);
@@ -45,6 +48,7 @@ export class SeenContentStore {
     this.nodeKeys = normalizedSnapshot.nodeKeys;
     this.discoveredCharacterIds = normalizedSnapshot.discoveredCharacterIds;
     this.discoveredLocationEntryIds = normalizedSnapshot.discoveredLocationEntryIds;
+    this.discoveredSceneEntryIds = normalizedSnapshot.discoveredSceneEntryIds ?? [];
 
     makeAutoObservable(this, { rootStore: false }, { autoBind: true });
   }
@@ -63,6 +67,7 @@ export class SeenContentStore {
       nodeKeys: [...this.nodeKeys],
       discoveredCharacterIds: [...this.discoveredCharacterIds],
       discoveredLocationEntryIds: [...this.discoveredLocationEntryIds],
+      discoveredSceneEntryIds: [...this.discoveredSceneEntryIds],
     };
   }
 
@@ -149,6 +154,23 @@ export class SeenContentStore {
     this.persist();
   }
 
+  hasDiscoveredSceneEntry(entryId: string | null) {
+    if (!entryId) {
+      return false;
+    }
+
+    return this.discoveredSceneEntryIds.includes(entryId);
+  }
+
+  markSceneEntryDiscovered(entryId: string | null) {
+    if (!entryId || this.discoveredSceneEntryIds.includes(entryId)) {
+      return;
+    }
+
+    this.discoveredSceneEntryIds = [...this.discoveredSceneEntryIds, entryId];
+    this.persist();
+  }
+
   restore(snapshot: SeenContentSnapshot) {
     const normalizedSnapshot = normalizeSeenContentSnapshot(snapshot);
 
@@ -156,6 +178,7 @@ export class SeenContentStore {
     this.nodeKeys = normalizedSnapshot.nodeKeys;
     this.discoveredCharacterIds = normalizedSnapshot.discoveredCharacterIds;
     this.discoveredLocationEntryIds = normalizedSnapshot.discoveredLocationEntryIds;
+    this.discoveredSceneEntryIds = normalizedSnapshot.discoveredSceneEntryIds ?? [];
     this.persist();
   }
 
@@ -165,6 +188,7 @@ export class SeenContentStore {
       nodeKeys: this.nodeKeys,
       discoveredCharacterIds: this.discoveredCharacterIds,
       discoveredLocationEntryIds: this.discoveredLocationEntryIds,
+      discoveredSceneEntryIds: this.discoveredSceneEntryIds,
     } satisfies SeenContentSnapshot);
   }
 }

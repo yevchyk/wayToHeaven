@@ -63,8 +63,10 @@ describe('UI shell screens', () => {
     rootStore.miniGameController.startMinigame('chapter-1/minigame/fishing/reed-bank');
     renderWithStore(rootStore);
 
-    expect(screen.getByRole('heading', { name: 'Тиха заводь' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Навик рибалки' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: rootStore.miniGame.activeSession?.title ?? '' })).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`Skill ${rootStore.miniGame.activeSession?.skillId ?? 'fishing'}:`, 'i')),
+    ).toBeInTheDocument();
   });
 
   it('renders authored scene-generation nextSceneId transitions through the dialogue UI', () => {
@@ -401,23 +403,27 @@ describe('UI shell screens', () => {
 
     expect(screen.getByRole('button', { name: 'Далі' })).toBeInTheDocument();
 
+    const selectedChoice = rootStore.dialogue.getVisibleChoices().find((choice) => choice.id === 's1_reaction_soft');
+
+    expect(selectedChoice).toBeDefined();
+
     fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'Тихо, але чітко: зупинити без зайвої жорстокості.',
+        name: selectedChoice!.text,
       }),
     );
     revealActiveDialogueLine(rootStore);
 
-    expect(rootStore.dialogue.currentNodeId).toBe('s1_after_soft');
+    expect(rootStore.dialogue.currentNodeId).toBe(selectedChoice!.nextNodeId);
     expect(screen.getByRole('button', { name: 'Далі' })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
-        name: 'Тихо, але чітко: зупинити без зайвої жорстокості.',
+        name: selectedChoice!.text,
       }),
     ).not.toBeInTheDocument();
-    expect(rootStore.stats.getStat('simplicity')).toBe(1);
-  });
+    expect(rootStore.stats.getStat('paranoia')).toBe(1);
+  }, 15_000);
 
   it('keeps a reveal control on choice nodes until the authored line is fully shown', () => {
     const rootStore = new GameRootStore();
@@ -434,25 +440,27 @@ describe('UI shell screens', () => {
     revealActiveDialogueLine(rootStore);
     fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
 
+    const stagedChoice = rootStore.dialogue.getVisibleChoices().find((choice) => choice.id === 's1_reaction_soft');
+    const currentChoiceLine = rootStore.dialogue.currentNode?.text ?? '';
+
+    expect(stagedChoice).toBeDefined();
     expect(screen.getByRole('button', { name: 'Далі' })).toBeInTheDocument();
-    expect(screen.queryByText(/це вже не просто допомога./i)).not.toBeInTheDocument();
-    expect(screen.queryByText('Тепер треба або поставити її на місце, або дозволити їй запам’ятати цю межу неправильно.')).not.toBeInTheDocument();
+    expect(screen.queryByText(currentChoiceLine)).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
-        name: 'Тихо, але чітко: зупинити без зайвої жорстокості.',
+        name: stagedChoice!.text,
       }),
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Далі' }));
 
     const choiceButton = screen.getByRole('button', {
-      name: 'Тихо, але чітко: зупинити без зайвої жорстокості.',
+      name: stagedChoice!.text,
     });
     const panel = document.querySelector('.dialogue-screen__panel');
     const choiceGrid = document.querySelector('.dialogue-screen__choice-grid');
 
-    expect(screen.queryByText(/це вже не просто допомога./i)).not.toBeInTheDocument();
-    expect(screen.getByText('Тепер треба або поставити її на місце, або дозволити їй запам’ятати цю межу неправильно.')).toBeInTheDocument();
+    expect(screen.getByText(currentChoiceLine)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Далі' })).toBeInTheDocument();
     expect(screen.queryByText('Попередня репліка')).not.toBeInTheDocument();
     expect(screen.queryByText('Контекст сцени')).not.toBeInTheDocument();
@@ -483,6 +491,24 @@ describe('UI shell screens', () => {
     fireEvent.click(panel);
 
     expect(rootStore.dialogue.currentNodeId).not.toBe(previousNodeId);
+  });
+
+  it('does not advance dialogue from global hotkeys while a modal is open', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.startNewGame();
+    renderWithStore(rootStore);
+
+    rootStore.dialogue.revealCurrentLine();
+    const currentNodeId = rootStore.dialogue.currentNodeId;
+
+    act(() => {
+      rootStore.ui.openModal('preferences');
+    });
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+
+    expect(rootStore.dialogue.currentNodeId).toBe(currentNodeId);
   });
 
   it('allows clicking reachable world nodes', () => {

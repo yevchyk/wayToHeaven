@@ -18,6 +18,7 @@ export interface NarrativeAssetDefinition {
 }
 
 export type NarrativeCharacterRole = 'heroine' | 'npc';
+export type NarrativePortraitPresentation = 'flat' | 'composite';
 
 export type PortraitPlaceholderPreset = 'default' | 'dress' | 'dress-torn' | 'dress-ripped';
 
@@ -34,6 +35,7 @@ export interface NarrativeCharacterData {
   chapterId: string;
   displayName: string;
   role?: NarrativeCharacterRole;
+  portraitPresentation?: NarrativePortraitPresentation;
   portraitRefs: Partial<Record<CharacterEmotion, string>>;
   defaultEmotion?: CharacterEmotion;
   defaultPortraitId?: string;

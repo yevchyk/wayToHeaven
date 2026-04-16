@@ -1,4 +1,5 @@
 import type { GameEffect } from '@engine/types/effects';
+import type { TimeCost } from '@engine/types/time';
 import type { ScreenId } from '@engine/types/ui';
 
 export type TravelNodeType =
@@ -55,6 +56,7 @@ export interface TravelBoardData {
   backgroundId?: string;
   scoutCharges?: number;
   scoutDepth?: number;
+  stepTimeCost?: TimeCost;
 }
 
 export interface TravelLogEntry {

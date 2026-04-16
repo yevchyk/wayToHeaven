@@ -37,8 +37,14 @@ export interface InventoryEntryDetails extends InventoryItem {
   data: ItemData;
 }
 
+export interface ItemUseOptions {
+  sourceUnitId?: string | null;
+  targetUnitId?: string | null;
+}
+
 export interface ItemUseResult {
   itemId: string;
   consumed: boolean;
   message?: string;
+  targetUnitId?: string | null;
 }

@@ -1,6 +1,7 @@
 import type { FlagValue } from '@engine/types/flags';
 import type { MetaKey } from '@engine/types/meta';
 import type { NarrativeProfileKey } from '@engine/types/profile';
+import type { RelationshipAxis, RelationshipId } from '@engine/types/relationships';
 import type { TagId } from '@engine/types/tags';
 
 export type NumericComparisonOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
@@ -28,6 +29,14 @@ export interface MetaCondition {
 export interface InventoryCondition {
   type: 'inventory';
   itemId: string;
+  operator: NumericComparisonOperator;
+  value: number;
+}
+
+export interface RelationshipCondition {
+  type: 'relationship';
+  relationshipId: RelationshipId;
+  axis?: RelationshipAxis;
   operator: NumericComparisonOperator;
   value: number;
 }
@@ -86,6 +95,7 @@ export type Condition =
   | FlagCondition
   | MetaCondition
   | InventoryCondition
+  | RelationshipCondition
   | TagCondition
   | FlagEqualsCondition
   | StatGteCondition

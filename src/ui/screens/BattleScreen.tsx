@@ -1,17 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { observer } from 'mobx-react-lite';
 import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
 import BackpackOutlinedIcon from '@mui/icons-material/BackpackOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import SportsKabaddiRoundedIcon from '@mui/icons-material/SportsKabaddiRounded';
-import { Alert, Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
+import { Box, ButtonBase, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
+import { skillUsesTarget } from '@engine/formulas/damage';
 import type { BattleUnitRuntime } from '@engine/types/unit';
-import { SectionCard } from '@ui/components/SectionCard';
-import { shellTokens } from '@ui/components/shell/shellTokens';
+import type { BattleAuraPreset } from '@engine/types/unit';
+import { BattleStagePreview } from '@ui/components/battle/BattleStagePreview';
+import type { StageImpactCue } from '@ui/components/battle/BattleStagePreview';
+import {
+  BattleAuraOverlay,
+  inferBattleActionAura,
+  inferBattleStatusAura,
+  resolveBattlePortraitUrl,
+} from '@ui/components/battle/battleVisuals';
+import { ScreenFrame } from '@ui/components/primitives/ScreenFrame';
+import { StatusStrip } from '@ui/components/primitives/StatusStrip';
+import { SystemAction } from '@ui/components/primitives/SystemAction';
+import type { CorruptionSkin } from '@ui/components/shell/corruptionSkins';
+import { resolveCorruptionSkin } from '@ui/components/shell/corruptionSkins';
 
 function getPreferredSkillId(skillIds: readonly string[]) {
   return skillIds.find((skillId) => skillId !== 'basic-attack') ?? skillIds[0] ?? null;
@@ -22,25 +36,34 @@ function ResourceMeter({
   max,
   label,
   tone,
+  skin,
 }: {
   current: number;
   max: number;
   label: string;
   tone: 'hp' | 'mana';
+  skin: CorruptionSkin;
 }) {
   const ratio = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0;
   const fill =
     tone === 'hp'
-      ? 'linear-gradient(90deg, rgba(188, 224, 203, 0.72) 0%, rgba(128, 186, 154, 0.82) 100%)'
-      : 'linear-gradient(90deg, rgba(188, 214, 236, 0.68) 0%, rgba(126, 166, 196, 0.82) 100%)';
+      ? `linear-gradient(90deg, ${alpha('#bfe1cb', 0.9)} 0%, ${alpha('#7dc198', 0.9)} 100%)`
+      : `linear-gradient(90deg, ${alpha('#bfd7ef', 0.88)} 0%, ${alpha('#7aa4cb', 0.92)} 100%)`;
 
   return (
-    <Stack spacing={0.35}>
-      <Stack direction="row" justifyContent="space-between" spacing={1}>
-        <Typography color="text.secondary" sx={{ fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+    <Stack spacing={0.28}>
+      <Stack alignItems="center" direction="row" justifyContent="space-between" spacing={1}>
+        <Typography
+          sx={{
+            color: alpha(skin.text.muted, 0.95),
+            fontSize: '0.66rem',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          }}
+        >
           {label}
         </Typography>
-        <Typography sx={{ color: shellTokens.text.primary, fontSize: '0.76rem' }}>
+        <Typography sx={{ color: skin.text.secondary, fontSize: '0.74rem' }}>
           {current}/{max}
         </Typography>
       </Stack>
@@ -49,8 +72,8 @@ function ResourceMeter({
           height: 7,
           overflow: 'hidden',
           borderRadius: 999,
-          backgroundColor: alpha('#eef5fb', 0.08),
-          border: `1px solid ${alpha('#eef5fb', 0.06)}`,
+          border: `1px solid ${alpha(skin.frame.border, 0.7)}`,
+          backgroundColor: alpha('#000000', 0.24),
         }}
       >
         <Box
@@ -59,6 +82,7 @@ function ResourceMeter({
             height: '100%',
             borderRadius: 999,
             background: fill,
+            boxShadow: `0 0 18px ${alpha(tone === 'hp' ? '#7dc198' : '#7aa4cb', 0.18)}`,
           }}
         />
       </Box>
@@ -66,114 +90,416 @@ function ResourceMeter({
   );
 }
 
-function CombatantCard({
-  unit,
-  isCurrent,
-  isSelectable,
-  isSelectedTarget,
-  onSelect,
-  tagLabels,
+function BattleMark({
+  label,
+  skin,
+  tone = 'default',
 }: {
-  unit: BattleUnitRuntime;
-  isCurrent: boolean;
-  isSelectable: boolean;
-  isSelectedTarget: boolean;
-  onSelect?: () => void;
-  tagLabels: string[];
+  label: string;
+  skin: CorruptionSkin;
+  tone?: 'default' | 'danger' | 'focus';
 }) {
-  const statusLabels = unit.statuses.map((status) => `${status.type} ${status.remainingDuration}`);
-  const stateLabel = unit.currentHp > 0 ? (unit.isDefending ? 'Guarding' : 'Ready') : 'Down';
+  const borderColor =
+    tone === 'danger'
+      ? alpha('#d89393', 0.55)
+      : tone === 'focus'
+        ? alpha(skin.frame.accent, 0.52)
+        : alpha(skin.frame.border, 0.9);
+  const background =
+    tone === 'danger'
+      ? alpha('#5a1e1e', 0.34)
+      : tone === 'focus'
+        ? alpha(skin.frame.accent, 0.14)
+        : alpha('#000000', 0.18);
 
   return (
     <Box
       sx={{
-        p: 1.05,
-        borderRadius: shellTokens.radius.sm,
-        border: isSelectedTarget
-          ? `1px solid ${alpha('#eef5fb', 0.34)}`
+        px: 0.72,
+        py: 0.34,
+        borderRadius: 1.3,
+        border: `1px solid ${borderColor}`,
+        background,
+      }}
+    >
+      <Typography
+        sx={{
+          color: skin.text.secondary,
+          fontSize: '0.66rem',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+function BattleCommand({
+  label,
+  detail,
+  skin,
+  active = false,
+  disabled = false,
+  onClick,
+  icon,
+}: {
+  label: string;
+  detail: string;
+  skin: CorruptionSkin;
+  active?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  icon?: ReactNode;
+}) {
+  return (
+    <ButtonBase
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      sx={{
+        minHeight: 72,
+        justifyContent: 'flex-start',
+        alignItems: 'stretch',
+        borderRadius: 2,
+        textAlign: 'left',
+        border: `1px solid ${active ? skin.frame.borderStrong : skin.frame.border}`,
+        background: active
+          ? `linear-gradient(180deg, ${alpha(skin.frame.accent, 0.18)} 0%, ${alpha(
+              skin.frame.accent,
+              0.08,
+            )} 100%)`
+          : `linear-gradient(180deg, ${alpha('#000000', 0.24)} 0%, ${alpha('#000000', 0.34)} 100%)`,
+        boxShadow: active ? `0 0 0 1px ${alpha(skin.frame.accent, 0.12)}` : 'none',
+        '&:hover': {
+          background: `linear-gradient(180deg, ${alpha(skin.frame.accent, 0.18)} 0%, ${alpha(
+            skin.frame.accent,
+            0.08,
+          )} 100%)`,
+        },
+        '&:disabled': {
+          opacity: 0.42,
+        },
+      }}
+    >
+      <Stack direction="row" spacing={1} sx={{ width: '100%', px: 1.05, py: 0.95 }}>
+        <Box
+          sx={{
+            width: 34,
+            height: 34,
+            flexShrink: 0,
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: 1.5,
+            border: `1px solid ${alpha(skin.frame.borderStrong, 0.72)}`,
+            backgroundColor: alpha('#000000', 0.22),
+            color: skin.text.primary,
+          }}
+        >
+          {icon}
+        </Box>
+        <Stack spacing={0.2} sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{
+              color: skin.text.primary,
+              fontSize: '0.86rem',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {label}
+          </Typography>
+          <Typography
+            aria-hidden="true"
+            sx={{ color: skin.text.muted, fontSize: '0.74rem', lineHeight: 1.35 }}
+          >
+            {detail}
+          </Typography>
+        </Stack>
+      </Stack>
+    </ButtonBase>
+  );
+}
+
+function CombatantCard({
+  unit,
+  skin,
+  roleLabel,
+  isCurrent,
+  isSelectable,
+  isSelectedTarget,
+  onSelect,
+  selectionLabel,
+  showDangerAccent = false,
+  portraitUrl,
+  auraKind,
+}: {
+  unit: BattleUnitRuntime;
+  skin: CorruptionSkin;
+  roleLabel: string;
+  isCurrent: boolean;
+  isSelectable: boolean;
+  isSelectedTarget: boolean;
+  onSelect?: (() => void) | undefined;
+  selectionLabel?: string | undefined;
+  showDangerAccent?: boolean;
+  portraitUrl: string | null;
+  auraKind?: BattleAuraPreset | null;
+}) {
+  const stateLabel = unit.currentHp > 0 ? (unit.isDefending ? 'Guarding' : 'Ready') : 'Down';
+  const statusLabels = unit.statuses.map((status) => `${status.type} ${status.remainingDuration}`);
+
+  return (
+    <ScreenFrame
+      mode="tactical"
+      skin={skin}
+      sx={{
+        p: 0.95,
+        background: showDangerAccent
+          ? `linear-gradient(180deg, ${alpha('#2a1010', 0.34)} 0%, ${skin.surface.panelStrong} 100%)`
+          : skin.surface.panelStrong,
+        borderColor: isSelectedTarget
+          ? skin.frame.borderStrong
           : isCurrent
-            ? `1px solid ${alpha('#eef5fb', 0.22)}`
-            : `1px solid ${alpha('#eef5fb', 0.1)}`,
-        background: isSelectedTarget
-          ? 'linear-gradient(180deg, rgba(234, 241, 248, 0.12) 0%, rgba(88, 116, 140, 0.16) 100%)'
-          : isCurrent
-            ? 'linear-gradient(180deg, rgba(23, 31, 42, 0.82) 0%, rgba(13, 18, 25, 0.88) 100%)'
-            : 'linear-gradient(180deg, rgba(11, 16, 23, 0.62) 0%, rgba(9, 13, 19, 0.76) 100%)',
-        boxShadow: shellTokens.shadow.inset,
+            ? alpha(skin.frame.accent, 0.8)
+            : skin.frame.border,
       }}
     >
       <Stack spacing={0.8}>
-        <Stack alignItems="center" direction="row" justifyContent="space-between" spacing={1}>
-          <Stack spacing={0.15} sx={{ minWidth: 0 }}>
-            <Typography sx={{ color: shellTokens.text.primary, fontSize: '0.92rem' }}>
-              {unit.name}
-            </Typography>
-            <Typography color="text.secondary" sx={{ fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Level {unit.level} • Init {unit.derivedStats.initiative}
-            </Typography>
+        <Stack direction="row" spacing={0.9} sx={{ alignItems: 'stretch' }}>
+          <Box
+            sx={{
+              position: 'relative',
+              width: 84,
+              minWidth: 84,
+              borderRadius: 1.75,
+              overflow: 'hidden',
+              border: `1px solid ${alpha(
+                isSelectedTarget ? skin.frame.borderStrong : skin.frame.border,
+                0.92,
+              )}`,
+              background: `linear-gradient(180deg, ${alpha('#140f0f', 0.42)} 0%, ${alpha(
+                '#060708',
+                0.76,
+              )} 100%)`,
+            }}
+          >
+            {portraitUrl ? (
+              <Box
+                component="img"
+                alt=""
+                src={portraitUrl}
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  minHeight: 110,
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                  filter: showDangerAccent ? 'saturate(0.84) contrast(1.04)' : 'saturate(0.88)',
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  minHeight: 110,
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: alpha(skin.text.primary, 0.68),
+                  fontSize: '0.82rem',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {unit.name}
+              </Box>
+            )}
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.02) 28%, rgba(0,0,0,0.4) 100%)',
+              }}
+            />
+            {auraKind ? (
+              <BattleAuraOverlay
+                intensity={isCurrent || isSelectedTarget ? 'focus' : 'normal'}
+                kind={auraKind}
+              />
+            ) : null}
+          </Box>
+
+          <Stack spacing={0.72} sx={{ flex: 1, minWidth: 0 }}>
+            <Stack alignItems="flex-start" direction="row" justifyContent="space-between" spacing={1}>
+              <Stack spacing={0.15} sx={{ minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    color: alpha(skin.text.muted, 0.95),
+                    fontSize: '0.66rem',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {roleLabel}
+                </Typography>
+                <Typography sx={{ color: skin.text.primary, fontSize: '1rem' }}>{unit.name}</Typography>
+                <Typography sx={{ color: skin.text.secondary, fontSize: '0.76rem' }}>
+                  Level {unit.level} | Initiative {unit.derivedStats.initiative}
+                </Typography>
+              </Stack>
+              <BattleMark
+                label={stateLabel}
+                skin={skin}
+                tone={isSelectedTarget ? 'focus' : unit.currentHp > 0 ? 'default' : 'danger'}
+              />
+            </Stack>
+
+            <ResourceMeter current={unit.currentHp} label="Blood" max={unit.derivedStats.maxHp} skin={skin} tone="hp" />
+            <ResourceMeter
+              current={unit.currentMana}
+              label="Will"
+              max={unit.derivedStats.maxMana}
+              skin={skin}
+              tone="mana"
+            />
+
+            <Stack direction="row" flexWrap="wrap" gap={0.55}>
+              <BattleMark label={`Power ${unit.derivedStats.physicalAttack}`} skin={skin} />
+              <BattleMark label={`Guard ${unit.derivedStats.armor}`} skin={skin} />
+              <BattleMark label={`Ward ${unit.derivedStats.resistance}`} skin={skin} />
+            </Stack>
           </Stack>
-          <Chip label={stateLabel} size="small" variant="outlined" />
-        </Stack>
-
-        <ResourceMeter current={unit.currentHp} label="HP" max={unit.derivedStats.maxHp} tone="hp" />
-        <ResourceMeter current={unit.currentMana} label="Mana" max={unit.derivedStats.maxMana} tone="mana" />
-
-        <Stack direction="row" flexWrap="wrap" gap={0.55}>
-          <Chip label={`Atk ${unit.derivedStats.physicalAttack}`} size="small" variant="outlined" />
-          <Chip label={`Armor ${unit.derivedStats.armor}`} size="small" variant="outlined" />
-          <Chip label={`Res ${unit.derivedStats.resistance}`} size="small" variant="outlined" />
         </Stack>
 
         {statusLabels.length > 0 ? (
           <Stack direction="row" flexWrap="wrap" gap={0.55}>
             {statusLabels.map((label) => (
-              <Chip key={`${unit.unitId}-${label}`} label={label} size="small" variant="outlined" />
-            ))}
-          </Stack>
-        ) : null}
-
-        {tagLabels.length > 0 ? (
-          <Stack direction="row" flexWrap="wrap" gap={0.55}>
-            {tagLabels.slice(0, 4).map((label) => (
-              <Chip key={`${unit.unitId}-${label}`} label={label} size="small" variant="outlined" />
+              <BattleMark key={`${unit.unitId}-${label}`} label={label} skin={skin} tone="danger" />
             ))}
           </Stack>
         ) : null}
 
         {onSelect ? (
-          <Button
-            data-testid={`battle-enemy-${unit.unitId}`}
+          <ButtonBase
+            data-testid={`battle-target-${unit.unitId}`}
             disabled={!isSelectable || unit.currentHp <= 0}
             onClick={onSelect}
-            sx={{ justifyContent: 'space-between' }}
-            variant={isSelectedTarget ? 'contained' : 'outlined'}
+            sx={{
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              px: 0.95,
+              py: 0.72,
+              borderRadius: 1.6,
+              border: `1px solid ${isSelectedTarget ? skin.frame.borderStrong : skin.frame.border}`,
+              background: isSelectedTarget
+                ? alpha(skin.frame.accent, 0.16)
+                : alpha('#000000', 0.18),
+              '&:hover': {
+                background: alpha(skin.frame.accent, 0.14),
+              },
+              '&:disabled': {
+                opacity: 0.42,
+              },
+            }}
           >
-            <span>{isSelectedTarget ? 'Selected target' : 'Target enemy'}</span>
-            <Typography color="text.secondary" variant="caption">
-              {unit.currentHp > 0 ? 'Confirm' : 'Unavailable'}
+            <Typography
+              sx={{
+                color: skin.text.primary,
+                fontSize: '0.76rem',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {isSelectedTarget ? 'Target Locked' : selectionLabel ?? 'Select target'}
             </Typography>
-          </Button>
+            <Typography sx={{ color: skin.text.muted, fontSize: '0.72rem' }}>
+              {unit.currentHp > 0 ? 'Commit' : 'Unavailable'}
+            </Typography>
+          </ButtonBase>
         ) : null}
       </Stack>
-    </Box>
+    </ScreenFrame>
   );
 }
 
-function getActionLabel(action: ReturnType<typeof useGameRootStore>['battle']['selectedAction']) {
+function TurnRibbon({
+  units,
+  currentUnitId,
+  skin,
+}: {
+  units: BattleUnitRuntime[];
+  currentUnitId: string | null;
+  skin: CorruptionSkin;
+}) {
+  if (units.length === 0) {
+    return null;
+  }
+
+  return (
+    <Stack direction="row" flexWrap="wrap" gap={0.7}>
+      {units.map((unit, index) => (
+        <Box
+          key={`${unit.unitId}-${index}`}
+          sx={{
+            minWidth: 104,
+            px: 0.9,
+            py: 0.68,
+            borderRadius: 1.6,
+            border: `1px solid ${
+              unit.unitId === currentUnitId ? alpha(skin.frame.borderStrong, 0.96) : alpha(skin.frame.border, 0.92)
+            }`,
+            background:
+              unit.unitId === currentUnitId
+                ? alpha(skin.frame.accent, 0.16)
+                : alpha('#000000', 0.18),
+          }}
+        >
+          <Typography
+            sx={{
+              color: skin.text.primary,
+              fontSize: '0.76rem',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {index === 0 ? 'Now' : `Then +${index}`}
+          </Typography>
+          <Typography sx={{ color: skin.text.secondary, fontSize: '0.78rem', mt: 0.2 }}>
+            {unit.name}
+          </Typography>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
+
+function getActionLabel(
+  rootStore: ReturnType<typeof useGameRootStore>,
+  action: ReturnType<typeof useGameRootStore>['battle']['selectedAction'],
+) {
   if (!action) {
-    return 'No action selected';
+    return 'Choose a command';
   }
 
   if (action.type === 'skill' && action.skillId) {
-    return `Skill • ${action.skillId}`;
+    return rootStore.getSkillById(action.skillId)?.name ?? action.skillId;
   }
 
-  return action.type;
+  if (action.type === 'item' && action.itemId) {
+    return rootStore.inventory.inspectItem(action.itemId)?.name ?? action.itemId;
+  }
+
+  return action.type === 'attack' ? 'Basic attack' : action.type;
 }
 
 export const BattleScreen = observer(function BattleScreen() {
   const rootStore = useGameRootStore();
   const { battle } = rootStore;
+  const corruptionSkin = resolveCorruptionSkin(rootStore.profile.getProfileValue('corruption'));
+  const [sandboxAuraPreview, setSandboxAuraPreview] = useState<Record<string, BattleAuraPreset>>({});
 
   useEffect(() => {
     if (battle.isEnemyTurn) {
@@ -181,249 +507,690 @@ export const BattleScreen = observer(function BattleScreen() {
     }
   }, [battle, battle.isEnemyTurn, battle.currentUnit?.unitId]);
 
+  useEffect(() => {
+    setSandboxAuraPreview({});
+  }, [battle.activeBattleId]);
+
   if (!battle.hasActiveBattle) {
     return (
-      <SectionCard eyebrow="Battle" title="No Active Battle">
-        <Typography color="text.secondary" variant="body2">
-          Battle runtime is idle.
-        </Typography>
-      </SectionCard>
+      <ScreenFrame
+        mode="tactical"
+        skin={corruptionSkin}
+        sx={{ p: { xs: 1.2, md: 1.4 }, m: { xs: 1, md: 1.4 } }}
+      >
+        <Stack spacing={0.55}>
+          <Typography
+            sx={{
+              color: alpha(corruptionSkin.text.muted, 0.95),
+              fontSize: '0.7rem',
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Tactical Mode
+          </Typography>
+          <Typography sx={{ color: corruptionSkin.text.primary, fontSize: '1.18rem' }}>
+            No Active Battle
+          </Typography>
+          <Typography sx={{ color: corruptionSkin.text.secondary, fontSize: '0.9rem' }}>
+            The battlefield is quiet. Start an encounter to wake the tactical shell.
+          </Typography>
+        </Stack>
+      </ScreenFrame>
     );
   }
 
   const currentUnit = battle.currentUnit;
   const selectedAction = battle.selectedAction;
   const preferredSkillId = currentUnit ? getPreferredSkillId(currentUnit.skillIds) : null;
-  const requiresTarget = selectedAction?.type === 'attack' || selectedAction?.type === 'skill';
+  const preferredItemEntry = battle.preferredItemEntry;
+  const battleItemEntries = rootStore.inventory.battleUsableEntries;
+  const requiresTarget = battle.selectedActionRequiresTarget;
+  const targetSide = battle.selectedActionTargetSide;
+  const actionPreviewTargetSide =
+    targetSide ??
+    (selectedAction?.type === 'skill'
+      ? battle.selectedSkill?.targetPattern === 'all-enemies'
+        ? 'enemy'
+        : battle.selectedSkill?.targetPattern === 'self'
+          ? currentUnit?.side ?? null
+          : null
+      : selectedAction?.type === 'item' && battle.selectedItem?.targetScope === 'self'
+        ? currentUnit?.side ?? null
+        : null);
   const queueUnits = battle.turnQueue
-    .map((unitId) => battle.allUnits.find((unit) => unit.unitId === unitId) ?? battle.enemies.find((unit) => unit.unitId === unitId) ?? null)
+    .map((unitId) => battle.allUnits.find((unit) => unit.unitId === unitId) ?? null)
     .filter((unit): unit is BattleUnitRuntime => unit !== null)
     .slice(0, 6);
+  const summaryItems = [
+    { label: 'Round', value: String(battle.round) },
+    { label: 'Phase', value: battle.phase },
+    { label: 'Current', value: currentUnit?.name ?? 'Awaiting resolver' },
+  ];
+  const isVisualLab = battle.activeBattleRef === 'battle-visual-lab';
+  const actionAuraKind = inferBattleActionAura(rootStore, selectedAction);
+  const previewTargetUnitIds =
+    actionAuraKind && selectedAction
+      ? selectedAction.type === 'skill' && battle.selectedSkill?.targetPattern === 'all-enemies'
+        ? battle.livingEnemies.map((unit) => unit.unitId)
+        : selectedAction.type === 'skill' && battle.selectedSkill?.targetPattern === 'self'
+          ? currentUnit
+            ? [currentUnit.unitId]
+            : []
+          : battle.selectedTargetId
+            ? [battle.selectedTargetId]
+            : []
+      : [];
+  const previewSourceUnitId = actionAuraKind && currentUnit ? currentUnit.unitId : null;
+  const sandboxTargetUnitId = battle.selectedTargetId ?? battle.livingEnemies[0]?.unitId ?? null;
+
+  const applySandboxAura = (unitId: string | null, auraKind: BattleAuraPreset) => {
+    if (!unitId) {
+      return;
+    }
+
+    setSandboxAuraPreview((currentPreview) => ({
+      ...currentPreview,
+      [unitId]: auraKind,
+    }));
+  };
+
+  const clearSandboxAuras = () => {
+    setSandboxAuraPreview({});
+  };
+
+  const getCombatantAura = (unit: BattleUnitRuntime) => {
+    const sandboxAura = sandboxAuraPreview[unit.unitId];
+
+    if (sandboxAura) {
+      return sandboxAura;
+    }
+
+    if (actionAuraKind && (unit.unitId === previewSourceUnitId || previewTargetUnitIds.includes(unit.unitId))) {
+      return actionAuraKind;
+    }
+
+    return inferBattleStatusAura(unit);
+  };
+  const leadAlly =
+    (currentUnit?.side === 'ally' ? currentUnit : null) ??
+    battle.livingAllies[0] ??
+    battle.allies[0] ??
+    null;
+  const leadEnemy =
+    (currentUnit?.side === 'enemy' ? currentUnit : null) ??
+    battle.livingEnemies[0] ??
+    battle.enemies[0] ??
+    null;
+  const latestStageEntry =
+    battle.combatLog
+      .slice()
+      .reverse()
+      .find((entry) => entry.type !== 'system' && entry.type !== 'outcome') ?? null;
+  const sourceUnitForEntry = latestStageEntry?.sourceUnitId
+    ? battle.allUnits.find((unit) => unit.unitId === latestStageEntry.sourceUnitId) ?? null
+    : null;
+  const targetUnitForEntry = latestStageEntry?.targetUnitId
+    ? battle.allUnits.find((unit) => unit.unitId === latestStageEntry.targetUnitId) ?? null
+    : null;
+  const recentStageImpactTone: StageImpactCue['tone'] =
+    latestStageEntry?.type === 'damage'
+      ? 'damage'
+      : latestStageEntry?.type === 'heal'
+        ? 'heal'
+        : latestStageEntry?.type === 'status'
+          ? 'status'
+          : latestStageEntry?.type === 'miss'
+            ? 'miss'
+            : 'action';
+  const recentStageImpact: StageImpactCue | null = latestStageEntry
+    ? {
+        id: latestStageEntry.id,
+        tone: recentStageImpactTone,
+        sourceSide: sourceUnitForEntry?.side ?? null,
+        targetSide: targetUnitForEntry?.side ?? null,
+        label: latestStageEntry.message,
+      }
+    : null;
+
+  const commitSelectedTarget = (targetId: string) => {
+    if (!selectedAction) {
+      return;
+    }
+
+    battle.performPlayerAction(selectedAction.type, {
+      targetId,
+      ...(selectedAction.type === 'skill' && selectedAction.skillId
+        ? { skillId: selectedAction.skillId }
+        : {}),
+      ...(selectedAction.type === 'item' && selectedAction.itemId
+        ? { itemId: selectedAction.itemId }
+        : {}),
+    });
+  };
+
+  const activateItem = (itemId: string) => {
+    const item = rootStore.inventory.inspectItem(itemId);
+
+    if (!item) {
+      return;
+    }
+
+    if (item.targetScope === 'ally' || item.targetScope === 'enemy') {
+      battle.selectAction('item', { itemId });
+
+      return;
+    }
+
+    battle.performPlayerAction('item', { itemId });
+  };
+
+  const targetPrompt = battle.isAwaitingPlayerInput && requiresTarget
+    ? targetSide === 'ally'
+      ? 'Choose who receives the rite from the ally rail.'
+      : 'Mark a foe on the enemy rail to let the action fall.'
+    : currentUnit
+      ? `${currentUnit.name} holds the initiative.`
+      : 'The field waits for the next turn owner.';
 
   return (
     <Box
       sx={{
         position: 'relative',
-        height: '100%',
+        minHeight: '100%',
         overflowY: 'auto',
+        px: { xs: 1, md: 1.4 },
+        py: { xs: 1, md: 1.25 },
       }}
     >
       <Box
         sx={{
           position: 'absolute',
           inset: 0,
-          background:
-            'radial-gradient(circle at top, rgba(243, 247, 251, 0.08) 0%, rgba(243, 247, 251, 0) 20%), linear-gradient(180deg, rgba(10, 14, 20, 0.12) 0%, rgba(10, 14, 20, 0.18) 34%, rgba(10, 14, 20, 0.38) 100%)',
+          background: `
+            radial-gradient(circle at 18% 22%, ${alpha(corruptionSkin.frame.accent, 0.12)} 0%, rgba(0,0,0,0) 28%),
+            radial-gradient(circle at 82% 18%, ${alpha(corruptionSkin.frame.accent, 0.08)} 0%, rgba(0,0,0,0) 24%),
+            linear-gradient(180deg, rgba(8, 11, 17, 0.24) 0%, rgba(5, 7, 12, 0.44) 100%)
+          `,
           pointerEvents: 'none',
         }}
       />
 
-      <Stack
-        spacing={1.2}
-        sx={{
-          position: 'relative',
-          px: { xs: 1, md: 1.4 },
-          py: { xs: 1, md: 1.25 },
-        }}
-      >
-        <SectionCard
-          action={
-            <Stack direction="row" flexWrap="wrap" gap={0.75}>
-              <Chip label={`Round ${battle.round}`} size="small" variant="outlined" />
-              <Chip label={`Phase ${battle.phase}`} size="small" variant="outlined" />
-              <Chip label={getActionLabel(selectedAction)} size="small" variant="outlined" />
-            </Stack>
-          }
-          eyebrow="Battlefield"
-          subtitle={currentUnit ? `Current turn: ${currentUnit.name}` : 'The encounter is waiting for the next resolver step.'}
-          title={battle.activeBattleRef ?? 'Battle'}
+      <Stack spacing={1.05} sx={{ position: 'relative' }}>
+        <ScreenFrame
+          mode="tactical"
+          skin={corruptionSkin}
+          sx={{
+            p: { xs: 1, md: 1.15 },
+            background: corruptionSkin.surface.panelStrong,
+          }}
         >
-          <Typography color="text.secondary" variant="body2">
-            The combat shell stays dense and readable: unit state, command intent and turn pressure all remain visible without collapsing into a debug table.
-          </Typography>
-        </SectionCard>
-
-        <Stack direction={{ xs: 'column', xl: 'row' }} spacing={1.2}>
-          <SectionCard eyebrow="Allies" title="Party Front">
-            <Stack spacing={0.9}>
-              {battle.allies.map((unit) => (
-                <CombatantCard
-                  key={unit.unitId}
-                  isCurrent={battle.currentUnit?.unitId === unit.unitId}
-                  isSelectable={false}
-                  isSelectedTarget={false}
-                  tagLabels={rootStore.statusProcessor.getEffectiveTags(unit)}
-                  unit={unit}
-                />
-              ))}
-            </Stack>
-          </SectionCard>
-
-          <Stack spacing={1.2} sx={{ width: { xs: '100%', xl: '34%' }, minWidth: 0 }}>
-            <SectionCard eyebrow="Command" title="Battle Actions">
-              {battle.phase === 'victory' || battle.phase === 'defeat' ? (
-                <Alert
-                  action={
-                    <Button color="inherit" onClick={() => battle.endBattle()} size="small">
-                      Leave Battlefield
-                    </Button>
-                  }
-                  severity={battle.phase === 'victory' ? 'success' : 'warning'}
+          <Stack spacing={0.8}>
+            <Stack
+              alignItems={{ xs: 'flex-start', md: 'center' }}
+              direction={{ xs: 'column', md: 'row' }}
+              justifyContent="space-between"
+              spacing={0.9}
+            >
+              <Stack spacing={0.18}>
+                <Typography
+                  sx={{
+                    color: alpha(corruptionSkin.text.muted, 0.94),
+                    fontSize: '0.72rem',
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                  }}
                 >
-                  {battle.phase === 'victory'
-                    ? 'The encounter is over. Claim the road and continue.'
-                    : 'The party is down. Leave the battlefield to recover the flow.'}
-                </Alert>
-              ) : (
-                <Stack spacing={1}>
-                  <Stack direction={{ xs: 'column', sm: 'row', xl: 'column' }} flexWrap="wrap" gap={0.9}>
-                    <Button
-                      disabled={!battle.isAwaitingPlayerInput}
-                      onClick={() => battle.selectAction('attack')}
-                      startIcon={<SportsKabaddiRoundedIcon />}
-                      variant="contained"
-                    >
-                      Attack
-                    </Button>
-                    <Button
-                      disabled={!battle.isAwaitingPlayerInput || !preferredSkillId}
-                      onClick={() =>
-                        preferredSkillId ? battle.selectAction('skill', { skillId: preferredSkillId }) : null
-                      }
-                      startIcon={<AutoFixHighRoundedIcon />}
-                      variant="outlined"
-                    >
-                      Skill
-                    </Button>
-                    <Button
-                      disabled={!battle.isAwaitingPlayerInput}
-                      onClick={() => battle.performPlayerAction('defend')}
-                      startIcon={<ShieldOutlinedIcon />}
-                      variant="outlined"
-                    >
-                      Defend
-                    </Button>
-                    <Button
-                      onClick={() => rootStore.openCharacterMenu()}
-                      startIcon={<BackpackOutlinedIcon />}
-                      variant="text"
-                    >
-                      Character Menu
-                    </Button>
-                  </Stack>
+                  Tactical Mode
+                </Typography>
+                <Typography
+                  component="h1"
+                  sx={{ color: corruptionSkin.text.primary, fontSize: { xs: '1.2rem', md: '1.34rem' } }}
+                >
+                  {battle.activeBattleRef ?? 'Battle'}
+                </Typography>
+                <Typography sx={{ color: corruptionSkin.text.secondary, fontSize: '0.84rem' }}>
+                  {targetPrompt}
+                </Typography>
+              </Stack>
+              <StatusStrip items={summaryItems} skin={corruptionSkin} />
+            </Stack>
 
-                  <Box
+            <TurnRibbon currentUnitId={battle.currentUnit?.unitId ?? null} skin={corruptionSkin} units={queueUnits} />
+          </Stack>
+        </ScreenFrame>
+
+        <Stack direction={{ xs: 'column', xl: 'row' }} spacing={1.05} alignItems="stretch">
+          <Stack spacing={0.85} sx={{ width: { xs: '100%', xl: 280 }, flexShrink: 0 }}>
+            <Typography
+              sx={{
+                color: alpha(corruptionSkin.text.muted, 0.92),
+                fontSize: '0.7rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                px: 0.2,
+              }}
+            >
+              Party Front
+            </Typography>
+            {battle.allies.map((unit) => (
+              <CombatantCard
+                key={unit.unitId}
+                auraKind={getCombatantAura(unit)}
+                isCurrent={battle.currentUnit?.unitId === unit.unitId}
+                isSelectable={battle.isAwaitingPlayerInput && targetSide === 'ally'}
+                isSelectedTarget={battle.selectedTargetId === unit.unitId}
+                onSelect={
+                  battle.isAwaitingPlayerInput && targetSide === 'ally'
+                    ? () => commitSelectedTarget(unit.unitId)
+                    : undefined
+                }
+                roleLabel="Ally"
+                selectionLabel="Target ally"
+                skin={corruptionSkin}
+                portraitUrl={resolveBattlePortraitUrl(rootStore, unit)}
+                unit={unit}
+              />
+            ))}
+          </Stack>
+
+          <ScreenFrame
+            mode="tactical"
+            skin={corruptionSkin}
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              p: { xs: 1, md: 1.15 },
+              background: `
+                radial-gradient(circle at 50% 10%, ${alpha(corruptionSkin.frame.accent, 0.08)} 0%, rgba(0,0,0,0) 28%),
+                ${corruptionSkin.surface.panelStrong}
+              `,
+            }}
+          >
+            <Stack spacing={1.05}>
+              <Stack
+                alignItems={{ xs: 'flex-start', md: 'center' }}
+                direction={{ xs: 'column', md: 'row' }}
+                justifyContent="space-between"
+                spacing={0.8}
+              >
+                <Stack spacing={0.15}>
+                  <Typography
                     sx={{
-                      p: 1,
-                      borderRadius: shellTokens.radius.sm,
-                      border: `1px solid ${alpha('#eef5fb', 0.1)}`,
-                      backgroundColor: alpha('#0d131a', 0.22),
+                      color: alpha(corruptionSkin.text.muted, 0.94),
+                      fontSize: '0.68rem',
+                      letterSpacing: '0.16em',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    <Stack spacing={0.35}>
+                    Command Dais
+                  </Typography>
+                  <Typography sx={{ color: corruptionSkin.text.primary, fontSize: '1.08rem' }}>
+                    {getActionLabel(rootStore, selectedAction)}
+                  </Typography>
+                </Stack>
+                <SystemAction
+                  onClick={() => rootStore.openCharacterMenu()}
+                  skin={corruptionSkin}
+                  startAdornment={<BackpackOutlinedIcon sx={{ fontSize: 16 }} />}
+                  tone="quiet"
+                >
+                  Open Character Menu
+                </SystemAction>
+              </Stack>
+
+              <BattleStagePreview
+                ally={
+                  leadAlly
+                    ? {
+                        name: leadAlly.name,
+                        roleLabel: 'Ally Front',
+                        portraitUrl: resolveBattlePortraitUrl(rootStore, leadAlly),
+                        auraKind: getCombatantAura(leadAlly),
+                        side: 'ally',
+                      }
+                    : null
+                }
+                enemy={
+                  leadEnemy
+                    ? {
+                        name: leadEnemy.name,
+                        roleLabel: 'Enemy Pressure',
+                        portraitUrl: resolveBattlePortraitUrl(rootStore, leadEnemy),
+                        auraKind: getCombatantAura(leadEnemy),
+                        side: 'enemy',
+                      }
+                    : null
+                }
+                previewAuraKind={actionAuraKind}
+                previewSourceSide={currentUnit?.side ?? null}
+                previewTargetSide={actionPreviewTargetSide}
+                recentImpact={recentStageImpact}
+                skin={corruptionSkin}
+              />
+
+              {battle.phase === 'victory' || battle.phase === 'defeat' ? (
+                <ScreenFrame
+                  mode="tactical"
+                  skin={corruptionSkin}
+                  sx={{
+                    p: 1,
+                    background:
+                      battle.phase === 'victory'
+                        ? `linear-gradient(180deg, ${alpha('#27402c', 0.34)} 0%, ${corruptionSkin.surface.panelStrong} 100%)`
+                        : `linear-gradient(180deg, ${alpha('#442322', 0.34)} 0%, ${corruptionSkin.surface.panelStrong} 100%)`,
+                  }}
+                >
+                  <Stack spacing={0.75}>
+                    <Typography sx={{ color: corruptionSkin.text.primary, fontSize: '1rem' }}>
+                      {battle.phase === 'victory'
+                        ? 'The encounter is over. Claim the road and continue.'
+                        : 'The line has broken. Withdraw before the scene swallows the party.'}
+                    </Typography>
+                    <SystemAction onClick={() => battle.endBattle()} skin={corruptionSkin} tone="accent">
+                      Leave Battlefield
+                    </SystemAction>
+                  </Stack>
+                </ScreenFrame>
+              ) : (
+                <Stack spacing={0.95}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    flexWrap="wrap"
+                    gap={0.85}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 180 }}>
+                      <BattleCommand
+                        active={selectedAction?.type === 'attack'}
+                        detail="Single target pressure. Commit against one marked enemy."
+                        disabled={!battle.isAwaitingPlayerInput}
+                        icon={<SportsKabaddiRoundedIcon sx={{ fontSize: 18 }} />}
+                        label="Attack"
+                        onClick={() => battle.selectAction('attack')}
+                        skin={corruptionSkin}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 180 }}>
+                      <BattleCommand
+                        active={selectedAction?.type === 'skill'}
+                        detail={
+                          preferredSkillId
+                            ? 'Invoke your prepared technique or spell.'
+                            : 'No trained battle skill is prepared yet.'
+                        }
+                        disabled={!battle.isAwaitingPlayerInput || !preferredSkillId}
+                        icon={<AutoFixHighRoundedIcon sx={{ fontSize: 18 }} />}
+                        label="Skill"
+                        onClick={() => {
+                          if (!preferredSkillId) {
+                            return;
+                          }
+
+                          const skill = rootStore.getSkillById(preferredSkillId) ?? null;
+
+                          if (!skillUsesTarget(skill)) {
+                            battle.performPlayerAction('skill', { skillId: preferredSkillId });
+
+                            return;
+                          }
+
+                          battle.selectAction('skill', { skillId: preferredSkillId });
+                        }}
+                        skin={corruptionSkin}
+                      />
+                    </Box>
+                  </Stack>
+
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    flexWrap="wrap"
+                    gap={0.85}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 180 }}>
+                      <BattleCommand
+                        active={selectedAction?.type === 'item'}
+                        detail={
+                          battleItemEntries.length > 0
+                            ? 'Use a carried remedy or weaponized tool.'
+                            : 'No battle-ready items remain in the satchel.'
+                        }
+                        disabled={!battle.isAwaitingPlayerInput || battleItemEntries.length === 0}
+                        icon={<BackpackOutlinedIcon sx={{ fontSize: 18 }} />}
+                        label={battleItemEntries.length > 1 ? `Items ${battleItemEntries.length}` : preferredItemEntry?.data.name ?? 'Items'}
+                        onClick={() => {
+                          if (!preferredItemEntry) {
+                            return;
+                          }
+
+                          activateItem(preferredItemEntry.itemId);
+                        }}
+                        skin={corruptionSkin}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 180 }}>
+                      <BattleCommand
+                        active={selectedAction?.type === 'defend'}
+                        detail="Brace for impact and halve the next clean strike."
+                        disabled={!battle.isAwaitingPlayerInput}
+                        icon={<ShieldOutlinedIcon sx={{ fontSize: 18 }} />}
+                        label="Defend"
+                        onClick={() => battle.performPlayerAction('defend')}
+                        skin={corruptionSkin}
+                      />
+                    </Box>
+                  </Stack>
+
+                  {battleItemEntries.length > 0 ? (
+                    <Stack spacing={0.55}>
                       <Typography
                         sx={{
-                          color: alpha('#eef5fb', 0.56),
+                          color: alpha(corruptionSkin.text.muted, 0.92),
                           fontSize: '0.68rem',
-                          letterSpacing: '0.12em',
+                          letterSpacing: '0.14em',
                           textTransform: 'uppercase',
                         }}
                       >
-                        Action Intent
+                        Satchel
                       </Typography>
-                      <Typography sx={{ color: shellTokens.text.primary, fontSize: '0.88rem' }}>
-                        {getActionLabel(selectedAction)}
-                      </Typography>
-                      <Typography color="text.secondary" variant="body2">
-                        {battle.isAwaitingPlayerInput && requiresTarget
-                          ? 'Select a target from the enemy rail to commit the current action.'
-                          : currentUnit
-                            ? `${currentUnit.name} controls the current resolver step.`
-                            : 'Waiting for the next turn owner.'}
-                      </Typography>
+                      <Stack direction="row" flexWrap="wrap" gap={0.65}>
+                        {battleItemEntries.map((entry) => (
+                          <SystemAction
+                            key={entry.itemId}
+                            active={selectedAction?.type === 'item' && selectedAction.itemId === entry.itemId}
+                            disabled={!battle.isAwaitingPlayerInput}
+                            onClick={() => activateItem(entry.itemId)}
+                            skin={corruptionSkin}
+                            tone={selectedAction?.type === 'item' && selectedAction.itemId === entry.itemId ? 'accent' : 'quiet'}
+                          >
+                            {entry.data.name} x{entry.quantity}
+                          </SystemAction>
+                        ))}
+                      </Stack>
                     </Stack>
-                  </Box>
-                </Stack>
-              )}
-            </SectionCard>
+                  ) : null}
 
-            <SectionCard eyebrow="Pressure" title="Turn Queue">
-              <Stack spacing={0.7}>
-                {queueUnits.length > 0 ? (
-                  queueUnits.map((unit, index) => (
-                    <Box
-                      key={`${unit.unitId}-${index}`}
+                  {isVisualLab ? (
+                    <ScreenFrame
+                      mode="tactical"
+                      skin={corruptionSkin}
                       sx={{
-                        px: 1,
-                        py: 0.8,
-                        borderRadius: shellTokens.radius.sm,
-                        border: `1px solid ${alpha('#eef5fb', index === 0 ? 0.18 : 0.08)}`,
-                        backgroundColor: index === 0 ? alpha('#eef5fb', 0.08) : alpha('#0d131a', 0.18),
+                        p: 0.9,
+                        background: `linear-gradient(180deg, ${alpha(corruptionSkin.frame.accent, 0.08)} 0%, ${alpha(
+                          '#000000',
+                          0.2,
+                        )} 100%)`,
                       }}
                     >
-                      <Stack alignItems="center" direction="row" justifyContent="space-between" spacing={1}>
-                        <Typography sx={{ color: shellTokens.text.primary, fontSize: '0.82rem' }}>
-                          {unit.name}
-                        </Typography>
-                        <Typography color="text.secondary" sx={{ fontSize: '0.68rem' }}>
-                          {index === 0 ? 'Now' : `+${index}`}
-                        </Typography>
+                      <Stack spacing={0.7}>
+                        <Stack spacing={0.15}>
+                          <Typography
+                            sx={{
+                              color: alpha(corruptionSkin.text.muted, 0.92),
+                              fontSize: '0.68rem',
+                              letterSpacing: '0.14em',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            FX Lab
+                          </Typography>
+                          <Typography sx={{ color: corruptionSkin.text.secondary, fontSize: '0.78rem' }}>
+                            Preview fire, holy and violet aura cycles on the active combatant or the marked target.
+                          </Typography>
+                        </Stack>
+
+                        <Stack spacing={0.45}>
+                          <Typography
+                            sx={{
+                              color: alpha(corruptionSkin.text.muted, 0.92),
+                              fontSize: '0.64rem',
+                              letterSpacing: '0.12em',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            Active Unit
+                          </Typography>
+                          <Stack direction="row" flexWrap="wrap" gap={0.6}>
+                            <SystemAction
+                              disabled={!currentUnit}
+                              onClick={() => applySandboxAura(currentUnit?.unitId ?? null, 'fire')}
+                              skin={corruptionSkin}
+                              tone="accent"
+                            >
+                              Ember Veil
+                            </SystemAction>
+                            <SystemAction
+                              disabled={!currentUnit}
+                              onClick={() => applySandboxAura(currentUnit?.unitId ?? null, 'holy')}
+                              skin={corruptionSkin}
+                              tone="quiet"
+                            >
+                              Holy Halo
+                            </SystemAction>
+                            <SystemAction
+                              disabled={!currentUnit}
+                              onClick={() => applySandboxAura(currentUnit?.unitId ?? null, 'violet')}
+                              skin={corruptionSkin}
+                              tone="quiet"
+                            >
+                              Violet Haze
+                            </SystemAction>
+                          </Stack>
+                        </Stack>
+
+                        <Stack spacing={0.45}>
+                          <Typography
+                            sx={{
+                              color: alpha(corruptionSkin.text.muted, 0.92),
+                              fontSize: '0.64rem',
+                              letterSpacing: '0.12em',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            Target Unit
+                          </Typography>
+                          <Stack direction="row" flexWrap="wrap" gap={0.6}>
+                            <SystemAction
+                              disabled={!sandboxTargetUnitId}
+                              onClick={() => applySandboxAura(sandboxTargetUnitId, 'fire')}
+                              skin={corruptionSkin}
+                              tone="accent"
+                            >
+                              Mark Ember
+                            </SystemAction>
+                            <SystemAction
+                              disabled={!sandboxTargetUnitId}
+                              onClick={() => applySandboxAura(sandboxTargetUnitId, 'holy')}
+                              skin={corruptionSkin}
+                              tone="quiet"
+                            >
+                              Mark Holy
+                            </SystemAction>
+                            <SystemAction
+                              disabled={!sandboxTargetUnitId}
+                              onClick={() => applySandboxAura(sandboxTargetUnitId, 'violet')}
+                              skin={corruptionSkin}
+                              tone="quiet"
+                            >
+                              Mark Violet
+                            </SystemAction>
+                            <SystemAction onClick={clearSandboxAuras} skin={corruptionSkin} tone="quiet">
+                              Clear FX
+                            </SystemAction>
+                          </Stack>
+                        </Stack>
                       </Stack>
-                    </Box>
-                  ))
-                ) : (
-                  <Typography color="text.secondary" variant="body2">
-                    No queued units remain. The resolver is about to rebuild order or close the encounter.
-                  </Typography>
-                )}
-              </Stack>
-            </SectionCard>
-          </Stack>
-
-          <SectionCard eyebrow="Enemies" title="Opposition">
-            <Stack spacing={0.9}>
-              {battle.enemies.map((unit) => (
-                <CombatantCard
-                  key={unit.unitId}
-                  isCurrent={battle.currentUnit?.unitId === unit.unitId}
-                  isSelectable={battle.isAwaitingPlayerInput && Boolean(requiresTarget)}
-                  isSelectedTarget={battle.selectedTargetId === unit.unitId}
-                  onSelect={() => {
-                    if (!selectedAction) {
-                      return;
-                    }
-
-                    battle.performPlayerAction(selectedAction.type, {
-                      targetId: unit.unitId,
-                      ...(selectedAction.type === 'skill' && selectedAction.skillId
-                        ? { skillId: selectedAction.skillId }
-                        : {}),
-                    });
-                  }}
-                  tagLabels={rootStore.statusProcessor.getEffectiveTags(unit)}
-                  unit={unit}
-                />
-              ))}
-            </Stack>
-          </SectionCard>
-        </Stack>
-
-        <SectionCard eyebrow="Combat Log" title="Recent Actions">
-          <Stack divider={<Divider sx={{ opacity: 0.08 }} flexItem />} spacing={0}>
-            {battle.combatLog.slice(-10).map((entry) => (
-              <Box key={entry.id} sx={{ py: 0.85 }}>
-                <Stack spacing={0.2}>
-                  <Typography sx={{ color: shellTokens.text.primary, fontSize: '0.88rem' }}>
-                    {entry.message}
-                  </Typography>
-                  <Typography color="text.secondary" variant="caption">
-                    Round {entry.round} • {entry.type}
-                  </Typography>
+                    </ScreenFrame>
+                  ) : null}
                 </Stack>
-              </Box>
+              )}
+
+              <ScreenFrame
+                mode="tactical"
+                skin={corruptionSkin}
+                sx={{
+                  p: 0.95,
+                  background: alpha('#000000', 0.14),
+                }}
+              >
+                <Stack spacing={0.55}>
+                  <Typography
+                    sx={{
+                      color: alpha(corruptionSkin.text.muted, 0.92),
+                      fontSize: '0.68rem',
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Recent Echoes
+                  </Typography>
+                  <Stack spacing={0.5}>
+                    {battle.combatLog.slice(-5).map((entry) => (
+                      <Box key={entry.id}>
+                        <Typography sx={{ color: corruptionSkin.text.secondary, fontSize: '0.82rem' }}>
+                          {entry.message}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Stack>
+              </ScreenFrame>
+            </Stack>
+          </ScreenFrame>
+
+          <Stack spacing={0.85} sx={{ width: { xs: '100%', xl: 280 }, flexShrink: 0 }}>
+            <Typography
+              sx={{
+                color: alpha(corruptionSkin.text.muted, 0.92),
+                fontSize: '0.7rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                px: 0.2,
+              }}
+            >
+              Opposition
+            </Typography>
+            {battle.enemies.map((unit) => (
+              <CombatantCard
+                key={unit.unitId}
+                auraKind={getCombatantAura(unit)}
+                isCurrent={battle.currentUnit?.unitId === unit.unitId}
+                isSelectable={battle.isAwaitingPlayerInput && targetSide === 'enemy' && requiresTarget}
+                isSelectedTarget={battle.selectedTargetId === unit.unitId}
+                onSelect={
+                  battle.isAwaitingPlayerInput && targetSide === 'enemy'
+                    ? () => commitSelectedTarget(unit.unitId)
+                    : undefined
+                }
+                roleLabel="Enemy"
+                selectionLabel="Target enemy"
+                showDangerAccent
+                skin={corruptionSkin}
+                portraitUrl={resolveBattlePortraitUrl(rootStore, unit)}
+                unit={unit}
+              />
             ))}
           </Stack>
-        </SectionCard>
+        </Stack>
       </Stack>
     </Box>
   );

@@ -61,6 +61,7 @@ function mapTransitionToHubAction(
     text: transition.label ?? transition.description ?? transition.id,
     ...(transition.tone ? { tone: transition.tone } : {}),
     ...(transition.description ? { description: transition.description } : {}),
+    ...(transition.timeCost ? { timeCost: { ...transition.timeCost } } : {}),
     ...(transition.conditions ? { conditions: [...transition.conditions] } : {}),
     ...(transition.effects ? { effects: [...transition.effects] } : {}),
     ...(transition.nextSceneId ? { nextSceneId: transition.nextSceneId } : {}),
@@ -286,6 +287,7 @@ export function adaptSceneFlowToTravelBoardView(flow: SceneFlowData): TravelBoar
     ...(flow.routeRules?.scoutDepth !== undefined
       ? { scoutDepth: flow.routeRules.scoutDepth }
       : {}),
+    ...(flow.routeRules?.stepTimeCost ? { stepTimeCost: { ...flow.routeRules.stepTimeCost } } : {}),
     nodes: Object.fromEntries(
       Object.values(flow.nodes).map((node): [string, TravelNode] => [
         node.id,

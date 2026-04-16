@@ -118,6 +118,7 @@ describe('GameRootStore runtime backbone', () => {
 
     rootStore.seenContent.markCharacterDiscovered('mirella');
     rootStore.seenContent.markLocationEntryDiscovered('scene:chapter-1/scene/intro');
+    rootStore.seenContent.markSceneEntryDiscovered('sceneReplay:chapter-1/scene/intro');
 
     const rehydratedStore = new GameRootStore();
 
@@ -125,6 +126,31 @@ describe('GameRootStore runtime backbone', () => {
     expect(
       rehydratedStore.seenContent.hasDiscoveredLocationEntry('scene:chapter-1/scene/intro'),
     ).toBe(true);
+    expect(
+      rehydratedStore.seenContent.hasDiscoveredSceneEntry('sceneReplay:chapter-1/scene/intro'),
+    ).toBe(true);
+  });
+
+  it('unlocks replay-enabled scenes when the live story starts them', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.dialogue.startScene('chapter-1/scene/intro');
+    rootStore.dialogue.endDialogue();
+    rootStore.dialogue.startScene('chapter-1/scene/awakening');
+
+    expect(
+      rootStore.seenContent.hasDiscoveredSceneEntry('sceneReplay:chapter-1/scene/intro'),
+    ).toBe(true);
+    expect(
+      rootStore.seenContent.hasDiscoveredSceneEntry('sceneReplay:chapter-1/scene/awakening'),
+    ).toBe(true);
+  });
+
+  it('can preview replay-only Thorn scenes once they are authored as replay entries', () => {
+    const rootStore = new GameRootStore();
+
+    expect(rootStore.canPreviewScene('chapter-1/scene/thorn-estate/replay/corset-tie')).toBe(true);
+    expect(rootStore.canPreviewScene('chapter-1/scene/thorn-estate/replay/father-betrayal')).toBe(true);
   });
 
   it('wires every store back to the root store', () => {
@@ -144,6 +170,7 @@ describe('GameRootStore runtime backbone', () => {
     expect(rootStore.meta.rootStore).toBe(rootStore);
     expect(rootStore.quests.rootStore).toBe(rootStore);
     expect(rootStore.miniGame.rootStore).toBe(rootStore);
+    expect(rootStore.progression.rootStore).toBe(rootStore);
     expect(rootStore.profile.rootStore).toBe(rootStore);
     expect(rootStore.stats.rootStore).toBe(rootStore);
     expect(rootStore.relationships.rootStore).toBe(rootStore);
@@ -221,6 +248,26 @@ describe('GameRootStore runtime backbone', () => {
     expect(rootStore.backlog.entries).toHaveLength(expectedBacklogLength);
     expect(rootStore.ui.activeModal?.id).toBe('backlog');
     expect(rootStore.audio.musicAssetId).toBe(expectedMusicId);
+  });
+
+  it('runs replay previews inside a sandbox and restores the previous runtime afterwards', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.flags.setBooleanFlag('preview.restore.flag', true);
+    rootStore.ui.openModal('library', { tab: 'scenes' });
+
+    rootStore.startScenePreview('chapter-1/scene/intro');
+
+    expect(rootStore.sceneFlow.isPreviewActive).toBe(true);
+    expect(rootStore.ui.activeScreen).toBe('dialogue');
+
+    rootStore.flags.setBooleanFlag('preview.restore.flag', false);
+    rootStore.dialogue.endDialogue();
+
+    expect(rootStore.sceneFlow.isPreviewActive).toBe(false);
+    expect(rootStore.flags.getBooleanFlag('preview.restore.flag')).toBe(true);
+    expect(rootStore.ui.activeModal?.id).toBe('library');
+    expect(rootStore.ui.activeModal?.payload).toEqual({ tab: 'scenes' });
   });
 
   it('restores legacy stat and relationship data from pre-profile saves', () => {

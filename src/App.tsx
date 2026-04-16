@@ -17,11 +17,14 @@ import { MetaHud } from '@ui/components/MetaHud';
 import { BrowserRuntimeConsoleBridge } from '@ui/components/debug/BrowserRuntimeConsoleBridge';
 import { RuntimeDebugPanel } from '@ui/components/debug/RuntimeDebugPanel';
 import { ScreenRenderer } from '@ui/components/ScreenRenderer';
+import { BattleRewardsModal } from '@ui/modals/BattleRewardsModal';
 
 const App = observer(function App() {
   const rootStore = useGameRootStore();
   const activeRuntimeLayer = rootStore.activeRuntimeLayer;
   const isImmersiveLayer =
+    activeRuntimeLayer === 'home' ||
+    activeRuntimeLayer === 'mainMenu' ||
     activeRuntimeLayer === 'dialogue' ||
     activeRuntimeLayer === 'city' ||
     activeRuntimeLayer === 'travelBoard' ||
@@ -100,6 +103,7 @@ const App = observer(function App() {
         )}
       </AppShell>
       <CharacterMenuModal />
+      <BattleRewardsModal />
       <LibraryModal />
       <QuestJournalModal />
       <BacklogModal />

@@ -6,7 +6,7 @@ export const chapter1PrisonFallSceneMeta: SceneMeta = {
   id: 'chapter-1/scene/prison-fall',
   title: 'Prison Fall',
   chapterId: 'chapter-1',
-  sceneOrder: 2,
+  sceneOrder: 4,
   mainSceneFlowId: 'chapter-1/scene/prison-fall',
   description: 'Functional aftermath bridge between the prologue collapse and the awakening route.',
   defaultBackgroundId: chapter1BackgroundIds.prisonCell,

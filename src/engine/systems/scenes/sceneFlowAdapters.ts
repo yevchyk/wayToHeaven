@@ -30,6 +30,7 @@ function buildDialogueTransitions(node: DialogueNode): SceneFlowTransition[] {
       id: choice.id,
       label: choice.text,
       ...(choice.tone ? { tone: choice.tone } : {}),
+      ...(choice.timeCost ? { timeCost: { ...choice.timeCost } } : {}),
       ...(choice.conditions ? { conditions: [...choice.conditions] } : {}),
       ...(choice.effects ? { effects: [...choice.effects] } : {}),
       ...(choice.nextNodeId ? { nextNodeId: choice.nextNodeId } : {}),
@@ -77,6 +78,7 @@ export function adaptCitySceneToSceneFlow(scene: CitySceneData): SceneFlowData {
           label: action.text,
           ...(action.tone ? { tone: action.tone } : {}),
           ...(action.description ? { description: action.description } : {}),
+          ...(action.timeCost ? { timeCost: { ...action.timeCost } } : {}),
           ...(action.conditions ? { conditions: [...action.conditions] } : {}),
           ...(action.effects ? { effects: [...action.effects] } : {}),
           ...(action.nextSceneId ? { nextSceneId: action.nextSceneId } : {}),
@@ -267,6 +269,7 @@ export function adaptTravelBoardToSceneFlow(board: TravelBoardData): SceneFlowDa
       scoutCharges: board.scoutCharges ?? 1,
       scoutDepth: board.scoutDepth ?? 2,
       revealNonHiddenAtStart: true,
+      ...(board.stepTimeCost ? { stepTimeCost: { ...board.stepTimeCost } } : {}),
     },
   };
 }

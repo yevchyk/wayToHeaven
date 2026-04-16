@@ -11,8 +11,8 @@ import { shellTokens } from '@ui/components/shell/shellTokens';
 export const MetaHud = observer(function MetaHud() {
   const rootStore = useGameRootStore();
   const { activeScreen } = rootStore.ui;
-  const storyDay = rootStore.flags.getNumericFlag('story.day');
-  const timeSegment = rootStore.flags.getStringFlag('story.timeSegment');
+  const storyDay = rootStore.time.day;
+  const timeSegment = rootStore.time.segmentLabel;
   const mainQuestCount = rootStore.quests.activeMainQuests.length;
   const characterQuestCount = rootStore.quests.activeCharacterQuests.length;
   const dailyQuestCount = rootStore.quests.activeDailyQuests.length;

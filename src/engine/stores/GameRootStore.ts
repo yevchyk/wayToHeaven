@@ -7,13 +7,16 @@ import { miniGameContentRegistry } from '@content/minigames';
 import { citySceneRegistry } from '@content/registries/citySceneRegistry';
 import { chapterRegistry } from '@content/registries/chapterRegistry';
 import { narrativeAssetRegistry, hasNarrativeAssetOfKind } from '@content/registries/assetRegistry';
+import { lootTableContentRegistry } from '@content/lootTables';
 import { locationContentRegistry } from '@content/registries/locationRegistry';
 import { narrativeCharacterRegistry } from '@content/registries/npcRegistry';
 import { questRegistry } from '@content/registries/questRegistry';
 import { sceneRegistry } from '@content/registries/sceneRegistry';
+import { sceneGenerationRegistry } from '@content/registries/sceneGenerationRegistry';
 import { sceneFlowRegistry } from '@content/registries/sceneFlowRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 import { itemContentRegistry } from '@content/items';
+import { skillContentRegistry } from '@content/skills';
 import {
   characterInstanceRegistry,
   characterTemplateRegistry,
@@ -38,6 +41,7 @@ import { NarrativeProfileStore } from '@engine/stores/NarrativeProfileStore';
 import { NarrativeAppearanceStore } from '@engine/stores/NarrativeAppearanceStore';
 import { PartyStore } from '@engine/stores/PartyStore';
 import { PreferencesStore } from '@engine/stores/PreferencesStore';
+import { ProgressionStore } from '@engine/stores/ProgressionStore';
 import { QuestStore } from '@engine/stores/QuestStore';
 import { RelationshipStore } from '@engine/stores/RelationshipStore';
 import { SaveStore } from '@engine/stores/SaveStore';
@@ -45,6 +49,7 @@ import { SceneFlowStore } from '@engine/stores/SceneFlowStore';
 import { SeenContentStore } from '@engine/stores/SeenContentStore';
 import { StatsStore } from '@engine/stores/StatsStore';
 import { TravelBoardStore } from '@engine/stores/TravelBoardStore';
+import { TimeStore } from '@engine/stores/TimeStore';
 import { UIStore } from '@engine/stores/UIStore';
 import { WorldStore } from '@engine/stores/WorldStore';
 import { BattleAI } from '@engine/systems/battle/BattleAI';
@@ -57,6 +62,7 @@ import { TurnQueueBuilder } from '@engine/systems/battle/TurnQueueBuilder';
 import { DialogueConditionEvaluator } from '@engine/systems/dialogue/DialogueConditionEvaluator';
 import { EffectRunner } from '@engine/systems/effects/EffectRunner';
 import { MiniGameController } from '@engine/systems/minigame/MiniGameController';
+import { LootTableResolver } from '@engine/systems/rewards/LootTableResolver';
 import { TravelBoardController } from '@engine/systems/travel/TravelBoardController';
 import { TravelEncounterResolver } from '@engine/systems/travel/TravelEncounterResolver';
 import { WorldController } from '@engine/systems/world/WorldController';
@@ -66,10 +72,12 @@ import type { CharacterCompositeDefinition } from '@engine/types/characterCompos
 import type { DialogueData } from '@engine/types/dialogue';
 import type { GameEffect } from '@engine/types/effects';
 import type { ItemData } from '@engine/types/item';
+import type { LootTableData } from '@engine/types/loot';
 import type { MiniGameData } from '@engine/types/minigame';
 import type { ChapterMeta, NarrativeAssetDefinition, NarrativeCharacterData, SceneMeta } from '@engine/types/narrative';
 import type { QuestDefinition } from '@engine/types/quest';
 import type { SceneFlowData } from '@engine/types/sceneFlow';
+import type { SkillData } from '@engine/types/skill';
 import type { StatusDefinition } from '@engine/types/status';
 import type { TagRuleSet } from '@engine/types/tags';
 import type { TravelBoardData } from '@engine/types/travel';
@@ -92,8 +100,11 @@ import { DialogueValidator } from '@engine/validators/DialogueValidator';
 import { EffectReferenceValidator } from '@engine/validators/EffectReferenceValidator';
 import { ItemContentValidator } from '@engine/validators/ItemContentValidator';
 import { LocationGraphValidator } from '@engine/validators/LocationGraphValidator';
+import { LootTableValidator } from '@engine/validators/LootTableValidator';
 import { TravelBoardValidator } from '@engine/validators/TravelBoardValidator';
 import { SceneFlowValidator } from '@engine/validators/SceneFlowValidator';
+import { SceneAuthoringValidator } from '@engine/validators/SceneAuthoringValidator';
+import { QuestContentValidator } from '@engine/validators/QuestContentValidator';
 import {
   createContentReferenceLookup,
   type ContentRegistrySnapshot,
@@ -119,6 +130,8 @@ export class GameRootStore {
   readonly characterCompositeRegistry: Record<string, CharacterCompositeDefinition>;
   readonly narrativeAssetRegistry: Record<string, NarrativeAssetDefinition>;
   readonly itemRegistry: Record<string, ItemData>;
+  readonly lootTableRegistry: Record<string, LootTableData>;
+  readonly skillRegistry: Record<string, SkillData>;
   readonly questRegistry: Record<string, QuestDefinition>;
   readonly locationRegistry: Record<string, LocationData>;
   readonly minigameRegistry: Record<string, MiniGameData>;
@@ -136,9 +149,12 @@ export class GameRootStore {
   readonly travelBoardValidator: TravelBoardValidator;
   readonly battleTemplateValidator: BattleTemplateValidator;
   readonly itemContentValidator: ItemContentValidator;
+  readonly lootTableValidator: LootTableValidator;
+  readonly questContentValidator: QuestContentValidator;
   readonly unitContentValidator: UnitContentValidator;
   readonly contentGraphValidator: ContentGraphValidator;
   readonly sceneFlowContentValidator: SceneFlowValidator;
+  readonly sceneAuthoringValidator: SceneAuthoringValidator;
   readonly scriptRegistry: ScriptRegistry;
   readonly turnQueueBuilder: TurnQueueBuilder;
   readonly combatLogBuilder: CombatLogBuilder;
@@ -152,6 +168,7 @@ export class GameRootStore {
   readonly worldController: WorldController;
   readonly effectRunner: EffectRunner;
   readonly miniGameController: MiniGameController;
+  readonly lootTableResolver: LootTableResolver;
   readonly ui: UIStore;
   readonly preferences: PreferencesStore;
   readonly audio: AudioStore;
@@ -167,7 +184,9 @@ export class GameRootStore {
   readonly party: PartyStore;
   readonly inventory: InventoryStore;
   readonly meta: MetaStore;
+  readonly time: TimeStore;
   readonly miniGame: MiniGameStore;
+  readonly progression: ProgressionStore;
   readonly quests: QuestStore;
   readonly profile: NarrativeProfileStore;
   readonly stats: StatsStore;
@@ -188,6 +207,8 @@ export class GameRootStore {
     this.characterCompositeRegistry = chapter1CharacterCompositeRegistry;
     this.narrativeAssetRegistry = narrativeAssetRegistry;
     this.itemRegistry = itemContentRegistry;
+    this.lootTableRegistry = lootTableContentRegistry;
+    this.skillRegistry = skillContentRegistry;
     this.questRegistry = questRegistry;
     this.locationRegistry = locationContentRegistry;
     this.minigameRegistry = miniGameContentRegistry;
@@ -207,6 +228,7 @@ export class GameRootStore {
       dialogues: this.dialogueRegistry,
       sceneFlows: this.sceneFlowRegistry,
       items: this.itemRegistry,
+      lootTables: this.lootTableRegistry,
       quests: this.questRegistry,
       locations: this.locationRegistry,
       characterTemplates: this.characterTemplateRegistry,
@@ -222,6 +244,7 @@ export class GameRootStore {
     this.dialogueConditionEvaluator = new DialogueConditionEvaluator(this);
     this.effectReferenceValidator = new EffectReferenceValidator(contentReferenceLookup, {
       hasAssetOfKind: (assetId, kind) => hasNarrativeAssetOfKind(assetId, kind),
+      hasSceneId: (sceneId) => sceneId in this.sceneRegistry,
     });
     this.dialogueValidator = new DialogueValidator(this.effectReferenceValidator, {
       hasSpeakerId: (speakerId) => speakerId in this.narrativeCharacterRegistry,
@@ -248,6 +271,8 @@ export class GameRootStore {
       this.effectReferenceValidator,
     );
     this.itemContentValidator = new ItemContentValidator(this.effectReferenceValidator);
+    this.lootTableValidator = new LootTableValidator(contentReferenceLookup);
+    this.questContentValidator = new QuestContentValidator(this.effectReferenceValidator);
     this.unitContentValidator = new UnitContentValidator(
       contentReferenceLookup,
       this.effectReferenceValidator,
@@ -256,6 +281,10 @@ export class GameRootStore {
       hasSceneFlowId: (sceneFlowId) => sceneFlowId in this.sceneFlowRegistry,
       hasAssetOfKind: (assetId, kind) => hasNarrativeAssetOfKind(assetId, kind),
     });
+    this.sceneAuthoringValidator = new SceneAuthoringValidator(
+      this.sceneRegistry,
+      sceneGenerationRegistry,
+    );
     this.contentGraphValidator = new ContentGraphValidator(
       contentSnapshot,
       this.dialogueValidator,
@@ -265,6 +294,8 @@ export class GameRootStore {
       this.sceneFlowContentValidator,
       this.battleTemplateValidator,
       this.itemContentValidator,
+      this.lootTableValidator,
+      this.questContentValidator,
       this.unitContentValidator,
     );
 
@@ -287,7 +318,9 @@ export class GameRootStore {
     this.party = new PartyStore(this);
     this.inventory = new InventoryStore(this);
     this.meta = new MetaStore(this);
+    this.time = new TimeStore(this);
     this.miniGame = new MiniGameStore(this);
+    this.progression = new ProgressionStore(this);
     this.quests = new QuestStore(this);
     this.profile = new NarrativeProfileStore(this);
     this.stats = this.profile;
@@ -300,7 +333,7 @@ export class GameRootStore {
     this.turnQueueBuilder = new TurnQueueBuilder((unit) =>
       this.statusProcessor.getAdjustedInitiative(unit),
     );
-    this.battleAI = new BattleAI(options.battleRandom);
+    this.battleAI = new BattleAI((skillId) => this.getSkillById(skillId) ?? null, options.battleRandom);
     this.battleResolver = new BattleResolver(
       this,
       this.turnQueueBuilder,
@@ -314,6 +347,7 @@ export class GameRootStore {
     this.worldController = new WorldController(this);
     this.effectRunner = new EffectRunner(this, this.scriptRegistry);
     this.miniGameController = new MiniGameController(this);
+    this.lootTableResolver = new LootTableResolver(options.battleRandom);
 
     makeAutoObservable(
       this,
@@ -329,6 +363,9 @@ export class GameRootStore {
         characterCompositeRegistry: false,
         narrativeAssetRegistry: false,
         itemRegistry: false,
+        lootTableRegistry: false,
+        skillRegistry: false,
+        questRegistry: false,
         locationRegistry: false,
         minigameRegistry: false,
         characterTemplateRegistry: false,
@@ -345,9 +382,12 @@ export class GameRootStore {
         travelBoardValidator: false,
         battleTemplateValidator: false,
         itemContentValidator: false,
+        lootTableValidator: false,
+        questContentValidator: false,
         unitContentValidator: false,
         contentGraphValidator: false,
         sceneFlowContentValidator: false,
+        sceneAuthoringValidator: false,
         scriptRegistry: false,
         turnQueueBuilder: false,
         combatLogBuilder: false,
@@ -361,6 +401,7 @@ export class GameRootStore {
         worldController: false,
         effectRunner: false,
         miniGameController: false,
+        lootTableResolver: false,
         ui: false,
         preferences: false,
         audio: false,
@@ -376,7 +417,10 @@ export class GameRootStore {
         party: false,
         inventory: false,
         meta: false,
+        time: false,
         miniGame: false,
+        progression: false,
+        quests: false,
         profile: false,
         stats: false,
         relationships: false,
@@ -421,6 +465,7 @@ export class GameRootStore {
       ui: this.ui.snapshot,
       world: this.world.snapshot,
       meta: this.meta.snapshot,
+      time: this.time.snapshot,
       quests: {
         states: this.quests.snapshot,
       },
@@ -430,6 +475,7 @@ export class GameRootStore {
       flags: this.flags.snapshot,
       inventory: this.inventory.snapshot,
       party: this.party.snapshot,
+      progression: this.progression.snapshot,
       appearance: this.appearance.snapshot,
       sceneFlow: this.sceneFlow.snapshot,
       dialogue: this.dialogue.snapshot,
@@ -476,8 +522,16 @@ export class GameRootStore {
     return this.itemRegistry[itemId];
   }
 
+  getLootTableById(lootTableId: string) {
+    return this.lootTableRegistry[lootTableId];
+  }
+
   getQuestById(questId: string) {
     return this.questRegistry[questId];
+  }
+
+  getSkillById(skillId: string) {
+    return this.skillRegistry[skillId];
   }
 
   getBattleTemplateById(templateId: string) {
@@ -527,16 +581,71 @@ export class GameRootStore {
     this.ui.openModal('character-menu');
   }
 
-  openLibrary(tab: 'characters' | 'locations' = 'characters', entryId?: string) {
+  openLibrary(tab: 'characters' | 'locations' | 'scenes' = 'characters', entryId?: string) {
     this.ui.openModal('library', entryId ? { tab, entryId } : { tab });
   }
 
+  canPreviewScene(sceneId: string) {
+    const scene = this.getSceneById(sceneId);
+    const mainFlowId = scene?.mainSceneFlowId;
+
+    if (!scene || !mainFlowId) {
+      return false;
+    }
+
+    return this.getSceneFlowById(mainFlowId)?.replay?.enabled === true;
+  }
+
+  startScenePreview(sceneId: string) {
+    if (!this.canPreviewScene(sceneId)) {
+      throw new Error(`Scene "${sceneId}" is not configured for replay preview.`);
+    }
+
+    const runtimeSnapshot = this.saveRuntimeSnapshot;
+
+    this.resetRuntime();
+    this.restorePreviewBaseline(runtimeSnapshot);
+    this.sceneFlow.beginPreview(runtimeSnapshot, sceneId);
+
+    try {
+      const session = this.dialogue.startScenePreview(sceneId);
+
+      if (!session) {
+        throw new Error(`Scene "${sceneId}" could not start in preview mode.`);
+      }
+    } catch (error) {
+      this.sceneFlow.consumePreviewRuntimeSnapshot();
+      this.restoreRuntimeSnapshot(runtimeSnapshot);
+      throw error;
+    }
+  }
+
+  finishScenePreview() {
+    const runtimeSnapshot = this.sceneFlow.consumePreviewRuntimeSnapshot();
+
+    if (!runtimeSnapshot) {
+      return;
+    }
+
+    this.restoreRuntimeSnapshot(runtimeSnapshot);
+  }
+
   validateContentGraph() {
-    return this.contentGraphValidator.validate();
+    return [...this.contentGraphValidator.validate(), ...this.sceneAuthoringValidator.validate()];
   }
 
   assertContentGraphValid() {
-    this.contentGraphValidator.assertValid();
+    const issues = this.validateContentGraph();
+
+    if (issues.length === 0) {
+      return;
+    }
+
+    const summary = issues
+      .map((issue) => `[${issue.sourceType}:${issue.sourceId}] ${issue.message}`)
+      .join(' ');
+
+    throw new Error(`Invalid content graph. ${summary}`);
   }
 
   assertBattleTemplateValid(templateId: string) {
@@ -589,6 +698,17 @@ export class GameRootStore {
     this.travelBoardController.startBoard(boardId);
   }
 
+  startBattleVisualDemo(templateId = 'battle-visual-lab') {
+    this.assertContentGraphValid();
+    this.resetRuntime();
+    this.party.loadParty(['main-hero']);
+    this.inventory.addItem('basic-potion', 2);
+    this.inventory.addItem('holy-water', 3);
+    this.inventory.addItem('pitch-bomb', 3);
+    this.inventory.addItem('stimulant-tincture', 3);
+    this.battle.startBattle(templateId);
+  }
+
   createSaveSnapshot(input: { slotId: string; kind: GameSaveSlotKind; label: string }): GameSaveSnapshot {
     const savedAt = new Date().toISOString();
 
@@ -621,32 +741,7 @@ export class GameRootStore {
       );
     }
 
-    this.resetRuntime();
-    this.meta.restore(snapshot.runtime.meta);
-    this.quests.restore(snapshot.runtime.quests?.states);
-    this.flags.restore(snapshot.runtime.flags);
-    this.profile.restore(
-      snapshot.runtime.profile ?? snapshot.runtime.stats ?? DEFAULT_NARRATIVE_PROFILE,
-      snapshot.runtime.profileUnlocks ?? snapshot.runtime.statUnlocks ?? DEFAULT_UNLOCKED_NARRATIVE_PROFILE,
-    );
-    this.relationships.restore(snapshot.runtime.relationships, snapshot.runtime.flags.numericFlags);
-    this.inventory.restore(snapshot.runtime.inventory);
-    this.party.restore(snapshot.runtime.party);
-    this.appearance.restore(snapshot.runtime.appearance);
-    this.world.restore(snapshot.runtime.world);
-    this.seenContent.restore(snapshot.runtime.seenContent);
-    this.backlog.restore(snapshot.runtime.backlog);
-    this.sceneFlow.restore(snapshot.runtime.sceneFlow);
-    this.battle.restore(snapshot.runtime.battle);
-    this.miniGame.restore(snapshot.runtime.miniGame);
-    this.ui.restore(snapshot.runtime.ui);
-    this.dialogue.restore(snapshot.runtime.dialogue);
-    this.audio.reset();
-    this.audio.applyPreferences(this.preferences.snapshot);
-
-    if (this.sceneFlow.isActive) {
-      this.audio.syncSceneFlowPresentation();
-    }
+    this.restoreRuntimeSnapshot(snapshot.runtime);
   }
 
   resetRuntime() {
@@ -665,8 +760,10 @@ export class GameRootStore {
     this.meta.reset();
     this.quests.reset();
     this.profile.reset();
+    this.progression.reset();
     this.relationships.reset();
     this.flags.clearAll();
+    this.time.reset();
     this.appearance.reset();
   }
 
@@ -676,5 +773,55 @@ export class GameRootStore {
     this.inventory.addItem('travel-ration', 3);
     this.inventory.addItem('iron-helm', 1);
     this.inventory.addItem('ember-aura', 1);
+  }
+
+  private restoreRuntimeSnapshot(snapshot: GameSaveRuntimeSnapshot) {
+    this.resetRuntime();
+    this.meta.restore(snapshot.meta);
+    this.time.restore(snapshot.time);
+    this.flags.restore(snapshot.flags);
+    this.profile.restore(
+      snapshot.profile ?? snapshot.stats ?? DEFAULT_NARRATIVE_PROFILE,
+      snapshot.profileUnlocks ?? snapshot.statUnlocks ?? DEFAULT_UNLOCKED_NARRATIVE_PROFILE,
+    );
+    this.relationships.restore(snapshot.relationships, snapshot.flags.numericFlags);
+    this.inventory.restore(snapshot.inventory);
+    this.party.restore(snapshot.party);
+    this.progression.restore(snapshot.progression);
+    this.appearance.restore(snapshot.appearance);
+    this.quests.restore(snapshot.quests?.states);
+    this.world.restore(snapshot.world);
+    this.seenContent.restore(snapshot.seenContent);
+    this.backlog.restore(snapshot.backlog);
+    this.sceneFlow.restore(snapshot.sceneFlow);
+    this.battle.restore(snapshot.battle);
+    this.miniGame.restore(snapshot.miniGame);
+    this.ui.restore(snapshot.ui);
+    this.dialogue.restore(snapshot.dialogue);
+    this.audio.reset();
+    this.audio.applyPreferences(this.preferences.snapshot);
+
+    if (this.sceneFlow.isActive) {
+      this.audio.syncSceneFlowPresentation();
+    }
+  }
+
+  private restorePreviewBaseline(snapshot: GameSaveRuntimeSnapshot) {
+    this.meta.restore(snapshot.meta);
+    this.time.restore(snapshot.time);
+    this.flags.restore(snapshot.flags);
+    this.profile.restore(
+      snapshot.profile ?? snapshot.stats ?? DEFAULT_NARRATIVE_PROFILE,
+      snapshot.profileUnlocks ?? snapshot.statUnlocks ?? DEFAULT_UNLOCKED_NARRATIVE_PROFILE,
+    );
+    this.relationships.restore(snapshot.relationships, snapshot.flags.numericFlags);
+    this.inventory.restore(snapshot.inventory);
+    this.party.restore(snapshot.party);
+    this.progression.restore(snapshot.progression);
+    this.appearance.restore(snapshot.appearance);
+    this.quests.restore(snapshot.quests?.states);
+    this.world.restore(snapshot.world);
+    this.seenContent.restore(snapshot.seenContent);
+    this.ui.setScreen(snapshot.ui.activeScreen);
   }
 }

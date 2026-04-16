@@ -1,4 +1,5 @@
 import type { BattleActionSelection, BattleActionType, BattleRuntime } from '@engine/types/battle';
+import { skillPatternRequiresTarget, type SkillData } from '@engine/types/skill';
 import type { BattleUnitRuntime } from '@engine/types/unit';
 
 type RandomSource = () => number;
@@ -14,9 +15,11 @@ function pickRandomValue<TValue>(values: readonly TValue[], random: RandomSource
 }
 
 export class BattleAI {
+  private readonly getSkillById: (skillId: string) => SkillData | null;
   private readonly random: RandomSource;
 
-  constructor(random: RandomSource = Math.random) {
+  constructor(getSkillById: (skillId: string) => SkillData | null, random: RandomSource = Math.random) {
+    this.getSkillById = getSkillById;
     this.random = random;
   }
 
@@ -49,12 +52,13 @@ export class BattleAI {
 
     if (type === 'skill') {
       const skillId = pickRandomValue(unit.skillIds, this.random);
+      const skill = this.getSkillById(skillId);
 
       return {
         type,
         sourceUnitId: unit.unitId,
         skillId,
-        targetId,
+        ...(skill && !skillPatternRequiresTarget(skill.targetPattern) ? {} : { targetId }),
       };
     }
 

@@ -13,7 +13,7 @@ export const basicPotion: ItemData = {
       type: 'restoreResource',
       resource: 'hp',
       amount: 20,
-      targetScope: 'player',
+      targetScope: 'unit',
     },
   ],
 };

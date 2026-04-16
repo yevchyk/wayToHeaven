@@ -10,6 +10,7 @@ import type {
   StageCharacterPlacement,
 } from '@engine/types/dialogue';
 import type { GameEffect } from '@engine/types/effects';
+import type { TimeCost } from '@engine/types/time';
 
 export const SCENE_GENERATION_SCHEMA_VERSION = 1 as const;
 
@@ -92,6 +93,12 @@ export interface SceneGenerationRouteRules {
   scoutCharges?: number;
   scoutDepth?: number;
   revealNonHiddenAtStart?: boolean;
+  stepTimeCost?: TimeCost;
+}
+
+export interface SceneGenerationReplayConfig {
+  enabled: boolean;
+  unlockOnStart?: boolean;
 }
 
 export interface SceneGenerationChoice {
@@ -99,6 +106,7 @@ export interface SceneGenerationChoice {
   text: string;
   description?: string;
   tone?: ActionTone;
+  timeCost?: TimeCost;
   conditions?: Condition[];
   effects?: GameEffect[];
   nextNodeId?: string;
@@ -161,6 +169,7 @@ export interface SceneGenerationScene {
   onConditionFail?: SceneGenerationFallbackTarget;
   tags?: string[];
   routeRules?: SceneGenerationRouteRules;
+  replay?: SceneGenerationReplayConfig;
   nodes: Record<string, SceneGenerationNode>;
 }
 
@@ -171,3 +180,25 @@ export interface SceneGenerationDocument {
   meta: SceneGenerationMeta;
   scenes: Record<string, SceneGenerationScene>;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

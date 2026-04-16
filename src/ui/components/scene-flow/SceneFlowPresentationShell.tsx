@@ -409,6 +409,45 @@ function getTransitionDurationMs(type: string, durationMs?: number) {
   return 420;
 }
 
+function resolveTransitionPresentation(type: string) {
+  if (type === 'flash') {
+    return {
+      background:
+        'radial-gradient(circle at 50% 46%, rgba(248, 243, 232, 0.32) 0%, rgba(248, 243, 232, 0.16) 28%, rgba(248, 243, 232, 0) 72%)',
+      mixBlendMode: 'screen' as const,
+      animationName: 'sceneFlowTransitionFlash',
+      initialOpacity: 0.68,
+    };
+  }
+
+  if (type === 'dissolve') {
+    return {
+      background:
+        'radial-gradient(circle at 50% 40%, rgba(235, 224, 205, 0.2) 0%, rgba(16, 20, 28, 0.26) 52%, rgba(7, 10, 16, 0.38) 100%)',
+      mixBlendMode: 'screen' as const,
+      animationName: 'sceneFlowTransitionDissolve',
+      initialOpacity: 0.52,
+    };
+  }
+
+  if (type === 'cut') {
+    return {
+      background: 'rgba(4, 5, 8, 0.76)',
+      mixBlendMode: 'normal' as const,
+      animationName: 'sceneFlowTransitionCut',
+      initialOpacity: 1,
+    };
+  }
+
+  return {
+    background:
+      'radial-gradient(circle at 50% 44%, rgba(7, 10, 16, 0.02) 0%, rgba(7, 10, 16, 0.18) 44%, rgba(7, 10, 16, 0.34) 100%)',
+    mixBlendMode: 'multiply' as const,
+    animationName: 'sceneFlowTransitionFade',
+    initialOpacity: 0.48,
+  };
+}
+
 function SceneFlowTransitionLayer() {
   const rootStore = useGameRootStore();
   const transition = rootStore.sceneFlow.activeSession?.presentation.activeTransition ?? null;
@@ -452,13 +491,7 @@ function SceneFlowTransitionLayer() {
   }
 
   const animationDuration = `${getTransitionDurationMs(activeTransition.type, activeTransition.durationMs)}ms`;
-  const background =
-    activeTransition.type === 'flash'
-      ? 'rgba(245, 241, 232, 0.92)'
-      : activeTransition.type === 'dissolve'
-        ? 'radial-gradient(circle at 50% 40%, rgba(245, 241, 232, 0.34) 0%, rgba(12, 15, 22, 0.72) 56%, rgba(4, 5, 8, 0.94) 100%)'
-        : 'rgba(4, 5, 8, 0.94)';
-  const mixBlendMode = activeTransition.type === 'dissolve' ? 'screen' : 'normal';
+  const presentation = resolveTransitionPresentation(activeTransition.type);
 
   return (
     <Box
@@ -469,15 +502,34 @@ function SceneFlowTransitionLayer() {
         inset: 0,
         zIndex: 3,
         pointerEvents: 'none',
-        background,
-        mixBlendMode,
+        background: presentation.background,
+        mixBlendMode: presentation.mixBlendMode,
         animation:
-          activeTransition.type === 'cut'
-            ? `sceneFlowTransitionCut ${animationDuration} steps(1, end)`
-            : `sceneFlowTransitionFade ${animationDuration} ease-out`,
+          presentation.animationName === 'sceneFlowTransitionCut'
+            ? `${presentation.animationName} ${animationDuration} steps(1, end)`
+            : `${presentation.animationName} ${animationDuration} ease-out`,
         '@keyframes sceneFlowTransitionFade': {
           '0%': {
-            opacity: activeTransition.type === 'flash' ? 0.96 : 0.9,
+            opacity: presentation.initialOpacity,
+          },
+          '100%': {
+            opacity: 0,
+          },
+        },
+        '@keyframes sceneFlowTransitionDissolve': {
+          '0%': {
+            opacity: presentation.initialOpacity,
+          },
+          '100%': {
+            opacity: 0,
+          },
+        },
+        '@keyframes sceneFlowTransitionFlash': {
+          '0%': {
+            opacity: presentation.initialOpacity,
+          },
+          '58%': {
+            opacity: presentation.initialOpacity * 0.46,
           },
           '100%': {
             opacity: 0,

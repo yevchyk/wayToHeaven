@@ -20,6 +20,8 @@ export class DialogueConditionEvaluator {
       getMeta: (key) => this.rootStore.meta[key],
       getProfileValue: (key) => this.rootStore.profile.getProfileValue(key),
       getItemCount: (itemId) => this.rootStore.inventory.getItemCount(itemId),
+      getRelationshipValue: (relationshipId, axis) =>
+        this.rootStore.relationships.getRelationshipValue(relationshipId, axis),
       hasTag: (tag, targetScope, targetId) =>
         this.rootStore.party.hasTagInScope(targetScope, tag, targetId),
     });
@@ -39,6 +41,8 @@ export class DialogueConditionEvaluator {
       getMeta: (key) => this.rootStore.meta[key],
       getProfileValue: (key) => this.rootStore.profile.getProfileValue(key),
       getItemCount: (itemId) => this.rootStore.inventory.getItemCount(itemId),
+      getRelationshipValue: (relationshipId, axis) =>
+        this.rootStore.relationships.getRelationshipValue(relationshipId, axis),
       hasTag: (tag, targetScope, targetId) =>
         this.rootStore.party.hasTagInScope(targetScope, tag, targetId),
     });
@@ -50,6 +54,8 @@ export class DialogueConditionEvaluator {
       getMeta: (key) => this.rootStore.meta[key],
       getProfileValue: (key) => this.rootStore.profile.getProfileValue(key),
       getItemCount: (itemId) => this.rootStore.inventory.getItemCount(itemId),
+      getRelationshipValue: (relationshipId, axis) =>
+        this.rootStore.relationships.getRelationshipValue(relationshipId, axis),
       hasTag: (tag, targetScope, targetId) =>
         this.rootStore.party.hasTagInScope(targetScope, tag, targetId),
     });

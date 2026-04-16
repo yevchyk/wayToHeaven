@@ -3,6 +3,7 @@ import { dialogueContentRegistry } from '@content/dialogues';
 import { itemContentRegistry } from '@content/items';
 import { locationContentRegistry } from '@content/registries/locationRegistry';
 import { citySceneRegistry } from '@content/registries/citySceneRegistry';
+import { lootTableContentRegistry } from '@content/lootTables';
 import { questRegistry } from '@content/registries/questRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 import {
@@ -21,6 +22,8 @@ import { DialogueValidator } from '@engine/validators/DialogueValidator';
 import { EffectReferenceValidator } from '@engine/validators/EffectReferenceValidator';
 import { ItemContentValidator } from '@engine/validators/ItemContentValidator';
 import { LocationGraphValidator } from '@engine/validators/LocationGraphValidator';
+import { LootTableValidator } from '@engine/validators/LootTableValidator';
+import { QuestContentValidator } from '@engine/validators/QuestContentValidator';
 import { SceneFlowValidator } from '@engine/validators/SceneFlowValidator';
 import { TravelBoardValidator } from '@engine/validators/TravelBoardValidator';
 import {
@@ -119,6 +122,7 @@ describe('ContentGraphValidator', () => {
         ...itemContentRegistry,
         [brokenItem.id]: brokenItem,
       },
+      lootTables: lootTableContentRegistry,
       quests: questRegistry,
       locations: locationContentRegistry,
       characterTemplates: {
@@ -147,6 +151,8 @@ describe('ContentGraphValidator', () => {
       new SceneFlowValidator(),
       new BattleTemplateValidator(referenceLookup, effectReferenceValidator),
       new ItemContentValidator(effectReferenceValidator),
+      new LootTableValidator(referenceLookup),
+      new QuestContentValidator(effectReferenceValidator),
       new UnitContentValidator(referenceLookup, effectReferenceValidator),
     );
 

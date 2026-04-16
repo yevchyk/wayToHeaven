@@ -1,29 +1,121 @@
 import { GameRootStore } from '@engine/stores/GameRootStore';
-import { resolveNarrativePortraitVisual, resolvePresentationStagePortraits } from '@ui/components/dialogue/dialoguePresentation';
+import {
+  resolveNarrativePortraitVisual,
+  resolvePresentationStagePortraits,
+} from '@ui/components/dialogue/dialoguePresentation';
 
 function createImageResolver(urls: Record<string, string>) {
   return {
-    resolveImageUrl: (assetId: string | null) => (assetId ? urls[assetId] ?? null : null),
+    resolveImageUrl: (assetId: string | null, sourcePath?: string) => {
+      if (assetId && urls[assetId]) {
+        return urls[assetId] ?? null;
+      }
+
+      return sourcePath ? urls[sourcePath] ?? null : null;
+    },
   };
 }
 
 describe('resolveNarrativePortraitVisual', () => {
-  it('prefers a layered composite when the legacy portrait id only duplicates the canonical emotion portrait', () => {
+  it('keeps NPCs on flat emotion portraits by default', () => {
     const rootStore = new GameRootStore();
     const visual = resolveNarrativePortraitVisual(
       rootStore,
       {
         speakerId: 'lady-sera',
         emotion: 'soft',
-        portraitId: 'chapter-1/portraits/lady-sera/soft.webp',
+        portraitId: null,
         outfitId: null,
         fallbackLabel: 'Леді Сера',
       },
       createImageResolver({
-        'chapter-1/portraits/lady-sera/soft.webp': '/portraits/lady-sera-soft.webp',
-        'chapter-1/characters/lady-sera/body/base': '/characters/lady-sera-body.webp',
-        'chapter-1/characters/lady-sera/clothes/base': '/characters/lady-sera-clothes.webp',
-        'chapter-1/characters/lady-sera/head/soft': '/characters/lady-sera-head-soft.webp',
+        'chapter-1/portraits/lady-sera/composed.png': '/portraits/lady-sera-composed.png',
+      }),
+    );
+
+    expect(visual.type).toBe('asset');
+
+    if (visual.type !== 'asset') {
+      return;
+    }
+
+    expect(visual.assetId).toBe('chapter-1/portraits/lady-sera/composed.png');
+    expect(visual.url).toBe('/portraits/lady-sera-composed.png');
+  });
+
+  it('falls back to the character default portrait when an emotion-specific asset is still missing', () => {
+    const rootStore = new GameRootStore();
+    const visual = resolveNarrativePortraitVisual(
+      rootStore,
+      {
+        speakerId: 'lady-sera',
+        emotion: 'calm',
+        portraitId: null,
+        outfitId: null,
+        fallbackLabel: 'Р›РµРґС– РЎРµСЂР°',
+      },
+      createImageResolver({
+        'chapter-1/portraits/lady-sera/composed.png': '/portraits/lady-sera-composed.png',
+      }),
+    );
+
+    expect(visual.type).toBe('asset');
+
+    if (visual.type !== 'asset') {
+      return;
+    }
+
+    expect(visual.assetId).toBe('chapter-1/portraits/lady-sera/composed.png');
+    expect(visual.url).toBe('/portraits/lady-sera-composed.png');
+  });
+
+  it('uses the placeholder bundle when a character has no authored portrait art yet', () => {
+    const rootStore = new GameRootStore();
+    const visual = resolveNarrativePortraitVisual(
+      rootStore,
+      {
+        speakerId: 'sir-raust',
+        emotion: 'stern',
+        portraitId: null,
+        outfitId: null,
+        fallbackLabel: 'РЎС–СЂ Р Р°СѓСЃС‚',
+      },
+      createImageResolver({
+        'src/content/shared/placeholders/portraits/noble-man.jpg': '/placeholders/noble-man.jpg',
+      }),
+    );
+
+    expect(visual.type).toBe('asset');
+
+    if (visual.type !== 'asset') {
+      return;
+    }
+
+    expect(visual.assetId).toBeNull();
+    expect(visual.url).toBe('/placeholders/noble-man.jpg');
+    expect(visual.isPlaceholder).toBe(false);
+  });
+
+  it('prefers the layered heroine composite for canonical dialogue beats', () => {
+    const rootStore = new GameRootStore();
+    const visual = resolveNarrativePortraitVisual(
+      rootStore,
+      {
+        speakerId: 'mirella',
+        emotion: 'soft',
+        portraitId: 'chapter-1/portraits/mirella/soft.webp',
+        outfitId: null,
+        fallbackLabel: 'Мірелла',
+      },
+      createImageResolver({
+        'chapter-1/portraits/mirella/soft.webp': '/portraits/mirella-soft.webp',
+        'chapter-1/characters/mirella/body/base': '/characters/mirella-body.webp',
+        'chapter-1/characters/mirella/clothes/base': '/characters/mirella-clothes.webp',
+        'chapter-1/characters/mirella/head/soft': '/characters/mirella-head-soft.webp',
+        'chapter-1/characters/mirella/hair/base': '/characters/mirella-hair.webp',
+        'chapter-1/characters/mirella/hands/left': '/characters/mirella-hand-left.webp',
+        'chapter-1/characters/mirella/hands/right': '/characters/mirella-hand-right.webp',
+        'chapter-1/characters/mirella/weapon/base': '/characters/mirella-weapon.webp',
       }),
     );
 
@@ -34,28 +126,36 @@ describe('resolveNarrativePortraitVisual', () => {
     }
 
     expect(visual.selectedEmotion).toBe('soft');
-    expect(visual.layers.map((layer) => layer.id)).toEqual(['body', 'clothes', 'head']);
+    expect(visual.layers.map((layer) => layer.id)).toEqual([
+      'body',
+      'clothes',
+      'head',
+      'hair',
+      'leftHand',
+      'weapon',
+      'rightHand',
+    ]);
     expect(visual.layers.find((layer) => layer.id === 'head')?.url).toBe(
-      '/characters/lady-sera-head-soft.webp',
+      '/characters/mirella-head-soft.webp',
     );
   });
 
-  it('keeps a bespoke explicit portrait override when that portrait has real art', () => {
+  it('keeps a bespoke explicit heroine portrait override when that portrait has real art', () => {
     const rootStore = new GameRootStore();
     const visual = resolveNarrativePortraitVisual(
       rootStore,
       {
-        speakerId: 'lady-sera',
+        speakerId: 'mirella',
         emotion: 'soft',
-        portraitId: 'chapter-1/portraits/lady-sera/private-audience.webp',
+        portraitId: 'chapter-1/portraits/mirella/private-audience.webp',
         outfitId: null,
-        fallbackLabel: 'Леді Сера',
+        fallbackLabel: 'Мірелла',
       },
       createImageResolver({
-        'chapter-1/portraits/lady-sera/private-audience.webp': '/portraits/lady-sera-private.webp',
-        'chapter-1/characters/lady-sera/body/base': '/characters/lady-sera-body.webp',
-        'chapter-1/characters/lady-sera/clothes/base': '/characters/lady-sera-clothes.webp',
-        'chapter-1/characters/lady-sera/head/soft': '/characters/lady-sera-head-soft.webp',
+        'chapter-1/portraits/mirella/private-audience.webp': '/portraits/mirella-private.webp',
+        'chapter-1/characters/mirella/body/base': '/characters/mirella-body.webp',
+        'chapter-1/characters/mirella/clothes/base': '/characters/mirella-clothes.webp',
+        'chapter-1/characters/mirella/head/soft': '/characters/mirella-head-soft.webp',
       }),
     );
 
@@ -65,11 +165,11 @@ describe('resolveNarrativePortraitVisual', () => {
       return;
     }
 
-    expect(visual.assetId).toBe('chapter-1/portraits/lady-sera/private-audience.webp');
-    expect(visual.url).toBe('/portraits/lady-sera-private.webp');
+    expect(visual.assetId).toBe('chapter-1/portraits/mirella/private-audience.webp');
+    expect(visual.url).toBe('/portraits/mirella-private.webp');
   });
 
-  it('keeps outfit-specific portrait art above the default character composite', () => {
+  it('keeps outfit-specific portrait art above the heroine composite', () => {
     const rootStore = new GameRootStore();
     const mirella = rootStore.narrativeCharacterRegistry.mirella;
 
@@ -112,19 +212,19 @@ describe('resolveNarrativePortraitVisual', () => {
     expect(visual.assetId).toBe('chapter-1/portraits/mirella/dress-pristine.webp');
   });
 
-  it('falls back to the flat portrait when no composite layers are available yet', () => {
+  it('falls back to the heroine flat portrait when composite layers are still missing', () => {
     const rootStore = new GameRootStore();
     const visual = resolveNarrativePortraitVisual(
       rootStore,
       {
-        speakerId: 'lady-sera',
-        emotion: 'sad',
+        speakerId: 'mirella',
+        emotion: 'soft',
         portraitId: null,
         outfitId: null,
-        fallbackLabel: 'Леді Сера',
+        fallbackLabel: 'Мірелла',
       },
       createImageResolver({
-        'chapter-1/portraits/lady-sera/sad.webp': '/portraits/lady-sera-sad.webp',
+        'chapter-1/portraits/mirella/soft.webp': '/portraits/mirella-soft.webp',
       }),
     );
 
@@ -134,8 +234,8 @@ describe('resolveNarrativePortraitVisual', () => {
       return;
     }
 
-    expect(visual.assetId).toBe('chapter-1/portraits/lady-sera/sad.webp');
-    expect(visual.url).toBe('/portraits/lady-sera-sad.webp');
+    expect(visual.assetId).toBe('chapter-1/portraits/mirella/soft.webp');
+    expect(visual.url).toBe('/portraits/mirella-soft.webp');
   });
 
   it('preserves authored stage placements so the shell can animate across the full stage width', () => {
@@ -173,11 +273,13 @@ describe('resolveNarrativePortraitVisual', () => {
       },
     });
 
-    expect(portraits.map((portrait) => ({
-      speakerId: portrait.speakerId,
-      placement: portrait.placement,
-      isActive: portrait.isActive,
-    }))).toEqual([
+    expect(
+      portraits.map((portrait) => ({
+        speakerId: portrait.speakerId,
+        placement: portrait.placement,
+        isActive: portrait.isActive,
+      })),
+    ).toEqual([
       {
         speakerId: 'father',
         placement: {

@@ -126,6 +126,10 @@ export class FlagsStore {
     }
 
     this.numericFlags.set(flagId, value);
+
+    if (flagId === 'story.day' && !this.rootStore.time.isStoryFlagSyncSuppressed) {
+      this.rootStore.time.handleStoryDayFlagChanged(value);
+    }
   }
 
   changeNumericFlag(flagId: string, delta: number) {
@@ -152,6 +156,10 @@ export class FlagsStore {
 
   setStringFlag(flagId: string, value: string) {
     this.stringFlags.set(flagId, value);
+
+    if (flagId === 'story.timeSegment' && !this.rootStore.time.isStoryFlagSyncSuppressed) {
+      this.rootStore.time.handleStorySegmentFlagChanged(value);
+    }
   }
 
   getStringFlag(flagId: string, fallback = '') {

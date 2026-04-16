@@ -2,6 +2,7 @@ import { observable, makeAutoObservable } from 'mobx';
 
 import { buildPartyUnitRuntime } from '@engine/formulas/runtimeUnits';
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import type { DamageKind } from '@engine/types/combat';
 import type {
   CharacterPreviewModel,
   CharacterVisualConfig,
@@ -11,7 +12,7 @@ import type {
 } from '@engine/types/appearance';
 import type { EffectTargetScope, ResourceKey } from '@engine/types/effects';
 import type { PartySnapshot } from '@engine/types/save';
-import type { StatusEffectInstance } from '@engine/types/status';
+import type { StatusCategory, StatusEffectInstance, StatusType } from '@engine/types/status';
 import type { TagId } from '@engine/types/tags';
 import type { CharacterInstance, CharacterTemplate, PartyUnitRuntime } from '@engine/types/unit';
 import { buildCharacterPreviewLayers } from '@engine/utils/buildCharacterPreviewLayers';
@@ -40,6 +41,11 @@ function clonePartyUnitRuntime(unitState: PartyUnitRuntime): PartyUnitRuntime {
     tags: [...unitState.tags],
     statuses: unitState.statuses.map(cloneStatusEffect),
     skillIds: [...unitState.skillIds],
+    skillRanks: { ...(unitState.skillRanks ?? {}) },
+    experience: unitState.experience ?? 0,
+    bonusMaxHp: unitState.bonusMaxHp ?? 0,
+    bonusMaxMana: unitState.bonusMaxMana ?? 0,
+    ...(unitState.battleVisual ? { battleVisual: { ...unitState.battleVisual } } : {}),
   };
 }
 
@@ -495,6 +501,248 @@ export class PartyStore {
     const restoredUnitIds = unitIds.filter((unitId) => this.restoreResource(unitId, resource, amount));
 
     return restoredUnitIds;
+  }
+
+  dealDamage(unitId: string, amount: number, _damageKind: DamageKind = 'physical') {
+    if (amount <= 0) {
+      return 0;
+    }
+
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return 0;
+    }
+
+    const nextHp = clamp(unitState.currentHp - amount, 0, unitState.derivedStats.maxHp);
+    const damageDealt = unitState.currentHp - nextHp;
+
+    if (damageDealt <= 0) {
+      return 0;
+    }
+
+    this.unitStates.set(unitId, {
+      ...unitState,
+      currentHp: nextHp,
+    });
+
+    return damageDealt;
+  }
+
+  dealDamageToScope(
+    scope: EffectTargetScope,
+    amount: number,
+    options: {
+      damageKind?: DamageKind;
+      targetId?: string;
+    } = {},
+  ) {
+    const unitIds = this.resolveScopeUnitIds(scope, options.targetId);
+    let totalDamage = 0;
+    const damagedUnitIds = unitIds.filter((unitId) => {
+      const damageDealt = this.dealDamage(unitId, amount, options.damageKind);
+
+      totalDamage += damageDealt;
+
+      return damageDealt > 0;
+    });
+
+    return {
+      damagedUnitIds,
+      totalDamage,
+    };
+  }
+
+  removeStatus(unitId: string, statusType: StatusType) {
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return 0;
+    }
+
+    const result = this.rootStore.statusProcessor.removeStatusFromUnit(unitState, statusType);
+
+    if (result.removedCount > 0) {
+      this.unitStates.set(unitId, clonePartyUnitRuntime(result.unit as PartyUnitRuntime));
+    }
+
+    return result.removedCount;
+  }
+
+  removeStatusFromScope(scope: EffectTargetScope, statusType: StatusType, targetId?: string) {
+    const unitIds = this.resolveScopeUnitIds(scope, targetId);
+
+    return unitIds.reduce((removedCount, unitId) => removedCount + this.removeStatus(unitId, statusType), 0);
+  }
+
+  cleanseStatuses(
+    unitId: string,
+    options: {
+      onlyNegative?: boolean;
+      category?: StatusCategory;
+      limit?: number;
+    } = {},
+  ) {
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return 0;
+    }
+
+    const result = this.rootStore.statusProcessor.cleanseStatusesFromUnit(unitState, options);
+
+    if (result.removedCount > 0) {
+      this.unitStates.set(unitId, clonePartyUnitRuntime(result.unit as PartyUnitRuntime));
+    }
+
+    return result.removedCount;
+  }
+
+  cleanseStatusesFromScope(
+    scope: EffectTargetScope,
+    options: {
+      onlyNegative?: boolean;
+      category?: StatusCategory;
+      limit?: number;
+      targetId?: string;
+    } = {},
+  ) {
+    const unitIds = this.resolveScopeUnitIds(scope, options.targetId);
+    let remainingLimit = options.limit;
+
+    return unitIds.reduce((removedCount, unitId) => {
+      if (remainingLimit !== undefined && remainingLimit <= 0) {
+        return removedCount;
+      }
+
+      const removed = this.cleanseStatuses(unitId, {
+        ...options,
+        ...(remainingLimit !== undefined ? { limit: remainingLimit } : {}),
+      });
+
+      if (remainingLimit !== undefined) {
+        remainingLimit -= removed;
+      }
+
+      return removedCount + removed;
+    }, 0);
+  }
+
+  setLevel(unitId: string, level: number) {
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return false;
+    }
+
+    if (unitState.level === level) {
+      return false;
+    }
+
+    this.unitStates.set(unitId, {
+      ...unitState,
+      level,
+    });
+
+    return true;
+  }
+
+  addExperience(unitId: string, amount: number) {
+    if (amount <= 0) {
+      return false;
+    }
+
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return false;
+    }
+
+    this.unitStates.set(unitId, {
+      ...unitState,
+      experience: unitState.experience + amount,
+    });
+
+    return true;
+  }
+
+  setExperience(unitId: string, value: number) {
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return false;
+    }
+
+    const nextExperience = Math.max(0, Math.floor(value));
+
+    if (unitState.experience === nextExperience) {
+      return false;
+    }
+
+    this.unitStates.set(unitId, {
+      ...unitState,
+      experience: nextExperience,
+    });
+
+    return true;
+  }
+
+  trainSkill(unitId: string, skillId: string, amount = 1) {
+    if (amount <= 0) {
+      return false;
+    }
+
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return false;
+    }
+
+    this.unitStates.set(unitId, {
+      ...unitState,
+      skillRanks: {
+        ...unitState.skillRanks,
+        [skillId]: (unitState.skillRanks[skillId] ?? 0) + amount,
+      },
+    });
+
+    return true;
+  }
+
+  increaseMaxResource(unitId: string, resource: ResourceKey, amount: number) {
+    if (amount <= 0) {
+      return false;
+    }
+
+    const unitState = this.unitStates.get(unitId);
+
+    if (!unitState) {
+      return false;
+    }
+
+    const nextDerivedStats = {
+      ...unitState.derivedStats,
+      ...(resource === 'hp'
+        ? { maxHp: unitState.derivedStats.maxHp + amount }
+        : { maxMana: unitState.derivedStats.maxMana + amount }),
+    };
+    const updatedUnit: PartyUnitRuntime = {
+      ...unitState,
+      derivedStats: nextDerivedStats,
+      ...(resource === 'hp'
+        ? {
+            currentHp: clamp(unitState.currentHp + amount, 0, nextDerivedStats.maxHp),
+            bonusMaxHp: unitState.bonusMaxHp + amount,
+          }
+        : {
+            currentMana: clamp(unitState.currentMana + amount, 0, nextDerivedStats.maxMana),
+            bonusMaxMana: unitState.bonusMaxMana + amount,
+          }),
+    };
+
+    this.unitStates.set(unitId, updatedUnit);
+
+    return true;
   }
 
   reset() {

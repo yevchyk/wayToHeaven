@@ -8,7 +8,12 @@ import { createStatusEffectInstance } from '@engine/registries/statusDefinitions
 import type { GameRootStore } from '@engine/stores/GameRootStore';
 import type { BattleRuntime } from '@engine/types/battle';
 import type { DamageKind } from '@engine/types/combat';
-import type { StatusEffectInstance, StatusTickTiming, StatusType } from '@engine/types/status';
+import type {
+  StatusCategory,
+  StatusEffectInstance,
+  StatusTickTiming,
+  StatusType,
+} from '@engine/types/status';
 import type { TagId } from '@engine/types/tags';
 import type { BattleUnitRuntime, PartyUnitRuntime } from '@engine/types/unit';
 
@@ -31,6 +36,12 @@ interface ApplyStatusOptions {
   stacks?: number;
 }
 
+interface CleanseStatusOptions {
+  onlyNegative?: boolean;
+  category?: StatusCategory;
+  limit?: number;
+}
+
 function cloneStatus(status: StatusEffectInstance): StatusEffectInstance {
   return {
     ...status,
@@ -51,6 +62,7 @@ function cloneBattleUnit(unit: BattleUnitRuntime): BattleUnitRuntime {
     tags: [...unit.tags],
     statuses: cloneStatuses(unit.statuses),
     skillIds: [...unit.skillIds],
+    skillRanks: { ...(unit.skillRanks ?? {}) },
   };
 }
 
@@ -346,6 +358,109 @@ export class StatusProcessor {
     return {
       runtime: this.replaceUnit(runtime, result.unit as BattleUnitRuntime),
       applied: true,
+    };
+  }
+
+  removeStatusFromUnit<TUnit extends { statuses: StatusEffectInstance[]; tags: TagId[] }>(
+    unit: TUnit,
+    statusType: StatusType,
+  ) {
+    const nextUnit = {
+      ...unit,
+      statuses: cloneStatuses(unit.statuses),
+      tags: [...unit.tags],
+    };
+    const nextStatuses = nextUnit.statuses.filter((status) => status.type !== statusType);
+
+    if (nextStatuses.length === nextUnit.statuses.length) {
+      return {
+        unit: nextUnit,
+        removedCount: 0,
+      };
+    }
+
+    nextUnit.statuses = nextStatuses;
+
+    return {
+      unit: nextUnit,
+      removedCount: unit.statuses.length - nextStatuses.length,
+    };
+  }
+
+  removeStatusFromRuntime(runtime: BattleRuntime, unitId: string, statusType: StatusType) {
+    const unit = this.getUnitById(runtime, unitId);
+
+    if (!unit) {
+      return {
+        runtime: cloneBattleRuntime(runtime),
+        removedCount: 0,
+      };
+    }
+
+    const result = this.removeStatusFromUnit(unit, statusType);
+
+    return {
+      runtime:
+        result.removedCount > 0
+          ? this.replaceUnit(runtime, result.unit as BattleUnitRuntime)
+          : cloneBattleRuntime(runtime),
+      removedCount: result.removedCount,
+    };
+  }
+
+  cleanseStatusesFromUnit<TUnit extends { statuses: StatusEffectInstance[]; tags: TagId[] }>(
+    unit: TUnit,
+    options: CleanseStatusOptions = {},
+  ) {
+    const nextUnit = {
+      ...unit,
+      statuses: cloneStatuses(unit.statuses),
+      tags: [...unit.tags],
+    };
+    let removedCount = 0;
+
+    nextUnit.statuses = nextUnit.statuses.filter((status) => {
+      const definition = this.rootStore.statusDefinitionsRegistry[status.type];
+      const matchesNegative = options.onlyNegative ? definition?.isNegative ?? false : true;
+      const matchesCategory = options.category ? definition?.category === options.category : true;
+      const underLimit = options.limit === undefined || removedCount < options.limit;
+      const shouldRemove = matchesNegative && matchesCategory && underLimit;
+
+      if (shouldRemove) {
+        removedCount += 1;
+      }
+
+      return !shouldRemove;
+    });
+
+    return {
+      unit: nextUnit,
+      removedCount,
+    };
+  }
+
+  cleanseStatusesFromRuntime(
+    runtime: BattleRuntime,
+    unitId: string,
+    options: CleanseStatusOptions = {},
+  ) {
+    const unit = this.getUnitById(runtime, unitId);
+
+    if (!unit) {
+      return {
+        runtime: cloneBattleRuntime(runtime),
+        removedCount: 0,
+      };
+    }
+
+    const result = this.cleanseStatusesFromUnit(unit, options);
+
+    return {
+      runtime:
+        result.removedCount > 0
+          ? this.replaceUnit(runtime, result.unit as BattleUnitRuntime)
+          : cloneBattleRuntime(runtime),
+      removedCount: result.removedCount,
     };
   }
 

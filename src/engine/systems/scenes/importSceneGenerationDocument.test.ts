@@ -16,6 +16,9 @@ describe('sceneGeneration import pipeline', () => {
       type: 'sceneGeneration',
       id: 'chapter-1/scene-generation/awakening',
     });
+    expect(imported.flows['chapter-1/scene/awakening']?.replay).toEqual({
+      enabled: true,
+    });
   });
 
   it('runs an imported scene-generation scene end-to-end through the dialogue runtime', () => {

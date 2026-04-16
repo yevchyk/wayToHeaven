@@ -6,6 +6,7 @@ import { GameRootStore } from '@engine/stores/GameRootStore';
 import { InventoryStore } from '@engine/stores/InventoryStore';
 import { UIStore } from '@engine/stores/UIStore';
 import { calculateDerivedStats } from '@engine/formulas/derivedStats';
+import { buildSceneReplayLibraryEntryId } from '@engine/systems/library/libraryDiscovery';
 import { WorldController } from '@engine/systems/world/WorldController';
 import type { GameEffect } from '@engine/types/effects';
 import type { BaseStats } from '@engine/types/unit';
@@ -32,6 +33,7 @@ function createPartyUnit(
     templateId: overrides.templateId ?? `${overrides.unitId}-template`,
     name: overrides.name ?? overrides.unitId,
     level: overrides.level ?? 1,
+    experience: overrides.experience ?? 0,
     currentHp: overrides.currentHp ?? derivedStats.maxHp,
     currentMana: overrides.currentMana ?? derivedStats.maxMana,
     baseStats,
@@ -39,6 +41,9 @@ function createPartyUnit(
     tags: overrides.tags ?? [],
     statuses: overrides.statuses ?? [],
     skillIds: overrides.skillIds ?? ['basic-attack'],
+    skillRanks: overrides.skillRanks ?? {},
+    bonusMaxHp: overrides.bonusMaxHp ?? 0,
+    bonusMaxMana: overrides.bonusMaxMana ?? 0,
     isDefending: overrides.isDefending ?? false,
   };
 }
@@ -84,6 +89,21 @@ describe('EffectRunner', () => {
     expect(rootStore.appearance.getCurrentOutfitId('mirella')).toBe('dress-torn');
   });
 
+  it('executes explicit replay unlock effects', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.executeEffect({
+      type: 'unlockSceneReplay',
+      sceneId: 'chapter-1/scene/thorn-estate/replay/corset-tie',
+    });
+
+    expect(
+      rootStore.seenContent.hasDiscoveredSceneEntry(
+        buildSceneReplayLibraryEntryId('chapter-1/scene/thorn-estate/replay/corset-tie'),
+      ),
+    ).toBe(true);
+  });
+
   it('executes changeMeta effects', () => {
     const rootStore = new GameRootStore();
 
@@ -94,6 +114,20 @@ describe('EffectRunner', () => {
     });
 
     expect(rootStore.meta.hunger).toBe(2);
+  });
+
+  it('executes advanceTime effects through the time store', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.executeEffect({
+      type: 'advanceTime',
+      hours: 7,
+    });
+
+    expect(rootStore.time.day).toBe(1);
+    expect(rootStore.time.hour).toBe(15);
+    expect(rootStore.flags.getNumericFlag('story.day')).toBe(1);
+    expect(rootStore.flags.getStringFlag('story.timeSegment')).toBe('day');
   });
 
   it('executes quest lifecycle effects', () => {
@@ -113,16 +147,20 @@ describe('EffectRunner', () => {
       questId: 'mq_survive',
     });
 
-    expect(rootStore.quests.getQuestState('mq_survive')).toEqual({
-      questId: 'mq_survive',
-      status: 'completed',
-      progress: 0,
-    });
-    expect(rootStore.quests.getQuestState('mq_road_to_hugen_um')).toEqual({
-      questId: 'mq_road_to_hugen_um',
-      status: 'active',
-      progress: 25,
-    });
+    expect(rootStore.quests.getQuestState('mq_survive')).toEqual(
+      expect.objectContaining({
+        questId: 'mq_survive',
+        status: 'completed',
+        progress: 0,
+      }),
+    );
+    expect(rootStore.quests.getQuestState('mq_road_to_hugen_um')).toEqual(
+      expect.objectContaining({
+        questId: 'mq_road_to_hugen_um',
+        status: 'active',
+        progress: 25,
+      }),
+    );
   });
 
   it('executes profile effects through canonical and legacy aliases', () => {
@@ -263,6 +301,21 @@ describe('EffectRunner', () => {
     });
 
     expect(rootStore.party.unitStates.get('hero')?.currentHp).toBe(50);
+  });
+
+  it('executes dealDamage effects', () => {
+    const rootStore = createRootStoreWithParty();
+
+    rootStore.executeEffect({
+      type: 'dealDamage',
+      amount: 7,
+      targetScope: 'player',
+      damageKind: 'fire',
+    });
+
+    expect(rootStore.party.unitStates.get('hero')?.currentHp).toBe(
+      (rootStore.party.unitStates.get('hero')?.derivedStats.maxHp ?? 0) - 7,
+    );
   });
 
   it('executes startBattle effects', () => {

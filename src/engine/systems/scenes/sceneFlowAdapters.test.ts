@@ -53,6 +53,9 @@ const legacyTravelFixture: TravelBoardData = {
   id: 'legacy-route',
   title: 'Legacy Route',
   startNodeId: 'forked-passage',
+  stepTimeCost: {
+    hours: 6,
+  },
   nodes: {
     'forked-passage': {
       id: 'forked-passage',
@@ -109,6 +112,7 @@ describe('sceneFlowAdapters', () => {
     expect(sceneFlow.id).toBe(legacyTravelFixture.id);
     expect(sceneFlow.mode).toBe('route');
     expect(sceneFlow.routeRules?.rollRange).toEqual({ min: 1, max: 6 });
+    expect(sceneFlow.routeRules?.stepTimeCost).toEqual({ hours: 6 });
     expect(branchNode?.route).toMatchObject({ x: 39, y: 52 });
     expect(branchNode?.encounter?.kind).toBe('script');
     expect(branchNode?.transitions.map((transition) => transition.nextNodeId)).toEqual([

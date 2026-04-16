@@ -1,0 +1,1519 @@
+[
+    {
+        "id":  48,
+        "label":  null,
+        "value":  {
+
+                  },
+        "elem_id":  null,
+        "type":  "label"
+    },
+    {
+        "id":  5,
+        "label":  "Prompt",
+        "value":  "",
+        "elem_id":  "txt2img_prompt",
+        "type":  "textbox"
+    },
+    {
+        "id":  9,
+        "label":  "Negative prompt",
+        "value":  "",
+        "elem_id":  "txt2img_neg_prompt",
+        "type":  "textbox"
+    },
+    {
+        "id":  28,
+        "label":  "Styles",
+        "value":  [
+
+                  ],
+        "elem_id":  "txt2img_styles",
+        "type":  "dropdown"
+    },
+    {
+        "id":  110,
+        "label":  "Batch count",
+        "value":  1,
+        "elem_id":  "txt2img_batch_count",
+        "type":  "slider"
+    },
+    {
+        "id":  111,
+        "label":  "Batch size",
+        "value":  1,
+        "elem_id":  "txt2img_batch_size",
+        "type":  "slider"
+    },
+    {
+        "id":  114,
+        "label":  "CFG Scale",
+        "value":  7.0,
+        "elem_id":  "txt2img_cfg_scale",
+        "type":  "slider"
+    },
+    {
+        "id":  104,
+        "label":  "Height",
+        "value":  512,
+        "elem_id":  "txt2img_height",
+        "type":  "slider"
+    },
+    {
+        "id":  103,
+        "label":  "Width",
+        "value":  512,
+        "elem_id":  "txt2img_width",
+        "type":  "slider"
+    },
+    {
+        "id":  61,
+        "label":  "Hires. fix",
+        "value":  false,
+        "elem_id":  "txt2img_hr-checkbox",
+        "type":  "checkbox"
+    },
+    {
+        "id":  69,
+        "label":  "Denoising strength",
+        "value":  0.7,
+        "elem_id":  "txt2img_denoising_strength",
+        "type":  "slider"
+    },
+    {
+        "id":  71,
+        "label":  "Upscale by",
+        "value":  2.0,
+        "elem_id":  "txt2img_hr_scale",
+        "type":  "slider"
+    },
+    {
+        "id":  67,
+        "label":  "Upscaler",
+        "value":  "Latent",
+        "elem_id":  "txt2img_hr_upscaler",
+        "type":  "dropdown"
+    },
+    {
+        "id":  68,
+        "label":  "Hires steps",
+        "value":  0,
+        "elem_id":  "txt2img_hires_steps",
+        "type":  "slider"
+    },
+    {
+        "id":  72,
+        "label":  "Resize width to",
+        "value":  0,
+        "elem_id":  "txt2img_hr_resize_x",
+        "type":  "slider"
+    },
+    {
+        "id":  73,
+        "label":  "Resize height to",
+        "value":  0,
+        "elem_id":  "txt2img_hr_resize_y",
+        "type":  "slider"
+    },
+    {
+        "id":  77,
+        "label":  "Checkpoint",
+        "value":  "Use same checkpoint",
+        "elem_id":  "hr_checkpoint",
+        "type":  "dropdown"
+    },
+    {
+        "id":  79,
+        "label":  "Hires sampling method",
+        "value":  "Use same sampler",
+        "elem_id":  "hr_sampler",
+        "type":  "dropdown"
+    },
+    {
+        "id":  80,
+        "label":  "Hires schedule type",
+        "value":  "Use same scheduler",
+        "elem_id":  "hr_scheduler",
+        "type":  "dropdown"
+    },
+    {
+        "id":  84,
+        "label":  "Hires prompt",
+        "value":  "",
+        "elem_id":  "hires_prompt",
+        "type":  "textbox"
+    },
+    {
+        "id":  88,
+        "label":  "Hires negative prompt",
+        "value":  "",
+        "elem_id":  "hires_neg_prompt",
+        "type":  "textbox"
+    },
+    {
+        "id":  75,
+        "label":  "Hires CFG Scale",
+        "value":  0.0,
+        "elem_id":  "txt2img_hr_cfg",
+        "type":  "slider"
+    },
+    {
+        "id":  134,
+        "label":  "Override settings",
+        "value":  null,
+        "elem_id":  "txt2img_override_settings",
+        "type":  "dropdown"
+    },
+    {
+        "id":  1275,
+        "label":  "Script",
+        "value":  "None",
+        "elem_id":  "script_list",
+        "type":  "dropdown"
+    },
+    {
+        "id":  57,
+        "label":  "Sampling steps",
+        "value":  20,
+        "elem_id":  "txt2img_steps",
+        "type":  "slider"
+    },
+    {
+        "id":  55,
+        "label":  "Sampling method",
+        "value":  "DPM++ 2M",
+        "elem_id":  "txt2img_sampling",
+        "type":  "dropdown"
+    },
+    {
+        "id":  56,
+        "label":  "Schedule type",
+        "value":  "Automatic",
+        "elem_id":  "txt2img_scheduler",
+        "type":  "dropdown"
+    },
+    {
+        "id":  91,
+        "label":  "Refiner",
+        "value":  false,
+        "elem_id":  "txt2img_enable-checkbox",
+        "type":  "checkbox"
+    },
+    {
+        "id":  94,
+        "label":  "Checkpoint",
+        "value":  "",
+        "elem_id":  "txt2img_checkpoint",
+        "type":  "dropdown"
+    },
+    {
+        "id":  96,
+        "label":  "Switch at",
+        "value":  0.8,
+        "elem_id":  "txt2img_switch_at",
+        "type":  "slider"
+    },
+    {
+        "id":  117,
+        "label":  "Seed",
+        "value":  -1.0,
+        "elem_id":  "txt2img_seed",
+        "type":  "number"
+    },
+    {
+        "id":  120,
+        "label":  "Extra",
+        "value":  false,
+        "elem_id":  "txt2img_subseed_show",
+        "type":  "checkbox"
+    },
+    {
+        "id":  124,
+        "label":  "Variation seed",
+        "value":  -1.0,
+        "elem_id":  "txt2img_subseed",
+        "type":  "number"
+    },
+    {
+        "id":  127,
+        "label":  "Variation strength",
+        "value":  0.0,
+        "elem_id":  "txt2img_subseed_strength",
+        "type":  "slider"
+    },
+    {
+        "id":  130,
+        "label":  "Resize seed from width",
+        "value":  0,
+        "elem_id":  "txt2img_seed_resize_from_w",
+        "type":  "slider"
+    },
+    {
+        "id":  131,
+        "label":  "Resize seed from height",
+        "value":  0,
+        "elem_id":  "txt2img_seed_resize_from_h",
+        "type":  "slider"
+    },
+    {
+        "id":  141,
+        "label":  "ADetailer",
+        "value":  false,
+        "elem_id":  "script_txt2img_adetailer_ad_main_accordion-checkbox",
+        "type":  "checkbox"
+    },
+    {
+        "id":  145,
+        "label":  "Skip img2img",
+        "value":  false,
+        "elem_id":  "script_txt2img_adetailer_ad_skip_img2img",
+        "type":  "checkbox"
+    },
+    {
+        "id":  244,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  338,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  432,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  526,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  531,
+        "label":  "Dynamic Prompts enabled",
+        "value":  true,
+        "elem_id":  "sddp-dynamic-prompts-enabled",
+        "type":  "checkbox"
+    },
+    {
+        "id":  533,
+        "label":  "Combinatorial generation",
+        "value":  false,
+        "elem_id":  "sddp-is-combinatorial",
+        "type":  "checkbox"
+    },
+    {
+        "id":  535,
+        "label":  "Combinatorial batches",
+        "value":  1,
+        "elem_id":  "sddp-combinatorial-times",
+        "type":  "slider"
+    },
+    {
+        "id":  539,
+        "label":  "Magic prompt",
+        "value":  false,
+        "elem_id":  "sddp-is-magicprompt",
+        "type":  "checkbox"
+    },
+    {
+        "id":  545,
+        "label":  "I\u0027m feeling lucky",
+        "value":  false,
+        "elem_id":  "sddp-is-feelinglucky",
+        "type":  "checkbox"
+    },
+    {
+        "id":  547,
+        "label":  "Attention grabber",
+        "value":  false,
+        "elem_id":  "sddp-is-attention-grabber",
+        "type":  "checkbox"
+    },
+    {
+        "id":  548,
+        "label":  "Minimum attention",
+        "value":  1.1,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  549,
+        "label":  "Maximum attention",
+        "value":  1.5,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  540,
+        "label":  "Max magic prompt length",
+        "value":  100,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  541,
+        "label":  "Magic prompt creativity",
+        "value":  0.7,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  566,
+        "label":  "Fixed seed",
+        "value":  false,
+        "elem_id":  "sddp-is-fixed-seed",
+        "type":  "checkbox"
+    },
+    {
+        "id":  565,
+        "label":  "Unlink seed from prompt",
+        "value":  false,
+        "elem_id":  "sddp-unlink-seed-from-prompt",
+        "type":  "checkbox"
+    },
+    {
+        "id":  551,
+        "label":  "Don\u0027t apply to negative prompts",
+        "value":  true,
+        "elem_id":  "sddp-disable-negative-prompt",
+        "type":  "checkbox"
+    },
+    {
+        "id":  558,
+        "label":  "Enable Jinja2 templates",
+        "value":  false,
+        "elem_id":  "sddp-enable-jinja-templates",
+        "type":  "checkbox"
+    },
+    {
+        "id":  568,
+        "label":  "Don\u0027t generate images",
+        "value":  false,
+        "elem_id":  "sddp-no-image-generation",
+        "type":  "checkbox"
+    },
+    {
+        "id":  534,
+        "label":  "Max generations (0 = all combinations - the batch count value is ignored)",
+        "value":  0,
+        "elem_id":  "sddp-max-generations",
+        "type":  "slider"
+    },
+    {
+        "id":  542,
+        "label":  "Magic prompt model",
+        "value":  "Gustavosta/MagicPrompt-Stable-Diffusion",
+        "elem_id":  "sddp-magic-prompt-model",
+        "type":  "dropdown"
+    },
+    {
+        "id":  543,
+        "label":  "Magic prompt blocklist regex",
+        "value":  "",
+        "elem_id":  "sddp-magic-prompt-blocklist-regex",
+        "type":  "textbox"
+    },
+    {
+        "id":  577,
+        "label":  "Enable",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  578,
+        "label":  "Compatibility",
+        "value":  true,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  580,
+        "label":  "Region Assignment",
+        "value":  "Basic",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  581,
+        "label":  "Couple Separator",
+        "value":  "",
+        "elem_id":  null,
+        "type":  "textbox"
+    },
+    {
+        "id":  585,
+        "label":  "Tile Direction",
+        "value":  "Horizontal",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  587,
+        "label":  "Global Effect",
+        "value":  "None",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  588,
+        "label":  "Global Effect Weight",
+        "value":  0.5,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  595,
+        "label":  null,
+        "value":  [
+                      [
+                          0.0,
+                          0.5,
+                          0.0,
+                          1.0,
+                          1.0
+                      ],
+                      [
+                          0.5,
+                          1.0,
+                          0.0,
+                          1.0,
+                          1.0
+                      ]
+                  ],
+        "elem_id":  null,
+        "type":  "json"
+    },
+    {
+        "id":  654,
+        "label":  "Syntax",
+        "value":  "{ }",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  656,
+        "label":  "Debug",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  655,
+        "label":  "Include Definitions in Prompt",
+        "value":  true,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  658,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  658,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  658,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  658,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  658,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  658,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  787,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  911,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  1035,
+        "label":  null,
+        "value":  null,
+        "elem_id":  null,
+        "type":  "state"
+    },
+    {
+        "id":  1045,
+        "label":  "Enabled",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1046,
+        "label":  "Simple Mode",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1049,
+        "label":  "Mimic Scale",
+        "value":  7.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1050,
+        "label":  "Threshold Percentile",
+        "value":  1.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1053,
+        "label":  "Mimic Mode",
+        "value":  "Constant",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1054,
+        "label":  "Mimic Scale Min",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1055,
+        "label":  "CFG Mode",
+        "value":  "Constant",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1056,
+        "label":  "CFG Scale Min",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1057,
+        "label":  "Schedule Value",
+        "value":  1.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1058,
+        "label":  "Separate Feature Channels",
+        "value":  "enable",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1059,
+        "label":  "Scaling Startpoint",
+        "value":  "MEAN",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1060,
+        "label":  "Variability Measure",
+        "value":  "AD",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1061,
+        "label":  "Interpolate Phi",
+        "value":  1.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1066,
+        "label":  "Enabled",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1067,
+        "label":  "B1",
+        "value":  1.01,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1068,
+        "label":  "B2",
+        "value":  1.02,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1069,
+        "label":  "S1",
+        "value":  0.99,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1070,
+        "label":  "S2",
+        "value":  0.95,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1074,
+        "label":  "Enabled",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1075,
+        "label":  "Scale",
+        "value":  0.5,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1076,
+        "label":  "Blur Sigma",
+        "value":  2.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1080,
+        "label":  "Enabled",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1081,
+        "label":  "Tile Size",
+        "value":  256,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1082,
+        "label":  "Swap Size",
+        "value":  2,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1083,
+        "label":  "Max Depth",
+        "value":  0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1084,
+        "label":  "Scale Depth",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1088,
+        "label":  "Enabled",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1089,
+        "label":  "Block Number",
+        "value":  3,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1090,
+        "label":  "Downscale Factor",
+        "value":  2.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1091,
+        "label":  "Start Percent",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1092,
+        "label":  "End Percent",
+        "value":  0.35,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1093,
+        "label":  "Downscale After Skip",
+        "value":  true,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1094,
+        "label":  "Downscale Method",
+        "value":  "bicubic",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1095,
+        "label":  "Upscale Method",
+        "value":  "bicubic",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1100,
+        "label":  "Enable APG",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1102,
+        "label":  "APG Momentum",
+        "value":  0.5,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1103,
+        "label":  "APG Adaptive Momentum",
+        "value":  0.18,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1104,
+        "label":  "APG Norm Threshold",
+        "value":  15.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1105,
+        "label":  "APG Eta",
+        "value":  1.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1108,
+        "label":  "Enable Guidance Limiter",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1110,
+        "label":  "Guidance Sigma Start",
+        "value":  5.42,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1111,
+        "label":  "Guidance Sigma End",
+        "value":  0.28,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1118,
+        "label":  "Enable RescaleCFG",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1119,
+        "label":  "RescaleCFG Version",
+        "value":  "Normal",
+        "elem_id":  null,
+        "type":  "dropdown"
+    },
+    {
+        "id":  1120,
+        "label":  "RescaleCFG Multiplier",
+        "value":  0.7,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1125,
+        "label":  "Enable Advanced Model Sampling",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1126,
+        "label":  "Sampling Mode",
+        "value":  "Discrete",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1128,
+        "label":  "Discrete Sampling Type",
+        "value":  "v_prediction",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1129,
+        "label":  "Zero SNR",
+        "value":  true,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1132,
+        "label":  "Continuous EDM Sampling Type",
+        "value":  "v_prediction",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1133,
+        "label":  "Sigma Max (Continuous EDM)",
+        "value":  120.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1134,
+        "label":  "Sigma Min (Continuous EDM)",
+        "value":  0.002,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1137,
+        "label":  "Sigma Max (Continuous V)",
+        "value":  500.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1138,
+        "label":  "Sigma Min (Continuous V)",
+        "value":  0.03,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1141,
+        "label":  "Shift (Stable Cascade)",
+        "value":  2.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1144,
+        "label":  "Shift (SD3)",
+        "value":  4.5,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1147,
+        "label":  "Shift (Aura Flow)",
+        "value":  1.73,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1150,
+        "label":  "Max Shift",
+        "value":  1.15,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1151,
+        "label":  "Base Shift",
+        "value":  0.5,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1152,
+        "label":  "Width",
+        "value":  1024,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1153,
+        "label":  "Height",
+        "value":  1024,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1159,
+        "label":  "Enable Mahiro CFG",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1164,
+        "label":  "Enable random resolution",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1166,
+        "label":  "Model Type",
+        "value":  "SDXL",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1174,
+        "label":  "Current Resolutions (width,height format)",
+        "value":  "",
+        "elem_id":  null,
+        "type":  "textbox"
+    },
+    {
+        "id":  1167,
+        "label":  "Resolution Weight Mode",
+        "value":  "Equal Weights",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1170,
+        "label":  "Minimum Dimension",
+        "value":  832,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1171,
+        "label":  "Maximum Dimension",
+        "value":  1216,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1197,
+        "label":  "Enabled",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1198,
+        "label":  "Method",
+        "value":  "Mixture of Diffusers",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1200,
+        "label":  "Tile Width",
+        "value":  768,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1201,
+        "label":  "Tile Height",
+        "value":  768,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1204,
+        "label":  "Tile Overlap",
+        "value":  64,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1205,
+        "label":  "Tile Batch Size",
+        "value":  4,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1208,
+        "label":  "Shift Method (SpotDiffusion)",
+        "value":  "random",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1215,
+        "label":  "Enable Sharpness Controls",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1217,
+        "label":  "Sharpness Multiplier",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1218,
+        "label":  "Sharpness Method",
+        "value":  "anisotropic",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1219,
+        "label":  "Apply to Unconditional",
+        "value":  "None",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1224,
+        "label":  "Enable Tone Controls",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1226,
+        "label":  "Tonemap Multiplier",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1227,
+        "label":  "Tonemap Method",
+        "value":  "reinhard",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1228,
+        "label":  "Tonemap Percentile",
+        "value":  100.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1229,
+        "label":  "Contrast Multiplier",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1233,
+        "label":  "Enable Noise \u0026 Combat Controls",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1236,
+        "label":  "Extra Noise Type",
+        "value":  "gaussian",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1237,
+        "label":  "Extra Noise Method",
+        "value":  "add",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1238,
+        "label":  "Extra Noise Multiplier",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1239,
+        "label":  "Extra Noise Lowpass",
+        "value":  100,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1241,
+        "label":  "Combat Method",
+        "value":  "subtract",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1242,
+        "label":  "Combat Cfg Drift",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1243,
+        "label":  "Rescale Cfg Phi",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1248,
+        "label":  "Enable Advanced Processing",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1251,
+        "label":  "Divisive Norm Size",
+        "value":  127,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1252,
+        "label":  "Divisive Norm Multiplier",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1254,
+        "label":  "Spectral Mod Mode",
+        "value":  "hard_clamp",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1255,
+        "label":  "Spectral Mod Percentile",
+        "value":  5.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1256,
+        "label":  "Spectral Mod Multiplier",
+        "value":  0.0,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1261,
+        "label":  "Enable Dynamic CFG",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1264,
+        "label":  "Dyn Cfg Augmentation",
+        "value":  "None",
+        "elem_id":  null,
+        "type":  "radio"
+    },
+    {
+        "id":  1270,
+        "label":  "Enabled for UNet (always maximize offload)",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1271,
+        "label":  "Enabled for VAE (always tiled)",
+        "value":  false,
+        "elem_id":  null,
+        "type":  "checkbox"
+    },
+    {
+        "id":  1272,
+        "label":  "Encoder Tile Size",
+        "value":  2048,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1273,
+        "label":  "Decoder Tile Size",
+        "value":  128,
+        "elem_id":  null,
+        "type":  "slider"
+    },
+    {
+        "id":  1280,
+        "label":  "Put variable parts at start of prompt",
+        "value":  false,
+        "elem_id":  "script_txt2img_prompt_matrix_put_at_start",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1281,
+        "label":  "Use different seed for each picture",
+        "value":  false,
+        "elem_id":  "script_txt2img_prompt_matrix_different_seeds",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1284,
+        "label":  "Select prompt",
+        "value":  "positive",
+        "elem_id":  "script_txt2img_prompt_matrix_prompt_type",
+        "type":  "radio"
+    },
+    {
+        "id":  1285,
+        "label":  "Select joining char",
+        "value":  "comma",
+        "elem_id":  "script_txt2img_prompt_matrix_variations_delimiter",
+        "type":  "radio"
+    },
+    {
+        "id":  1288,
+        "label":  "Grid margins (px)",
+        "value":  0,
+        "elem_id":  "script_txt2img_prompt_matrix_margin_size",
+        "type":  "slider"
+    },
+    {
+        "id":  1291,
+        "label":  "Iterate seed every line",
+        "value":  false,
+        "elem_id":  "script_txt2img_prompts_from_file_or_textbox_checkbox_iterate",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1292,
+        "label":  "Use same random seed for all lines",
+        "value":  false,
+        "elem_id":  "script_txt2img_prompts_from_file_or_textbox_checkbox_iterate_batch",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1293,
+        "label":  "Insert prompts at the",
+        "value":  "start",
+        "elem_id":  "script_txt2img_prompts_from_file_or_textbox_prompt_position",
+        "type":  "radio"
+    },
+    {
+        "id":  1294,
+        "label":  "List of prompt inputs",
+        "value":  "",
+        "elem_id":  "script_txt2img_prompts_from_file_or_textbox_prompt_txt",
+        "type":  "textbox"
+    },
+    {
+        "id":  1301,
+        "label":  "X type",
+        "value":  "Seed",
+        "elem_id":  "script_txt2img_xyz_plot_x_type",
+        "type":  "dropdown"
+    },
+    {
+        "id":  1302,
+        "label":  "X values",
+        "value":  "",
+        "elem_id":  "script_txt2img_xyz_plot_x_values",
+        "type":  "textbox"
+    },
+    {
+        "id":  1303,
+        "label":  "X values",
+        "value":  "",
+        "elem_id":  null,
+        "type":  "dropdown"
+    },
+    {
+        "id":  1307,
+        "label":  "Y type",
+        "value":  "Nothing",
+        "elem_id":  "script_txt2img_xyz_plot_y_type",
+        "type":  "dropdown"
+    },
+    {
+        "id":  1308,
+        "label":  "Y values",
+        "value":  "",
+        "elem_id":  "script_txt2img_xyz_plot_y_values",
+        "type":  "textbox"
+    },
+    {
+        "id":  1309,
+        "label":  "Y values",
+        "value":  "",
+        "elem_id":  null,
+        "type":  "dropdown"
+    },
+    {
+        "id":  1313,
+        "label":  "Z type",
+        "value":  "Nothing",
+        "elem_id":  "script_txt2img_xyz_plot_z_type",
+        "type":  "dropdown"
+    },
+    {
+        "id":  1314,
+        "label":  "Z values",
+        "value":  "",
+        "elem_id":  "script_txt2img_xyz_plot_z_values",
+        "type":  "textbox"
+    },
+    {
+        "id":  1315,
+        "label":  "Z values",
+        "value":  "",
+        "elem_id":  null,
+        "type":  "dropdown"
+    },
+    {
+        "id":  1320,
+        "label":  "Draw legend",
+        "value":  true,
+        "elem_id":  "script_txt2img_xyz_plot_draw_legend",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1321,
+        "label":  "Draw individual labels",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_draw_individual_labels",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1322,
+        "label":  "Skip final grid generation",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_skip_grid",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1323,
+        "label":  "Items per grid (0 = default), for sequential grid generation.",
+        "value":  0,
+        "elem_id":  "script_txt2img_xyz_plot_items_per_grid",
+        "type":  "slider"
+    },
+    {
+        "id":  1332,
+        "label":  "Include Sub Images",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_include_lone_images",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1333,
+        "label":  "Include Sub Grids",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_include_sub_grids",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1324,
+        "label":  "Keep -1 for seeds",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_no_fixed_seeds",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1326,
+        "label":  "Vary seeds for X",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_vary_seeds_x",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1327,
+        "label":  "Vary seeds for Y",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_vary_seeds_y",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1328,
+        "label":  "Vary seeds for Z",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_vary_seeds_z",
+        "type":  "checkbox"
+    },
+    {
+        "id":  1337,
+        "label":  "Grid margins (px)",
+        "value":  0,
+        "elem_id":  "script_txt2img_xyz_plot_margin_size",
+        "type":  "slider"
+    },
+    {
+        "id":  1334,
+        "label":  "Use text inputs instead of dropdowns",
+        "value":  false,
+        "elem_id":  "script_txt2img_xyz_plot_csv_mode",
+        "type":  "checkbox"
+    }
+]

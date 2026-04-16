@@ -43,6 +43,26 @@ src/content/chapters/chapter-1/
 
 If Chapter 2 is added later, mirror this shape under `src/content/chapters/chapter-2/`.
 
+## Long Scene Files
+
+Do not keep a whole prologue-sized opening in one `scene-generation` file once it spans multiple acts.
+
+Split long authored flows into multiple scene-generation documents under the same scene folder when:
+- one file starts covering multiple microchapters or distinct dramatic acts
+- flow review becomes hard because the file is too large to reason about safely
+- different acts already transition through `nextSceneId`
+
+Current Chapter 1 example:
+
+```text
+src/content/chapters/chapter-1/scenes/intro/
+  intro.scene-generation.ts
+  two-of-three.scene-generation.ts
+  ball-and-assault.scene-generation.ts
+```
+
+Keep the runtime `scene id` stable when splitting. The split should change document boundaries, not narrative routing ids.
+
 ## Id Contract
 
 Prefer namespaced ids for all new content.
@@ -82,14 +102,119 @@ When adding content, wire it into the matching registry:
 - dialogues: `src/content/registries/dialogueRegistry.ts`
 - city scenes: `src/content/registries/citySceneRegistry.ts`
 - travel boards: `src/content/registries/travelBoardRegistry.ts`
+- quests: `src/content/registries/questRegistry.ts`
 - narrative characters: `src/content/registries/npcRegistry.ts`
 - assets: `src/content/registries/assetRegistry.ts`
 - items: `src/content/items/index.ts`
+- loot tables: `src/content/lootTables/index.ts`
+- skills: `src/content/skills/index.ts`
 - battles: `src/content/battles/index.ts`
 - mini-games: `src/content/minigames/index.ts`
 - units: `src/content/units/index.ts`
 - locations: `src/content/locations/index.ts`
 - scripts: `src/engine/scripts/registerNarrativeScripts.ts`
+
+## Quest And Consequence Contract
+
+Quest content lives in chapter-scoped files such as:
+- `src/content/chapters/chapter-1/quests/*.quests.ts`
+- `src/content/chapters/chapter-2/quests/*.quests.ts`
+
+The runtime registry entrypoint is:
+- `src/content/registries/questRegistry.ts`
+
+Use the staged quest model by default for new authored quest lines.
+
+Each quest should have:
+- `id`
+- `title`
+- `category`
+
+Recommended fields:
+- `description`
+- `ownerId`
+- `kind`
+- `pinned`
+- `hasProgressBar`
+- `maxProgress`
+
+If the quest has authored stages, use:
+- `startStageId`
+- `stages`
+- `completionEffects`
+
+Each quest stage should have:
+- `id`
+- `title`
+- `objectives`
+
+Optional stage fields:
+- `description`
+- `onEnterEffects`
+- `onCompleteEffects`
+- `nextStageId`
+
+Supported objective kinds:
+- `counter`
+- `condition`
+
+Use `counter` objectives when authored scenes explicitly advance progress through:
+- `advanceQuest`
+- `advanceQuest` with `objectiveId`
+
+Use `condition` objectives when a quest should react to the live runtime state.
+
+Current reactive conditions can read:
+- flags
+- meta values
+- inventory counts
+- relationship values
+- tags
+- stats / profile values
+
+Relationship-aware objectives should use the `relationship` condition type with:
+- `relationshipId`
+- optional `axis`
+- comparison operator
+- numeric threshold
+
+Relationship axes currently available through runtime:
+- `affinity`
+- `trust`
+- `respect`
+- `fear`
+- `intimacy`
+- `dependency`
+
+Meta-aware objectives should use `meta` conditions and target keys like:
+- `hunger`
+- `morale`
+- `reputation`
+- other registered meta values
+
+Important runtime rule:
+- quest state lives in `QuestStore`
+- quest stage logic lives in `QuestRuntimeEngine`
+- relationship values live in `RelationshipStore`
+- reactive quest sync happens after state-changing effects through `EffectRunner`
+
+Do not:
+- store quest logic inside React components
+- fake stage progression with ad hoc flags if a real quest stage is needed
+- write relationship consequence checks directly into UI
+- duplicate quest progress in multiple stores
+
+Quest authoring should prefer:
+- one quest definition per quest id
+- one clear active stage at a time
+- explicit objective labels for the journal
+- `onEnterEffects` / `onCompleteEffects` for narrative consequences
+
+The quest journal UI now expects staged quests and can show:
+- current stage title
+- current stage description
+- visible objective list
+- per-objective progress chips
 
 ## Mini-game Contract
 
@@ -103,6 +228,26 @@ Use:
 
 Current supported kinds:
 - `fishing`: green-zone hold-and-release tension game
+
+## Time and travel runtime
+
+Movement pressure is now backed by a dedicated runtime clock.
+
+Implemented pieces:
+- `src/engine/stores/TimeStore.ts` as the canonical source of story day and hour
+- `src/engine/types/time.ts` for `TimeCost`, time segments, and formatting helpers
+- `advanceTime` in `GameEffect`
+- `timeCost` on `CitySceneAction` and `SceneFlowTransition`
+- `stepTimeCost` on `TravelBoardData` and `SceneFlowRouteRules`
+
+Current engine rule:
+- meaningful hub actions can spend hours
+- route steps can spend hours, segments, or days through route rules
+- visible time pressure currently feeds `hunger`
+
+Backward compatibility:
+- authored content that still reads `story.day` and `story.timeSegment` through flags continues to work
+- `TimeStore` mirrors its state into those flags automatically
 - `dance`: blinking arrow rhythm prompts with hit windows
 
 Do not:
@@ -127,10 +272,15 @@ Each character should have:
 Optional but recommended:
 - `description`
 - `role`
+- `portraitPresentation`
 - `defaultOutfitId`
 - `outfits`
 
 Emotion keys must come from `CHARACTER_EMOTIONS` in `src/engine/types/dialogue.ts`.
+
+Portrait presentation defaults to `flat`.
+
+Use `portraitPresentation: 'composite'` only for the main story heroine or another future opt-in exception that has been explicitly approved.
 
 Example:
 
@@ -284,9 +434,32 @@ For Chapter 1, the current supporting cast already implies these portrait sets:
 - Marna Voss: `professional`, `cold`, `sharp`, `mocking`, `superior`
 - Ner-Azet: `whisper`, `hunger`, `invasion`
 
+Approved workflow rule:
+- full flat emotion sheets are the default portrait pipeline for NPCs and supporting cast
+- the current story heroine can still keep fallback flat portraits for archive continuity and one-off beats
+- do not open a new composite portrait branch for a side character unless the runtime contract is intentionally expanded
+
+## Character Prompt Authoring Model
+
+Do not build character prompts ad hoc in random notes.
+
+Current prompt authoring now has its own Storybook and type contract:
+
+- `src/engine/types/characterAuthoring.ts`
+- `src/engine/utils/buildCharacterPromptRecipe.ts`
+- `src/content/storybook/characterProfiles/chapter1CharacterPromptWorkbench.ts`
+- `src/ui/components/character-authoring/CharacterPromptWorkbench.tsx`
+
+Practical rule:
+
+1. Choose the real runtime target first.
+2. Keep NPCs on `flat-portrait` prompts.
+3. Keep Mirella on `composite-head` or `rig-layer` prompts unless a fallback flat portrait is intentional.
+4. Copy prompts from the Storybook composer instead of freewriting them each time.
+
 ## Character Composite Contract
 
-Use composite character assets when a scene should be built from layers instead of one flat portrait.
+Use composite character assets only when a scene should be built from reusable layers instead of one flat portrait.
 
 Store files in:
 - `src/content/chapters/chapter-1/images/characters/<character-id>/body/base.webp`
@@ -299,6 +472,11 @@ Optional layers for characters that need them:
 - `hands/right.webp`
 - `weapon/base.webp`
 
+Current policy:
+- the active composite pipeline is reserved for the story heroine, `mirella`
+- NPCs and supporting cast should use full flat emotion portraits under `images/portraits`
+- the legacy starter `heroine` id can remain in the repo, but it should not drive new portrait production decisions
+
 Important runtime rule:
 - `head/<emotion>.webp` is only the head/expression layer
 - changing `head/soft.webp` to `head/tired.webp` should not require redrawing `body/base.webp`
@@ -306,12 +484,13 @@ Important runtime rule:
 
 Current Chapter 1 composite stage contract:
 - stage size: `1000x1400`
-- NPC baseline stack: `body + clothes + head`
 - heroine baseline stack: `body + clothes + head + hair + hands + weapon`
 
-Migration rule:
-- if composite layers exist, the runtime can prefer them over the legacy flat portrait for the same default emotion
+Runtime selection rule:
+- flat is the default presentation for narrative characters
+- `portraitPresentation: 'composite'` lets the runtime prefer the layered heroine render for canonical dialogue beats
 - bespoke event portraits and outfit-specific portrait art can still override the composite when needed
+- if the heroine composite layers are missing or still placeholder-only, runtime falls back to the flat portrait automatically
 
 ## CG Contract
 
@@ -628,9 +807,10 @@ This means content authors can already reference these assets now, but final use
 
 1. Add `<character-id>.npc.ts`
 2. Define `displayName`, `defaultSide`, `defaultEmotion`, `defaultPortraitId`, `portraitRefs`
-3. Add optional outfits if presentation state changes over time
-4. Register in `npcRegistry.ts`
-5. Add portrait files under `images/portraits/<character-id>/`
+3. Leave `portraitPresentation` unset unless the character is an explicitly approved composite exception
+4. Add optional outfits if presentation state changes over time
+5. Register in `npcRegistry.ts`
+6. Add portrait files under `images/portraits/<character-id>/`
 
 ## Minimal Authoring Checklist For New Music Or SFX
 

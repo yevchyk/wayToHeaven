@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 
-import { actionUsesTarget } from '@engine/formulas/damage';
+import { actionUsesTarget, skillUsesTarget } from '@engine/formulas/damage';
 import type { GameRootStore } from '@engine/stores/GameRootStore';
 import {
   cloneBattleRuntime,
@@ -15,10 +15,20 @@ import type {
   BattleRuntime,
   CombatLogEntry,
 } from '@engine/types/battle';
+import type { DamageKind } from '@engine/types/combat';
 import type { EffectTargetScope, GameEffect, ResourceKey } from '@engine/types/effects';
+import type { ItemData } from '@engine/types/item';
+import type { ResolvedLootEntry } from '@engine/types/loot';
 import type { BattleStoreSnapshot } from '@engine/types/save';
+import type { StatusCategory, StatusType } from '@engine/types/status';
 import type { ScreenId } from '@engine/types/ui';
 import type { BattleUnitRuntime } from '@engine/types/unit';
+
+interface BattleRewardBundle {
+  experience: number;
+  loot: ResolvedLootEntry[];
+  effects: GameEffect[];
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -113,6 +123,66 @@ export class BattleStore {
 
   get isEnemyTurn() {
     return this.phase === 'enemyThinking';
+  }
+
+  get preferredItemEntry() {
+    return this.rootStore.inventory.battleUsableEntries[0] ?? null;
+  }
+
+  get selectedItem() {
+    if (this.selectedAction?.type !== 'item' || !this.selectedAction.itemId) {
+      return null;
+    }
+
+    return this.rootStore.inventory.inspectItem(this.selectedAction.itemId);
+  }
+
+  get selectedSkill() {
+    if (this.selectedAction?.type !== 'skill' || !this.selectedAction.skillId) {
+      return null;
+    }
+
+    return this.rootStore.getSkillById(this.selectedAction.skillId) ?? null;
+  }
+
+  get selectedActionTargetSide(): BattleUnitRuntime['side'] | null {
+    const selection = this.selectedAction;
+
+    if (!selection) {
+      return null;
+    }
+
+    if (selection.type === 'attack') {
+      return 'enemy';
+    }
+
+    if (selection.type === 'skill') {
+      switch (this.selectedSkill?.targetPattern) {
+        case 'single-ally':
+          return 'ally';
+        case 'single-enemy':
+          return 'enemy';
+        default:
+          return null;
+      }
+    }
+
+    if (selection.type !== 'item') {
+      return null;
+    }
+
+    switch (this.selectedItem?.targetScope) {
+      case 'ally':
+        return 'ally';
+      case 'enemy':
+        return 'enemy';
+      default:
+        return null;
+    }
+  }
+
+  get selectedActionRequiresTarget() {
+    return this.selectionRequiresTarget(this.selectedAction);
   }
 
   get snapshot(): BattleStoreSnapshot {
@@ -244,10 +314,12 @@ export class BattleStore {
       throw new Error('No player action is currently selected.');
     }
 
-    const finalizedSelection = actionUsesTarget(selection.type)
+    const finalizedSelection = this.selectionRequiresTarget(selection)
       ? (() => {
           const resolvedTargetId =
-            selection.targetId ?? runtime.selectedTargetId ?? this.getAvailableTargets()[0]?.unitId;
+            selection.targetId ??
+            runtime.selectedTargetId ??
+            this.getAvailableTargetsForSelection(selection)[0]?.unitId;
 
           return resolvedTargetId
             ? {
@@ -258,7 +330,7 @@ export class BattleStore {
         })()
       : selection;
 
-    if (actionUsesTarget(finalizedSelection.type) && !finalizedSelection.targetId) {
+    if (this.selectionRequiresTarget(finalizedSelection) && !finalizedSelection.targetId) {
       throw new Error(`Action "${finalizedSelection.type}" requires a target.`);
     }
 
@@ -285,6 +357,43 @@ export class BattleStore {
     }
 
     return currentUnit.side === 'ally' ? this.livingEnemies : this.livingAllies;
+  }
+
+  getAvailableTargetsForSelection(selection = this.selectedAction) {
+    const currentUnit = this.currentUnit;
+
+    if (!currentUnit || !selection) {
+      return [];
+    }
+
+    if (selection.type === 'skill') {
+      const skill = selection.skillId ? this.rootStore.getSkillById(selection.skillId) ?? null : null;
+
+      switch (skill?.targetPattern) {
+        case 'single-ally':
+          return this.livingAllies;
+        case 'single-enemy':
+          return this.livingEnemies;
+        default:
+          return [];
+      }
+    }
+
+    if (selection.type === 'item') {
+      const item = selection.itemId ? this.rootStore.inventory.inspectItem(selection.itemId) : null;
+
+      if (item?.targetScope === 'ally') {
+        return this.livingAllies;
+      }
+
+      if (item?.targetScope === 'enemy') {
+        return this.livingEnemies;
+      }
+
+      return [];
+    }
+
+    return this.getAvailableTargets();
   }
 
   restoreResourceToScope(
@@ -338,9 +447,160 @@ export class BattleStore {
     return restoredUnitIds;
   }
 
+  dealDamageToScope(
+    scope: EffectTargetScope,
+    amount: number,
+    options: {
+      damageKind?: DamageKind;
+      sourceUnitId?: string;
+      targetId?: string;
+    } = {},
+  ) {
+    const runtime = this.battleRuntime;
+
+    if (!runtime || amount <= 0) {
+      return {
+        damagedUnitIds: [],
+        totalDamage: 0,
+      };
+    }
+
+    const targetUnitIds = this.resolveScopeUnitIds(scope, options.targetId);
+    const sourceUnit = options.sourceUnitId
+      ? [...runtime.allies, ...runtime.enemies].find((unit) => unit.unitId === options.sourceUnitId) ?? null
+      : null;
+    const damagedUnitIds: string[] = [];
+    let totalDamage = 0;
+    let nextRuntime = cloneBattleRuntime(runtime);
+
+    targetUnitIds.forEach((unitId) => {
+      const unit = [...nextRuntime.allies, ...nextRuntime.enemies].find((entry) => entry.unitId === unitId);
+
+      if (!unit) {
+        return;
+      }
+
+      const damageDealt = this.rootStore.statusProcessor.getAdjustedDamage(
+        amount,
+        sourceUnit ?? unit,
+        unit,
+        options.damageKind ?? 'physical',
+      );
+
+      if (damageDealt <= 0) {
+        return;
+      }
+
+      const updatedUnit: BattleUnitRuntime = {
+        ...cloneBattleUnit(unit),
+        currentHp: clamp(unit.currentHp - damageDealt, 0, unit.derivedStats.maxHp),
+      };
+      const appliedDamage = unit.currentHp - updatedUnit.currentHp;
+
+      if (appliedDamage <= 0) {
+        return;
+      }
+
+      nextRuntime = this.replaceUnit(nextRuntime, updatedUnit);
+      totalDamage += appliedDamage;
+      damagedUnitIds.push(unitId);
+    });
+
+    if (damagedUnitIds.length > 0) {
+      this.battleRuntime = nextRuntime;
+      this.syncAlliesBackToParty();
+    }
+
+    return {
+      damagedUnitIds,
+      totalDamage,
+    };
+  }
+
+  removeStatusFromScope(scope: EffectTargetScope, statusType: StatusType, targetId?: string) {
+    const runtime = this.battleRuntime;
+
+    if (!runtime) {
+      return 0;
+    }
+
+    const targetUnitIds = this.resolveScopeUnitIds(scope, targetId);
+    let removedCount = 0;
+    let nextRuntime = cloneBattleRuntime(runtime);
+
+    targetUnitIds.forEach((unitId) => {
+      const result = this.rootStore.statusProcessor.removeStatusFromRuntime(nextRuntime, unitId, statusType);
+
+      nextRuntime = result.runtime;
+      removedCount += result.removedCount;
+    });
+
+    if (removedCount > 0) {
+      this.battleRuntime = nextRuntime;
+      this.syncAlliesBackToParty();
+    }
+
+    return removedCount;
+  }
+
+  cleanseStatusesFromScope(
+    scope: EffectTargetScope,
+    options: {
+      onlyNegative?: boolean;
+      category?: StatusCategory;
+      limit?: number;
+      targetId?: string;
+    } = {},
+  ) {
+    const runtime = this.battleRuntime;
+
+    if (!runtime) {
+      return 0;
+    }
+
+    const targetUnitIds = this.resolveScopeUnitIds(scope, options.targetId);
+    let removedCount = 0;
+    let remainingLimit = options.limit;
+    let nextRuntime = cloneBattleRuntime(runtime);
+
+    targetUnitIds.forEach((unitId) => {
+      if (remainingLimit !== undefined && remainingLimit <= 0) {
+        return;
+      }
+
+      const result = this.rootStore.statusProcessor.cleanseStatusesFromRuntime(nextRuntime, unitId, {
+        ...(options.onlyNegative !== undefined ? { onlyNegative: options.onlyNegative } : {}),
+        ...(options.category !== undefined ? { category: options.category } : {}),
+        ...(remainingLimit !== undefined ? { limit: remainingLimit } : {}),
+      });
+
+      nextRuntime = result.runtime;
+      removedCount += result.removedCount;
+
+      if (remainingLimit !== undefined) {
+        remainingLimit -= result.removedCount;
+      }
+    });
+
+    if (removedCount > 0) {
+      this.battleRuntime = nextRuntime;
+      this.syncAlliesBackToParty();
+    }
+
+    return removedCount;
+  }
+
   endBattle() {
     const shouldRestoreScreen = this.rootStore.ui.activeScreen === 'battle';
     const returnScreenId = this.returnScreenId;
+
+    if (this.rootStore.ui.activeModal?.id === 'battle-rewards') {
+      this.rootStore.ui.closeModal();
+    }
+
+    if (this.rootStore.progression.hasPendingBattleSummary) {
+      this.rootStore.progression.clearBattleSummary();
+    }
 
     this.battleRuntime = null;
     this.returnScreenId = null;
@@ -504,7 +764,8 @@ export class BattleStore {
   private finishBattle(outcome: BattleOutcome) {
     const runtime = this.requireBattleRuntime();
     const outcomeLog = this.rootStore.combatLogBuilder.createOutcomeEntry(runtime, outcome);
-    const outcomeEffects = this.collectOutcomeEffects(runtime.templateId, outcome);
+    const rewardBundle = this.collectOutcomeRewards(runtime.templateId, outcome);
+    const outcomeEffects = rewardBundle.effects;
 
     this.battleRuntime = {
       ...runtime,
@@ -520,19 +781,48 @@ export class BattleStore {
     if (outcomeEffects.length > 0) {
       this.rootStore.executeEffects(outcomeEffects);
     }
+
+    if (outcome === 'victory') {
+      const template = this.rootStore.getBattleTemplateById(runtime.templateId);
+      const shouldShowRewardSummary = template?.showRewardSummary ?? false;
+      
+      if (shouldShowRewardSummary) {
+        const rewardSummary = this.rootStore.progression.awardBattleRewards({
+          battleId: runtime.templateId,
+          battleTitle: template?.title ?? runtime.templateId,
+          recipientUnitIds: runtime.allies.map((unit) => unit.unitId),
+          experience: rewardBundle.experience,
+          loot: rewardBundle.loot,
+        });
+
+        if (rewardSummary) {
+          this.rootStore.ui.openModal('battle-rewards');
+        }
+      }
+    }
   }
 
-  private collectOutcomeEffects(templateId: string, outcome: BattleOutcome): GameEffect[] {
+  private collectOutcomeRewards(templateId: string, outcome: BattleOutcome): BattleRewardBundle {
     const template = this.rootStore.getBattleTemplateById(templateId);
 
     if (!template) {
-      return [];
+      return {
+        experience: 0,
+        loot: [],
+        effects: [],
+      };
     }
 
     if (outcome === 'defeat') {
-      return [...(template.defeatEffects ?? [])];
+      return {
+        experience: 0,
+        loot: [],
+        effects: [...(template.defeatEffects ?? [])],
+      };
     }
 
+    const loot = new Map<string, number>();
+    let experience = template.experienceReward ?? 0;
     const rewardEffects = template.enemyUnitIds.flatMap((enemyTemplateId) => {
       const enemyTemplate = this.rootStore.getEnemyTemplateById(enemyTemplateId);
 
@@ -540,18 +830,43 @@ export class BattleStore {
         return [];
       }
 
-      const itemEffects = (enemyTemplate.rewardItemIds ?? []).map(
-        (itemId): GameEffect => ({
-          type: 'giveItem',
-          itemId,
-          quantity: 1,
-        }),
-      );
+      experience += enemyTemplate.experienceReward ?? 0;
 
-      return [...(enemyTemplate.rewardEffects ?? []), ...itemEffects];
+      (enemyTemplate.rewardItemIds ?? []).forEach((itemId) => {
+        loot.set(itemId, (loot.get(itemId) ?? 0) + 1);
+      });
+      this.rootStore.lootTableResolver
+        .resolve(
+          enemyTemplate.rewardTableId ? this.rootStore.getLootTableById(enemyTemplate.rewardTableId) : null,
+        )
+        .forEach((entry) => {
+          loot.set(entry.itemId, (loot.get(entry.itemId) ?? 0) + entry.quantity);
+        });
+
+      return [...(enemyTemplate.rewardEffects ?? [])];
     });
+    this.rootStore.lootTableResolver
+      .resolve(template.rewardTableId ? this.rootStore.getLootTableById(template.rewardTableId) : null)
+      .forEach((entry) => {
+        loot.set(entry.itemId, (loot.get(entry.itemId) ?? 0) + entry.quantity);
+      });
 
-    return [...(template.victoryEffects ?? []), ...rewardEffects];
+    const lootEffects = Array.from(loot.entries()).map(
+      ([itemId, quantity]): GameEffect => ({
+        type: 'giveItem',
+        itemId,
+        quantity,
+      }),
+    );
+
+    return {
+      experience,
+      loot: Array.from(loot.entries()).map(([itemId, quantity]) => ({
+        itemId,
+        quantity,
+      })),
+      effects: [...(template.victoryEffects ?? []), ...rewardEffects, ...lootEffects],
+    };
   }
 
   private syncAlliesBackToParty() {
@@ -655,5 +970,31 @@ export class BattleStore {
     }
 
     return currentUnit;
+  }
+
+  private selectionRequiresTarget(selection: BattleActionSelection | null) {
+    if (!selection) {
+      return false;
+    }
+
+    if (selection.type === 'skill') {
+      return skillUsesTarget(selection.skillId ? this.rootStore.getSkillById(selection.skillId) ?? null : null);
+    }
+
+    if (actionUsesTarget(selection.type)) {
+      return true;
+    }
+
+    if (selection.type !== 'item') {
+      return false;
+    }
+
+    return this.itemRequiresTarget(
+      selection.itemId ? this.rootStore.inventory.inspectItem(selection.itemId) : null,
+    );
+  }
+
+  private itemRequiresTarget(item: ItemData | null) {
+    return item?.targetScope === 'ally' || item?.targetScope === 'enemy';
   }
 }

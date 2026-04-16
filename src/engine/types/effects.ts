@@ -3,7 +3,10 @@ import type { MetaKey } from '@engine/types/meta';
 import type { NarrativeProfileKey } from '@engine/types/profile';
 import type { QuestDefinition } from '@engine/types/quest';
 import type { RelationshipAxis, RelationshipId } from '@engine/types/relationships';
+import type { DamageKind } from '@engine/types/combat';
+import type { StatusCategory, StatusType } from '@engine/types/status';
 import type { TagId } from '@engine/types/tags';
+import type { TimeCost, TimeSegment } from '@engine/types/time';
 import type { ModalId, ScreenId } from '@engine/types/ui';
 
 export type EffectTargetScope = 'player' | 'party' | 'unit';
@@ -24,6 +27,11 @@ export interface SetCharacterOutfitEffect {
   outfitId: string;
 }
 
+export interface UnlockSceneReplayEffect {
+  type: 'unlockSceneReplay';
+  sceneId: string;
+}
+
 export interface ChangeMetaEffect {
   type: 'changeMeta';
   key: MetaKey;
@@ -39,6 +47,7 @@ export interface AdvanceQuestEffect {
   type: 'advanceQuest';
   questId: QuestDefinition['id'];
   delta?: number;
+  objectiveId?: string;
 }
 
 export interface CompleteQuestEffect {
@@ -120,6 +129,39 @@ export interface RestoreResourceEffect {
   amount: number;
   targetScope: EffectTargetScope;
   targetId?: string;
+}
+
+export interface DealDamageEffect {
+  type: 'dealDamage';
+  amount: number;
+  targetScope: EffectTargetScope;
+  damageKind?: DamageKind;
+  sourceUnitId?: string;
+  targetId?: string;
+}
+
+export interface RemoveStatusEffect {
+  type: 'removeStatus';
+  statusType: StatusType;
+  targetScope: EffectTargetScope;
+  targetId?: string;
+}
+
+export interface CleanseStatusesEffect {
+  type: 'cleanseStatuses';
+  targetScope: EffectTargetScope;
+  targetId?: string;
+  onlyNegative?: boolean;
+  category?: StatusCategory;
+  limit?: number;
+}
+
+export interface AdvanceTimeEffect extends TimeCost {
+  type: 'advanceTime';
+  setDay?: number;
+  setHour?: number;
+  setSegment?: TimeSegment;
+  applyDefaultConsequences?: boolean;
 }
 
 export interface StartBattleEffect {
@@ -206,6 +248,7 @@ export interface JumpToNodeEffect {
 export type GameEffect =
   | SetFlagEffect
   | SetCharacterOutfitEffect
+  | UnlockSceneReplayEffect
   | ChangeMetaEffect
   | AddQuestEffect
   | AdvanceQuestEffect
@@ -222,6 +265,10 @@ export type GameEffect =
   | GiveItemEffect
   | RemoveItemEffect
   | RestoreResourceEffect
+  | DealDamageEffect
+  | RemoveStatusEffect
+  | CleanseStatusesEffect
+  | AdvanceTimeEffect
   | StartBattleEffect
   | StartTravelBoardEffect
   | StartMinigameEffect

@@ -12,6 +12,7 @@ describe('DialogueValidator', () => {
       dialogues: {},
       sceneFlows: {},
       items: {},
+      lootTables: {},
       quests: {},
       locations: {},
       characterTemplates: {},

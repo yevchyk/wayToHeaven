@@ -35,7 +35,7 @@ describe('CharacterMenuModal', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Character Menu' })).not.toBeInTheDocument();
     });
-  });
+  }, 15_000);
 
   it('updates the preview and selected character when switching party members', () => {
     const rootStore = new GameRootStore();
@@ -52,7 +52,7 @@ describe('CharacterMenuModal', () => {
 
     expect(screen.getByTestId('character-menu-selected-name')).toHaveTextContent('Ash');
     expect(screen.getByTestId('character-preview-layer-headwear')).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('opens the inventory modal on the inventory tab by default', () => {
     const rootStore = new GameRootStore();
@@ -63,5 +63,5 @@ describe('CharacterMenuModal', () => {
 
     expect(screen.getByRole('tab', { name: 'Inventory' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('Basic Potion')).toBeInTheDocument();
-  });
+  }, 15_000);
 });

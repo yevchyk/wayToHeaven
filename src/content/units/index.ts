@@ -5,6 +5,7 @@ import { guardEnemyTemplate } from './guardEnemy';
 import { mainHeroInstance, mainHeroTemplate } from './mainHero';
 import { roadCompanionInstance, roadCompanionTemplate } from './roadCompanion';
 import { saltPassRaiderEnemyTemplate } from './saltPassRaiderEnemy';
+import { wolfEnemyTemplate } from './wolfEnemy';
 
 export const characterTemplateRegistry: Record<string, CharacterTemplate> = {
   [mainHeroTemplate.id]: mainHeroTemplate,
@@ -20,6 +21,7 @@ export const enemyTemplateRegistry: Record<string, EnemyTemplate> = {
   [guardEnemyTemplate.id]: guardEnemyTemplate,
   [banditEnemyTemplate.id]: banditEnemyTemplate,
   [saltPassRaiderEnemyTemplate.id]: saltPassRaiderEnemyTemplate,
+  [wolfEnemyTemplate.id]: wolfEnemyTemplate,
 };
 
 export const defaultPartyInstanceIds = [mainHeroInstance.id, roadCompanionInstance.id];

@@ -5,6 +5,7 @@ import { Box, Button, Chip, List, ListItem, Stack, Typography } from '@mui/mater
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
 import type { TravelNode } from '@engine/types/travel';
+import { formatTimeCost } from '@engine/types/time';
 import { SceneFlowPresentationShell } from '@ui/components/scene-flow/SceneFlowPresentationShell';
 import { SectionCard } from '@ui/components/SectionCard';
 
@@ -42,6 +43,7 @@ export const TravelBoardScreen = observer(function TravelBoardScreen() {
   }
 
   const nodes = Object.values(board.nodes);
+  const stepTimeCostLabel = formatTimeCost(board.stepTimeCost);
   const mapAssetId =
     board.backgroundId && rootStore.getNarrativeAssetById(board.backgroundId)?.kind === 'map'
       ? board.backgroundId
@@ -186,10 +188,13 @@ export const TravelBoardScreen = observer(function TravelBoardScreen() {
           title={currentNode.title ?? currentNode.id}
         >
           <Stack direction="row" flexWrap="wrap" gap={1}>
+            <Chip label={`Day ${rootStore.time.day}`} variant="outlined" />
+            <Chip label={rootStore.time.segmentLabel} variant="outlined" />
             <Chip label={`Phase ${travelBoard.phase}`} variant="outlined" />
             <Chip label={`Roll ${travelBoard.lastRoll ?? '-'}`} variant="outlined" />
             <Chip label={`Steps ${travelBoard.remainingSteps}`} variant="outlined" />
             <Chip label={`Scout ${travelBoard.scoutCharges}`} variant="outlined" />
+            {stepTimeCostLabel ? <Chip label={`Step ${stepTimeCostLabel}`} variant="outlined" /> : null}
           </Stack>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2.5 }}>

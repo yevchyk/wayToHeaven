@@ -13,6 +13,8 @@ export function cloneBattleUnit(unit: BattleUnitRuntime): BattleUnitRuntime {
       ...(status.metadata ? { metadata: { ...status.metadata } } : {}),
     })),
     skillIds: [...unit.skillIds],
+    skillRanks: { ...(unit.skillRanks ?? {}) },
+    ...(unit.battleVisual ? { battleVisual: { ...unit.battleVisual } } : {}),
   };
 }
 
@@ -45,5 +47,7 @@ export function toPartyUnitRuntime(unit: BattleUnitRuntime): PartyUnitRuntime {
       ...(status.metadata ? { metadata: { ...status.metadata } } : {}),
     })),
     skillIds: [...partyUnit.skillIds],
+    skillRanks: { ...(partyUnit.skillRanks ?? {}) },
+    ...(partyUnit.battleVisual ? { battleVisual: { ...partyUnit.battleVisual } } : {}),
   };
 }

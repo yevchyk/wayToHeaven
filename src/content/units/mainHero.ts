@@ -5,6 +5,9 @@ export const mainHeroTemplate: CharacterTemplate = {
   kind: 'character',
   name: 'Pilgrim',
   description: 'A wanderer who survives by stubborn resolve.',
+  battleVisual: {
+    portraitSourcePath: 'src/content/shared/placeholders/portraits/young-woman.jpg',
+  },
   faction: 'player',
   baseStats: {
     strength: 7,
@@ -17,7 +20,7 @@ export const mainHeroTemplate: CharacterTemplate = {
   },
   startingTags: ['human', 'living', 'pilgrim'],
   startingStatuses: [],
-  skillIds: ['basic-attack', 'firebolt'],
+  skillIds: ['basic-attack', 'firebolt', 'cinder-storm'],
   itemIds: ['basic-potion'],
   preview: {
     background: 'background/pilgrim-road-dawn',

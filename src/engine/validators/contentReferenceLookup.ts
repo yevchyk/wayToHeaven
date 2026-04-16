@@ -2,6 +2,7 @@ import type { BattleTemplate } from '@engine/types/battle';
 import type { CitySceneData } from '@engine/types/city';
 import type { DialogueData } from '@engine/types/dialogue';
 import type { ItemData } from '@engine/types/item';
+import type { LootTableData } from '@engine/types/loot';
 import type { QuestDefinition } from '@engine/types/quest';
 import type { SceneFlowData } from '@engine/types/sceneFlow';
 import type { StatusDefinition, StatusType } from '@engine/types/status';
@@ -16,6 +17,7 @@ export interface ContentReferenceLookup {
   hasDialogue(dialogueId: string): boolean;
   hasSceneFlow(sceneFlowId: string): boolean;
   hasItem(itemId: string): boolean;
+  hasLootTable(lootTableId: string): boolean;
   hasQuest(questId: string): boolean;
   hasLocation(locationId: string): boolean;
   hasLocationNode(locationId: string, nodeId: string): boolean;
@@ -33,6 +35,7 @@ export interface ContentRegistrySnapshot {
   dialogues: Record<string, DialogueData>;
   sceneFlows: Record<string, SceneFlowData>;
   items: Record<string, ItemData>;
+  lootTables: Record<string, LootTableData>;
   quests: Record<string, QuestDefinition>;
   locations: Record<string, LocationData>;
   characterTemplates: Record<string, CharacterTemplate>;
@@ -58,6 +61,7 @@ export function createContentReferenceLookup(
     hasDialogue: (dialogueId) => dialogueId in snapshot.dialogues || hasSceneFlowOfMode(dialogueId, 'sequence'),
     hasSceneFlow: (sceneFlowId) => sceneFlowId in snapshot.sceneFlows,
     hasItem: (itemId) => itemId in snapshot.items,
+    hasLootTable: (lootTableId) => lootTableId in snapshot.lootTables,
     hasQuest: (questId) => questId in snapshot.quests,
     hasLocation: (locationId) => locationId in snapshot.locations,
     hasLocationNode: (locationId, nodeId) => Boolean(snapshot.locations[locationId]?.nodes[nodeId]),

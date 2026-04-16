@@ -11,6 +11,7 @@ export type ScreenId =
 
 export type ModalId =
   | 'character-menu'
+  | 'battle-rewards'
   | 'inventory'
   | 'library'
   | 'party'

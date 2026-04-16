@@ -25,6 +25,7 @@ export type DialogueValidationErrorCode =
   | 'missingCgReference'
   | 'missingOverlayReference'
   | 'missingJumpNodeReference'
+  | 'missingSceneReference'
   | 'missingSceneFlowReference'
   | 'missingBattleReference'
   | 'missingItemReference'

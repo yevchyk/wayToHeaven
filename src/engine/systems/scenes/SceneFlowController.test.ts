@@ -405,4 +405,126 @@ describe('SceneFlowController regressions', () => {
     expect(rootStore.sceneFlow.isAwaitingDirection).toBe(true);
     expect(rootStore.sceneFlow.lastRoll).toBe(4);
   });
+
+  it('spends time on hub choices and route steps through scene-flow rules', () => {
+    const rootStore = new GameRootStore({
+      travelRandom: () => 0,
+    });
+
+    registerImportedFlows(rootStore, {
+      id: 'tests/scene-generation/time-runtime',
+      schemaVersion: 1,
+      title: 'Time Runtime',
+      meta: {
+        chapterId: 'chapter-1',
+      },
+      scenes: {
+        'tests/scene/hub-time': {
+          id: 'tests/scene/hub-time',
+          mode: 'hub',
+          startNodeId: 'hub',
+          cityName: 'Test Ward',
+          locationName: 'Test Yard',
+          nodes: {
+            hub: {
+              id: 'hub',
+              type: 'choice',
+              text: 'Spend time in the yard.',
+              choices: [
+                {
+                  id: 'pray',
+                  text: 'Pray at the roadside altar.',
+                  timeCost: {
+                    hours: 2,
+                  },
+                  nextSceneId: 'tests/scene/hub-target',
+                },
+              ],
+            },
+          },
+        },
+        'tests/scene/hub-target': {
+          id: 'tests/scene/hub-target',
+          mode: 'sequence',
+          startNodeId: 'line',
+          nodes: {
+            line: {
+              id: 'line',
+              type: 'narration',
+              text: 'The prayer is complete.',
+              isEnd: true,
+            },
+          },
+        },
+        'tests/scene/route-time': {
+          id: 'tests/scene/route-time',
+          mode: 'route',
+          startNodeId: 'start',
+          routeRules: {
+            rollRange: {
+              min: 1,
+              max: 1,
+            },
+            stepTimeCost: {
+              hours: 6,
+            },
+          },
+          nodes: {
+            start: {
+              id: 'start',
+              type: 'event',
+              title: 'Start',
+              route: {
+                x: 10,
+                y: 10,
+              },
+              nextNodeId: 'mid',
+            },
+            mid: {
+              id: 'mid',
+              type: 'event',
+              title: 'Mid',
+              route: {
+                x: 60,
+                y: 10,
+              },
+              encounter: {
+                kind: 'none',
+              },
+              nextNodeId: 'exit',
+            },
+            exit: {
+              id: 'exit',
+              type: 'event',
+              title: 'Exit',
+              route: {
+                x: 90,
+                y: 10,
+              },
+              encounter: {
+                kind: 'exit',
+                completesFlow: true,
+              },
+              isEnd: true,
+            },
+          },
+        },
+      },
+    });
+
+    rootStore.time.setTime(1, 8);
+    rootStore.sceneFlowController.startSceneFlow('tests/scene/hub-time');
+    rootStore.sceneFlowController.chooseTransition('pray');
+
+    expect(rootStore.time.day).toBe(1);
+    expect(rootStore.time.hour).toBe(10);
+    expect(rootStore.dialogue.currentText).toBe('The prayer is complete.');
+
+    rootStore.sceneFlowController.startSceneFlow('tests/scene/route-time');
+    rootStore.sceneFlowController.rollDice();
+
+    expect(rootStore.time.day).toBe(1);
+    expect(rootStore.time.hour).toBe(16);
+    expect(rootStore.sceneFlow.currentNodeId).toBe('mid');
+  });
 });

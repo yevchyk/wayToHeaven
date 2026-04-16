@@ -94,7 +94,7 @@ export function buildBrowserRuntimeSnapshot(rootStore: GameRootStore): BrowserRu
     },
     city: {
       sceneId: rootStore.city.activeSceneId,
-      title: rootStore.city.currentScene?.title ?? null,
+      title: rootStore.city.currentScene?.locationName ?? null,
     },
     travelBoard: {
       boardId: rootStore.travelBoard.activeBoardId,

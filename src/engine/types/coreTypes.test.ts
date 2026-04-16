@@ -149,6 +149,7 @@ describe('core domain types', () => {
       templateId: heroTemplate.id,
       name: heroTemplate.name,
       level: heroInstance.level,
+      experience: 0,
       currentHp: derivedStats.maxHp,
       currentMana: derivedStats.maxMana,
       baseStats,
@@ -156,6 +157,9 @@ describe('core domain types', () => {
       tags: heroInstance.tags ?? [],
       statuses: heroInstance.statusEffects ?? [],
       skillIds: heroTemplate.skillIds,
+      skillRanks: {},
+      bonusMaxHp: 0,
+      bonusMaxMana: 0,
       isDefending: false,
       side: 'ally',
     };

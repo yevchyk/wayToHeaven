@@ -1,7 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
-import type { SceneFlowSnapshot } from '@engine/types/save';
+import type { GameSaveRuntimeSnapshot, SceneFlowSnapshot } from '@engine/types/save';
 import type {
   SceneFlowPresentationState,
   SceneFlowRouteRuntime,
@@ -86,6 +86,7 @@ function parseTrailingSequence(value: string, prefix: string) {
 function cloneSession(session: SceneFlowSession): SceneFlowSession {
   return {
     ...session,
+    playbackMode: session.playbackMode ?? 'live',
     visibleTransitionIds: [...session.visibleTransitionIds],
     visitedNodeIds: [...session.visitedNodeIds],
     presentation: clonePresentationState(session.presentation),
@@ -99,6 +100,8 @@ export class SceneFlowStore {
   flowStack: SceneFlowSession[] = [];
   visitedHubFlowIds: string[] = [];
   triggeredHubTransitionKeys: string[] = [];
+  previewRuntimeSnapshot: GameSaveRuntimeSnapshot | null = null;
+  previewSceneId: string | null = null;
   ambientPresentation: SceneFlowPresentationState = {
     backgroundId: null,
     musicId: null,
@@ -116,7 +119,14 @@ export class SceneFlowStore {
   constructor(rootStore: GameRootStore) {
     this.rootStore = rootStore;
 
-    makeAutoObservable(this, { rootStore: false }, { autoBind: true });
+    makeAutoObservable(
+      this,
+      {
+        rootStore: false,
+        previewRuntimeSnapshot: false,
+      },
+      { autoBind: true },
+    );
   }
 
   get isActive() {
@@ -129,6 +139,10 @@ export class SceneFlowStore {
 
   get parentSession() {
     return this.flowStack.length > 1 ? this.flowStack[this.flowStack.length - 2] ?? null : null;
+  }
+
+  get isPreviewActive() {
+    return this.previewRuntimeSnapshot !== null;
   }
 
   get activeFlowId() {
@@ -315,6 +329,8 @@ export class SceneFlowStore {
     this.flowStack = [];
     this.visitedHubFlowIds = [];
     this.triggeredHubTransitionKeys = [];
+    this.previewRuntimeSnapshot = null;
+    this.previewSceneId = null;
     this.ambientPresentation = {
       backgroundId: null,
       musicId: null,
@@ -333,6 +349,8 @@ export class SceneFlowStore {
     this.flowStack = snapshot.flowStack.map((session) => cloneSession(session));
     this.visitedHubFlowIds = [...snapshot.visitedHubFlowIds];
     this.triggeredHubTransitionKeys = [...snapshot.triggeredHubTransitionKeys];
+    this.previewRuntimeSnapshot = null;
+    this.previewSceneId = null;
     this.ambientPresentation = clonePresentationState(snapshot.ambientPresentation);
     this.sessionSequence = this.flowStack.reduce(
       (highestSequence, session) =>
@@ -354,6 +372,20 @@ export class SceneFlowStore {
     if (!this.visitedHubFlowIds.includes(flowId)) {
       this.visitedHubFlowIds.push(flowId);
     }
+  }
+
+  beginPreview(runtimeSnapshot: GameSaveRuntimeSnapshot, sceneId: string) {
+    this.previewRuntimeSnapshot = runtimeSnapshot;
+    this.previewSceneId = sceneId;
+  }
+
+  consumePreviewRuntimeSnapshot() {
+    const snapshot = this.previewRuntimeSnapshot;
+
+    this.previewRuntimeSnapshot = null;
+    this.previewSceneId = null;
+
+    return snapshot;
   }
 
   markHubTransitionTriggered(flowId: string, transitionId: string) {

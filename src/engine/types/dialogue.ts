@@ -8,6 +8,7 @@ import type {
   NarrativeProfileSnapshot,
   NarrativeProfileUnlockSnapshot,
 } from '@engine/types/profile';
+import type { TimeCost } from '@engine/types/time';
 
 export const CHARACTER_EMOTIONS = [
   'neutral',
@@ -166,6 +167,7 @@ export interface DialogueChoice {
   id: string;
   text: string;
   tone?: ActionTone;
+  timeCost?: TimeCost;
   conditions?: Condition[];
   effects?: DialogueEffect[];
   nextNodeId?: string;

@@ -1,4 +1,5 @@
 import type { GameEffect } from '@engine/types/effects';
+import type { LootTableData } from '@engine/types/loot';
 import type { BattleUnitRuntime } from '@engine/types/unit';
 
 export type BattlePhase =
@@ -42,6 +43,9 @@ export interface BattleTemplate {
   backgroundId?: string;
   introSceneFlowId?: string;
   introDialogueId?: string;
+  rewardTableId?: LootTableData['id'];
+  experienceReward?: number;
+  showRewardSummary?: boolean;
   victoryEffects?: GameEffect[];
   defeatEffects?: GameEffect[];
   enemyAiProfile?: 'random';

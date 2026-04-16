@@ -2,6 +2,8 @@ import { battleContentRegistry } from '@content/battles';
 import { narrativeCharacterRegistry } from '@content/registries/npcRegistry';
 import { hasNarrativeAssetOfKind } from '@content/registries/assetRegistry';
 import { locationContentRegistry } from '@content/registries/locationRegistry';
+import { lootTableContentRegistry } from '@content/lootTables';
+import { sceneRegistry } from '@content/registries/sceneRegistry';
 import { sceneGenerationRegistry } from '@content/registries/sceneGenerationRegistry';
 import { itemContentRegistry } from '@content/items';
 import { questRegistry } from '@content/registries/questRegistry';
@@ -47,6 +49,7 @@ const effectReferenceValidator = new EffectReferenceValidator(
       dialogues: {},
       sceneFlows: {},
       items: itemContentRegistry,
+      lootTables: lootTableContentRegistry,
       quests: questRegistry,
       locations: locationContentRegistry,
       characterTemplates: characterTemplateRegistry,
@@ -59,6 +62,7 @@ const effectReferenceValidator = new EffectReferenceValidator(
   ),
   {
     hasAssetOfKind: hasNarrativeAssetOfKind,
+    hasSceneId: (sceneId) => sceneId in sceneRegistry,
   },
 );
 const sceneGenerationValidator = new SceneGenerationValidator(effectReferenceValidator, {

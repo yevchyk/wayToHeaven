@@ -1,8 +1,64 @@
 import { observable, makeAutoObservable } from 'mobx';
 
 import type { GameRootStore } from '@engine/stores/GameRootStore';
+import type { GameEffect } from '@engine/types/effects';
 import type { InventorySnapshot } from '@engine/types/save';
-import type { InventoryEntryDetails, InventoryItem, ItemUseResult } from '@engine/types/item';
+import type {
+  InventoryEntryDetails,
+  InventoryItem,
+  ItemTargetScope,
+  ItemUseOptions,
+  ItemUseResult,
+} from '@engine/types/item';
+
+function isBattleRelevantItemEffect(effect: GameEffect) {
+  return (
+    effect.type === 'dealDamage' ||
+    effect.type === 'restoreResource' ||
+    effect.type === 'addTag' ||
+    effect.type === 'removeTag' ||
+    effect.type === 'removeStatus' ||
+    effect.type === 'cleanseStatuses'
+  );
+}
+
+function overrideEffectContext(
+  effect: GameEffect,
+  options: {
+    sourceUnitId?: string | null;
+    targetUnitId?: string | null;
+  },
+) {
+  switch (effect.type) {
+    case 'addTag':
+    case 'cleanseStatuses':
+    case 'removeTag':
+    case 'removeStatus':
+    case 'restoreResource':
+      return {
+        ...effect,
+        ...(options.targetUnitId
+          ? {
+              targetScope: 'unit' as const,
+              targetId: options.targetUnitId,
+            }
+          : {}),
+      };
+    case 'dealDamage':
+      return {
+        ...effect,
+        ...(options.sourceUnitId ? { sourceUnitId: options.sourceUnitId } : {}),
+        ...(options.targetUnitId
+          ? {
+              targetScope: 'unit' as const,
+              targetId: options.targetUnitId,
+            }
+          : {}),
+      };
+    default:
+      return effect;
+  }
+}
 
 export class InventoryStore {
   readonly rootStore: GameRootStore;
@@ -47,6 +103,18 @@ export class InventoryStore {
 
   get totalItemCount() {
     return this.entries.reduce((total, entry) => total + entry.quantity, 0);
+  }
+
+  get usableConsumableEntries() {
+    return this.detailedEntries.filter(
+      (entry) => entry.data.type === 'consumable' && (entry.data.effects?.length ?? 0) > 0,
+    );
+  }
+
+  get battleUsableEntries() {
+    return this.usableConsumableEntries.filter((entry) =>
+      (entry.data.effects ?? []).some((effect) => isBattleRelevantItemEffect(effect)),
+    );
   }
 
   get snapshot(): InventorySnapshot {
@@ -97,7 +165,7 @@ export class InventoryStore {
     return true;
   }
 
-  useItem(itemId: string): ItemUseResult {
+  useItem(itemId: string, options: ItemUseOptions = {}): ItemUseResult {
     const item = this.inspectItem(itemId);
 
     if (!item) {
@@ -124,7 +192,30 @@ export class InventoryStore {
       };
     }
 
-    const batchResult = this.rootStore.executeEffects(item.effects);
+    const resolvedTargetUnitId = this.resolveItemTargetUnitId(item.targetScope ?? 'none', options);
+
+    if (item.targetScope && item.targetScope !== 'none' && !resolvedTargetUnitId) {
+      return {
+        itemId,
+        consumed: false,
+        message: `Item "${item.name}" requires a valid target.`,
+      };
+    }
+
+    const resolvedEffects =
+      resolvedTargetUnitId
+        ? item.effects.map((effect) =>
+            overrideEffectContext(effect, {
+              ...(options.sourceUnitId !== undefined ? { sourceUnitId: options.sourceUnitId } : {}),
+              targetUnitId: resolvedTargetUnitId,
+            }),
+          )
+        : item.effects.map((effect) =>
+            overrideEffectContext(effect, {
+              ...(options.sourceUnitId !== undefined ? { sourceUnitId: options.sourceUnitId } : {}),
+            }),
+          );
+    const batchResult = this.rootStore.executeEffects(resolvedEffects);
 
     if (batchResult.appliedCount === 0) {
       return {
@@ -139,6 +230,7 @@ export class InventoryStore {
     return {
       itemId,
       consumed: true,
+      ...(resolvedTargetUnitId ? { targetUnitId: resolvedTargetUnitId } : {}),
     };
   }
 
@@ -154,5 +246,24 @@ export class InventoryStore {
         this.itemCounts.set(itemId, quantity);
       }
     });
+  }
+
+  private resolveItemTargetUnitId(scope: ItemTargetScope, options: ItemUseOptions) {
+    switch (scope) {
+      case 'none':
+        return null;
+      case 'enemy':
+      case 'ally':
+        return options.targetUnitId ?? null;
+      case 'self':
+      default:
+        return (
+          options.targetUnitId ??
+          options.sourceUnitId ??
+          this.rootStore.party.selectedCharacterId ??
+          this.rootStore.party.playerUnitId ??
+          null
+        );
+    }
   }
 }

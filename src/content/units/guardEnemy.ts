@@ -5,6 +5,9 @@ export const guardEnemyTemplate: EnemyTemplate = {
   kind: 'enemy',
   name: 'Gate Guard',
   description: 'A trained guard ready to block the road.',
+  battleVisual: {
+    portraitSourcePath: 'src/content/shared/placeholders/portraits/rough-man.jpg',
+  },
   faction: 'enemy',
   aiProfile: 'random',
   level: 1,

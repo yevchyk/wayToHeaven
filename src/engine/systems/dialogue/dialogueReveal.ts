@@ -1,100 +1,31 @@
 interface DialogueRevealSegment {
   segment: string;
+  isWhitespace: boolean;
+  isNewline: boolean;
   isWordLike: boolean;
 }
 
 const MAX_DIALOGUE_REVEAL_DELAY_MS = 240;
 const WORD_LIKE_CHARACTER_PATTERN = /[\p{L}\p{N}\p{M}]/u;
-const WORD_CONNECTOR_PATTERN = /['’ʼ-]/u;
 const WHITESPACE_PATTERN = /\s/u;
+const TERMINAL_PUNCTUATION_PATTERN = /[.!?…]/u;
+const MINOR_PUNCTUATION_PATTERN = /[,;:]/u;
 
 function isWordLikeCharacter(character: string) {
   return WORD_LIKE_CHARACTER_PATTERN.test(character);
 }
 
-function isWordConnector(character: string) {
-  return WORD_CONNECTOR_PATTERN.test(character);
+function toDialogueRevealSegment(segment: string): DialogueRevealSegment {
+  return {
+    segment,
+    isWhitespace: WHITESPACE_PATTERN.test(segment),
+    isNewline: segment.includes('\n'),
+    isWordLike: isWordLikeCharacter(segment),
+  };
 }
 
-function createFallbackWordSegments(input: string) {
-  const segments: DialogueRevealSegment[] = [];
-  let cursor = 0;
-
-  while (cursor < input.length) {
-    const character = input[cursor];
-
-    if (!character) {
-      break;
-    }
-
-    if (WHITESPACE_PATTERN.test(character)) {
-      let end = cursor + 1;
-
-      while (end < input.length && WHITESPACE_PATTERN.test(input[end] ?? '')) {
-        end += 1;
-      }
-
-      segments.push({
-        segment: input.slice(cursor, end),
-        isWordLike: false,
-      });
-      cursor = end;
-
-      continue;
-    }
-
-    if (isWordLikeCharacter(character)) {
-      let end = cursor + 1;
-
-      while (end < input.length) {
-        const nextCharacter = input[end] ?? '';
-
-        if (isWordLikeCharacter(nextCharacter)) {
-          end += 1;
-
-          continue;
-        }
-
-        if (
-          isWordConnector(nextCharacter) &&
-          isWordLikeCharacter(input[end - 1] ?? '') &&
-          isWordLikeCharacter(input[end + 1] ?? '')
-        ) {
-          end += 1;
-
-          continue;
-        }
-
-        break;
-      }
-
-      segments.push({
-        segment: input.slice(cursor, end),
-        isWordLike: true,
-      });
-      cursor = end;
-
-      continue;
-    }
-
-    let end = cursor + 1;
-
-    while (
-      end < input.length &&
-      !WHITESPACE_PATTERN.test(input[end] ?? '') &&
-      !isWordLikeCharacter(input[end] ?? '')
-    ) {
-      end += 1;
-    }
-
-    segments.push({
-      segment: input.slice(cursor, end),
-      isWordLike: false,
-    });
-    cursor = end;
-  }
-
-  return segments;
+function createFallbackGraphemeSegments(input: string) {
+  return Array.from(input).map((segment) => toDialogueRevealSegment(segment));
 }
 
 function getDialogueRevealSegments(input: string) {
@@ -103,15 +34,40 @@ function getDialogueRevealSegments(input: string) {
   }
 
   if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
-    const segmenter = new Intl.Segmenter('uk', { granularity: 'word' });
+    const segmenter = new Intl.Segmenter('uk', { granularity: 'grapheme' });
 
-    return Array.from(segmenter.segment(input), ({ segment, isWordLike }) => ({
-      segment,
-      isWordLike: Boolean(isWordLike ?? WORD_LIKE_CHARACTER_PATTERN.test(segment)),
-    }));
+    return Array.from(segmenter.segment(input), ({ segment }) => toDialogueRevealSegment(segment));
   }
 
-  return createFallbackWordSegments(input);
+  return createFallbackGraphemeSegments(input);
+}
+
+function consumeAttachedTrailingSegments(
+  segments: DialogueRevealSegment[],
+  startIndex: number,
+) {
+  let consumedCharacters = 0;
+  let cursor = startIndex;
+
+  while (cursor < segments.length) {
+    const segment = segments[cursor];
+
+    if (!segment || segment.isWordLike) {
+      break;
+    }
+
+    consumedCharacters += segment.segment.length;
+    cursor += 1;
+
+    if (segment.isNewline || segment.isWhitespace) {
+      break;
+    }
+  }
+
+  return {
+    consumedCharacters,
+    nextIndex: cursor,
+  };
 }
 
 export function getNextDialogueRevealCharacterCount(
@@ -135,6 +91,7 @@ export function getNextDialogueRevealCharacterCount(
 
   let consumedCharacters = 0;
   let segmentIndex = 0;
+  let hasVisibleGrapheme = false;
 
   while (segmentIndex < segments.length) {
     const segment = segments[segmentIndex];
@@ -146,40 +103,87 @@ export function getNextDialogueRevealCharacterCount(
     consumedCharacters += segment.segment.length;
     segmentIndex += 1;
 
-    if (!segment.isWordLike) {
-      if (segment.segment.includes('\n')) {
+    if (segment.isNewline) {
+      break;
+    }
+
+    if (segment.isWhitespace) {
+      if (hasVisibleGrapheme) {
         break;
       }
 
       continue;
     }
 
-    while (segmentIndex < segments.length) {
-      const trailingSegment = segments[segmentIndex];
-
-      if (!trailingSegment || trailingSegment.isWordLike) {
+    if (!segment.isWordLike) {
+      if (hasVisibleGrapheme) {
+        const trailingSegments = consumeAttachedTrailingSegments(segments, segmentIndex);
+        consumedCharacters += trailingSegments.consumedCharacters;
+        segmentIndex = trailingSegments.nextIndex;
         break;
       }
 
-      consumedCharacters += trailingSegment.segment.length;
-      segmentIndex += 1;
-
-      if (trailingSegment.segment.includes('\n')) {
-        break;
-      }
+      continue;
     }
 
+    hasVisibleGrapheme = true;
+
+    const trailingSegments = consumeAttachedTrailingSegments(segments, segmentIndex);
+    consumedCharacters += trailingSegments.consumedCharacters;
+    segmentIndex = trailingSegments.nextIndex;
     break;
   }
 
   return safeStart + Math.max(1, Math.min(consumedCharacters, safeEnd - safeStart));
 }
 
-export function getDialogueRevealDelayMs(textSpeed: number, revealedCharacterDelta: number) {
+function getTrailingPunctuationDelayMultiplier(revealedChunk: string) {
+  const characters = Array.from(revealedChunk);
+  let trailingVisibleCharacter: string | null = null;
+
+  for (let index = characters.length - 1; index >= 0; index -= 1) {
+    const character = characters[index];
+
+    if (!character || WHITESPACE_PATTERN.test(character)) {
+      continue;
+    }
+
+    trailingVisibleCharacter = character;
+    break;
+  }
+
+  if (!trailingVisibleCharacter) {
+    return 1;
+  }
+
+  if (TERMINAL_PUNCTUATION_PATTERN.test(trailingVisibleCharacter)) {
+    return 3;
+  }
+
+  if (MINOR_PUNCTUATION_PATTERN.test(trailingVisibleCharacter)) {
+    return 1.8;
+  }
+
+  if (revealedChunk.includes('\n')) {
+    return 2.3;
+  }
+
+  return 1;
+}
+
+export function getDialogueRevealDelayMs(
+  textSpeed: number,
+  revealedCharacterDelta: number,
+  revealedChunk = '',
+) {
   const stepDelayMs = Math.max(10, Math.floor(1000 / Math.max(1, textSpeed)));
+  const punctuationMultiplier = getTrailingPunctuationDelayMultiplier(revealedChunk);
 
   return Math.max(
     stepDelayMs,
-    Math.min(MAX_DIALOGUE_REVEAL_DELAY_MS, stepDelayMs * Math.max(1, revealedCharacterDelta)),
+    Math.min(
+      MAX_DIALOGUE_REVEAL_DELAY_MS,
+      Math.floor(stepDelayMs * Math.max(1, revealedCharacterDelta) * punctuationMultiplier),
+    ),
   );
 }

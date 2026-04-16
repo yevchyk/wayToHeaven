@@ -51,10 +51,12 @@ export class UIStore {
 
   openModal(modalId: ActiveModal['id'], payload?: Record<string, unknown>) {
     this.activeModal = payload ? { id: modalId, payload } : { id: modalId };
+    this.rootStore.dialogue.handlePlaybackPreferenceChanged();
   }
 
   closeModal() {
     this.activeModal = null;
+    this.rootStore.dialogue.handlePlaybackPreferenceChanged();
   }
 
   showOverlay(overlayId: OverlayId) {

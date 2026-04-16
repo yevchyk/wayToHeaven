@@ -1,24 +1,31 @@
 import type {
   CharacterCompositeAssetDefinition,
   CharacterCompositeDefinition,
-  CharacterCompositePlacementPatch,
   CharacterCompositeStageDefinition,
 } from '@engine/types/characterComposite';
 import type { NarrativeCharacterData } from '@engine/types/narrative';
 
-import { heroineNpc } from '@content/chapters/chapter-1/npcs/heroine.npc';
-import { gateGuardNpc } from '@content/chapters/chapter-1/npcs/gate-guard.npc';
-import { oldVoiceNpc } from '@content/chapters/chapter-1/npcs/old-voice.npc';
 import { chapter1SupportingCastRegistry } from '@content/chapters/chapter-1/npcs/supporting-cast.npc';
 
 function buildChapterCharacterAssetId(characterId: string, layerFolder: string, assetName: string) {
   return `chapter-1/characters/${characterId}/${layerFolder}/${assetName}`;
 }
 
+function getChapter1StoryHeroine() {
+  const heroine = chapter1SupportingCastRegistry.mirella;
+
+  if (!heroine) {
+    throw new Error('Expected Mirella to exist in the Chapter 1 supporting cast registry.');
+  }
+
+  return heroine;
+}
+
+const chapter1StoryHeroine = getChapter1StoryHeroine();
+
 function buildEmotionHeadDefinitions(
   characterId: string,
   character: NarrativeCharacterData,
-  emotionPlacements?: Partial<Record<string, CharacterCompositePlacementPatch>>,
 ): Record<string, CharacterCompositeAssetDefinition> {
   const emotions = Object.keys(character.portraitRefs);
   const fallbackEmotion = character.defaultEmotion ?? emotions[0] ?? 'neutral';
@@ -28,16 +35,10 @@ function buildEmotionHeadDefinitions(
     result[emotion] = {
       assetId: buildChapterCharacterAssetId(characterId, 'head', emotion),
       label: `${character.displayName} ${emotion}`,
-      ...(emotionPlacements?.[emotion] ? { placement: emotionPlacements[emotion] } : {}),
     };
 
     return result;
   }, {});
-}
-
-interface ChapterNpcCompositeTweakSet {
-  placements?: CharacterCompositeDefinition['placements'];
-  headEmotionPlacements?: Partial<Record<string, CharacterCompositePlacementPatch>>;
 }
 
 export const chapter1CharacterCompositeStage: CharacterCompositeStageDefinition = {
@@ -50,8 +51,6 @@ export const chapter1CharacterCompositeStage: CharacterCompositeStageDefinition 
     height: 1204,
   },
 };
-
-export const chapter1NpcCompositeTweaks: Partial<Record<string, ChapterNpcCompositeTweakSet>> = {};
 
 export const chapter1HeroineBasePlacements: NonNullable<CharacterCompositeDefinition['placements']> = {
   head: {
@@ -207,96 +206,41 @@ export const chapter1HeroineWeaponPosePresets: NonNullable<
   },
 };
 
-function createNpcCompositeDefinition(
-  character: NarrativeCharacterData,
-  tweakSet?: ChapterNpcCompositeTweakSet,
-): CharacterCompositeDefinition {
-  return {
-    id: character.id,
-    chapterId: character.chapterId,
-    displayName: character.displayName,
-    kind: 'npc',
-    stage: chapter1CharacterCompositeStage,
-    defaultEmotion: character.defaultEmotion ?? Object.keys(character.portraitRefs)[0] ?? 'neutral',
-    assets: {
-      body: {
-        assetId: buildChapterCharacterAssetId(character.id, 'body', 'base'),
-        label: `${character.displayName} body`,
-      },
-      clothes: {
-        assetId: buildChapterCharacterAssetId(character.id, 'clothes', 'base'),
-        label: `${character.displayName} clothes`,
-      },
-      headByEmotion: buildEmotionHeadDefinitions(
-        character.id,
-        character,
-        tweakSet?.headEmotionPlacements,
-      ),
-    },
-    placements: {
-      head: {
-        anchor: {
-          x: 500,
-          y: 308,
-        },
-        size: {
-          width: 300,
-        },
-        assetAnchor: {
-          x: 0.5,
-          y: 0.82,
-        },
-      },
-      ...tweakSet?.placements,
-    },
-  };
-}
-
-const chapter1NpcSourceCharacters: NarrativeCharacterData[] = [
-  gateGuardNpc,
-  oldVoiceNpc,
-  ...Object.values(chapter1SupportingCastRegistry),
-];
-
-export const chapter1NpcCompositeDefinitions = chapter1NpcSourceCharacters
-  .map((character) => createNpcCompositeDefinition(character, chapter1NpcCompositeTweaks[character.id]))
-  .sort((left, right) => left.displayName.localeCompare(right.displayName));
-
 export const chapter1HeroineCompositeDefinition: CharacterCompositeDefinition = {
-  id: heroineNpc.id,
-  chapterId: heroineNpc.chapterId,
-  displayName: heroineNpc.displayName,
+  id: chapter1StoryHeroine.id,
+  chapterId: chapter1StoryHeroine.chapterId,
+  displayName: chapter1StoryHeroine.displayName,
   kind: 'heroine',
   stage: chapter1CharacterCompositeStage,
-  defaultEmotion: heroineNpc.defaultEmotion ?? 'neutral',
+  defaultEmotion: chapter1StoryHeroine.defaultEmotion ?? 'neutral',
   defaultWeaponPosePreset: 'pose-2',
   assets: {
     body: {
-      assetId: buildChapterCharacterAssetId(heroineNpc.id, 'body', 'base'),
-      label: `${heroineNpc.displayName} body`,
+      assetId: buildChapterCharacterAssetId(chapter1StoryHeroine.id, 'body', 'base'),
+      label: `${chapter1StoryHeroine.displayName} body`,
     },
     clothes: {
-      assetId: buildChapterCharacterAssetId(heroineNpc.id, 'clothes', 'base'),
-      label: `${heroineNpc.displayName} clothes`,
+      assetId: buildChapterCharacterAssetId(chapter1StoryHeroine.id, 'clothes', 'base'),
+      label: `${chapter1StoryHeroine.displayName} clothes`,
     },
-    headByEmotion: buildEmotionHeadDefinitions(heroineNpc.id, heroineNpc),
+    headByEmotion: buildEmotionHeadDefinitions(chapter1StoryHeroine.id, chapter1StoryHeroine),
     hair: {
-      assetId: buildChapterCharacterAssetId(heroineNpc.id, 'hair', 'base'),
-      label: `${heroineNpc.displayName} hair`,
+      assetId: buildChapterCharacterAssetId(chapter1StoryHeroine.id, 'hair', 'base'),
+      label: `${chapter1StoryHeroine.displayName} hair`,
     },
     hands: {
       left: {
-        assetId: buildChapterCharacterAssetId(heroineNpc.id, 'hands', 'left'),
-        label: `${heroineNpc.displayName} left hand`,
+        assetId: buildChapterCharacterAssetId(chapter1StoryHeroine.id, 'hands', 'left'),
+        label: `${chapter1StoryHeroine.displayName} left hand`,
       },
       right: {
-        assetId: buildChapterCharacterAssetId(heroineNpc.id, 'hands', 'right'),
-        label: `${heroineNpc.displayName} right hand`,
+        assetId: buildChapterCharacterAssetId(chapter1StoryHeroine.id, 'hands', 'right'),
+        label: `${chapter1StoryHeroine.displayName} right hand`,
       },
     },
     weapon: {
-      assetId: buildChapterCharacterAssetId(heroineNpc.id, 'weapon', 'base'),
-      label: `${heroineNpc.displayName} weapon`,
+      assetId: buildChapterCharacterAssetId(chapter1StoryHeroine.id, 'weapon', 'base'),
+      label: `${chapter1StoryHeroine.displayName} weapon`,
     },
   },
   placements: chapter1HeroineBasePlacements,
@@ -305,7 +249,4 @@ export const chapter1HeroineCompositeDefinition: CharacterCompositeDefinition = 
 
 export const chapter1CharacterCompositeRegistry: Record<string, CharacterCompositeDefinition> = {
   [chapter1HeroineCompositeDefinition.id]: chapter1HeroineCompositeDefinition,
-  ...Object.fromEntries(
-    chapter1NpcCompositeDefinitions.map((character) => [character.id, character] as const),
-  ),
 };

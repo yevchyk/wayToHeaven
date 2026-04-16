@@ -1,10 +1,13 @@
 export { chapter1CityHubsSceneGenerationDocument } from '@content/chapters/chapter-1/city/city-hubs.scene-generation';
 export { chapter1UndergroundRouteSceneGenerationDocument } from '@content/chapters/chapter-1/travel/underground-route.scene-generation';
 export { chapter1AwakeningSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/awakening/awakening.scene-generation';
+export { chapter1IntroBallAndAssaultSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/intro/ball-and-assault.scene-generation';
 export { chapter1CaravanToHugenUmSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/caravan-to-hugen-um/caravan-to-hugen-um.scene-generation';
 export { chapter1PrisonFallSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/prison-fall/prison-fall.scene-generation';
 export { chapter1CityGateSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/city-gate/city-gate.scene-generation';
 export { chapter1IntroSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/intro/intro.scene-generation';
+export { chapter1IntroTwoOfThreeSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/intro/two-of-three.scene-generation';
+export { chapter1ThornDepartureSceneGenerationDocument } from '@content/chapters/chapter-1/scenes/thorn-departure/thorn-departure.scene-generation';
 export { chapter2HugenUmHubsSceneGenerationDocument } from '@content/chapters/chapter-2/city/hugen-um-hubs.scene-generation';
 export { chapter2ArrivalSceneGenerationDocument } from '@content/chapters/chapter-2/scenes/arrival/arrival.scene-generation';
 export { chapter2FirstDealSceneGenerationDocument } from '@content/chapters/chapter-2/scenes/first-deal/first-deal.scene-generation';

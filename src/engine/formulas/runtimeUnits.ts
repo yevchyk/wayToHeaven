@@ -39,7 +39,14 @@ export function buildPartyUnitRuntime(
   template: CharacterTemplate,
   instance: CharacterInstance,
 ): PartyUnitRuntime {
-  const derivedStats = calculateDerivedStats(template.baseStats);
+  const bonusMaxHp = instance.bonusMaxHp ?? 0;
+  const bonusMaxMana = instance.bonusMaxMana ?? 0;
+  const baseDerivedStats = calculateDerivedStats(template.baseStats);
+  const derivedStats = {
+    ...baseDerivedStats,
+    maxHp: baseDerivedStats.maxHp + bonusMaxHp,
+    maxMana: baseDerivedStats.maxMana + bonusMaxMana,
+  };
   const currentHp = clamp(instance.currentHp ?? derivedStats.maxHp, 0, derivedStats.maxHp);
   const currentMana = clamp(instance.currentMana ?? derivedStats.maxMana, 0, derivedStats.maxMana);
   const statuses = [
@@ -52,6 +59,7 @@ export function buildPartyUnitRuntime(
     templateId: template.id,
     name: instance.displayName ?? template.name,
     level: instance.level,
+    experience: instance.experience ?? 0,
     currentHp,
     currentMana,
     baseStats: { ...template.baseStats },
@@ -59,6 +67,10 @@ export function buildPartyUnitRuntime(
     tags: uniqueValues<UnitTag>([...template.startingTags, ...(instance.tags ?? [])]),
     statuses,
     skillIds: [...template.skillIds],
+    skillRanks: { ...(instance.skillRanks ?? {}) },
+    bonusMaxHp,
+    bonusMaxMana,
+    ...(template.battleVisual ? { battleVisual: { ...template.battleVisual } } : {}),
     isDefending: false,
   };
 }
@@ -89,6 +101,7 @@ export function buildBattleUnitRuntime(
     templateId: template.id,
     name: options.displayName ?? template.name,
     level: options.level ?? ('level' in template ? (template.level ?? 1) : 1),
+    experience: 0,
     currentHp,
     currentMana,
     baseStats: { ...template.baseStats },
@@ -96,6 +109,10 @@ export function buildBattleUnitRuntime(
     tags: uniqueValues<UnitTag>([...template.startingTags, ...(options.tags ?? [])]),
     statuses,
     skillIds: [...template.skillIds],
+    skillRanks: {},
+    bonusMaxHp: 0,
+    bonusMaxMana: 0,
+    ...(template.battleVisual ? { battleVisual: { ...template.battleVisual } } : {}),
     isDefending: false,
     side: options.side,
   };

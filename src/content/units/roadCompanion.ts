@@ -5,6 +5,9 @@ export const roadCompanionTemplate: CharacterTemplate = {
   kind: 'character',
   name: 'Ash',
   description: 'A quick-footed scout with a sharp tongue and sharper eyes.',
+  battleVisual: {
+    portraitSourcePath: 'src/content/shared/placeholders/portraits/noble-man.jpg',
+  },
   faction: 'ally',
   baseStats: {
     strength: 4,

@@ -5,6 +5,9 @@ export const saltPassRaiderEnemyTemplate: EnemyTemplate = {
   kind: 'enemy',
   name: 'Salt Pass Raider',
   description: 'A tunnel raider used to striking in cramped stone corridors.',
+  battleVisual: {
+    portraitSourcePath: 'src/content/shared/placeholders/portraits/rough-man.jpg',
+  },
   faction: 'enemy',
   aiProfile: 'random',
   level: 1,

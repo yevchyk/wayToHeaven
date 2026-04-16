@@ -66,7 +66,7 @@ export const StartHere: Story = {
         <Typography variant="h3">Storybook Authoring Flow</Typography>
         <Typography color="text.secondary" variant="body1">
           Storybook is the visual workbench, not the first place where a scene is invented. The authoring flow now
-          starts in `Documentation`, then moves into authored <CodeInline>sceneGeneration</CodeInline> files, and only
+          starts in Documentation, then moves into authored <CodeInline>sceneGeneration</CodeInline> files, and only
           then comes back here for visual QA.
         </Typography>
       </Stack>
@@ -82,12 +82,14 @@ export const StartHere: Story = {
           lines={[
             'Create or update the scene note in `Documentation` first.',
             'Use the scene note together with linked character, location, and system notes.',
-            'Do not treat `Documentation/WTH/Лор/Загальний лор.md` as the main source of truth; it is legacy overview material now.',
+            'Do not treat the old general lore overview as the main source of truth; use the current WTH note tree instead.',
           ]}
           title="1. Start In Documentation"
         />
         <GuideCard
           lines={[
+            'Use "Scene Authoring/Workbench" for scene-generation structure, replay flags, and unlock-source QA.',
+            'Use "Narrative Portrait/Character Prompt Composer" first when you need production-ready portrait prompts tied to a real runtime target.',
             'Use "Location Backdrop/Workbench" for backgrounds.',
             'Use "Narrative Portrait/Workbench" for raw dialogue portraits and explicit scene overrides.',
             'Use "Character Composite/Workbench" only for layered composite actor art, not raw VN portraits.',
@@ -114,10 +116,10 @@ export const StartHere: Story = {
         <GuideCard
           lines={[
             'Scene note title usually maps to `scene.title` if it is a full runtime scene, or `node.title` if it is only one beat inside a larger scene.',
-            'The "Де" section usually affects `scene.locationName` and the chosen `backgroundId` level.',
-            'The "Хто в сцені" section maps to `scene.stage.characters`, `node.speakerId`, and reusable portrait work in the NPC registry.',
-            'The "Що відбувається" section becomes `scene.description`, `node.text`, and `choices[*].text`.',
-            'The "Навіщо сцена" section is not pasted verbatim; it should drive effects, conditions, and `nextSceneId` / `nextNodeId` transitions.',
+            'The "Where" section usually affects `scene.locationName` and the chosen `backgroundId` level.',
+            'The "Who Is In The Scene" section maps to `scene.stage.characters`, `node.speakerId`, and reusable portrait work in the NPC registry.',
+            'The "What Happens" section becomes `scene.description`, `node.text`, and `choices[*].text`.',
+            'The "Why This Scene Exists" section is not pasted verbatim; it should drive effects, conditions, and `nextSceneId` / `nextNodeId` transitions.',
           ]}
           title="5. Note To Runtime Mapping"
         />
@@ -144,6 +146,10 @@ export const StartHere: Story = {
         <Typography variant="body2">
           Storybook covers visual authoring surfaces: backgrounds, portraits, and stage overrides. It still does not
           replace runtime QA for branching logic, effects, inventory or state changes, route logic, and audio timing.
+        </Typography>
+        <Typography color="text.secondary" variant="body2">
+          Portrait generation now has a single prompt entrypoint: start in `Narrative Portrait/Character Prompt Composer`,
+          then validate the result in the portrait or composite workbench instead of inventing prompts ad hoc.
         </Typography>
       </Stack>
     </Stack>

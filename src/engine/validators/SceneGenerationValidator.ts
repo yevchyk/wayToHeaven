@@ -59,6 +59,7 @@ export type SceneGenerationValidationIssueCode =
   | 'invalidMusicStructure'
   | 'invalidSfxStructure'
   | 'invalidSceneChangeStructure'
+  | 'invalidReplayConfig'
   | 'invalidConditionsStructure'
   | 'invalidEffectsStructure'
   | 'invalidConditionFallback'
@@ -360,6 +361,7 @@ export class SceneGenerationValidator {
     this.validateStage(sceneValue.stage, `${scenePath}.stage`, issues, { sceneId });
     this.validateTransition(sceneValue.transition, `${scenePath}.transition`, issues, { sceneId });
     this.validateRouteRules(sceneValue.routeRules, `${scenePath}.routeRules`, issues, { sceneId });
+    this.validateReplay(sceneValue.replay, `${scenePath}.replay`, issues, { sceneId });
 
     const sceneMode: SceneMode = isSceneMode(sceneValue.mode) ? sceneValue.mode : 'sequence';
 
@@ -1437,6 +1439,40 @@ export class SceneGenerationValidator {
         ...(isRecord(transitionValue) && typeof transitionValue.type === 'string'
           ? { targetId: transitionValue.type }
           : {}),
+      });
+    }
+  }
+
+  private validateReplay(
+    replayValue: unknown,
+    replayPath: string,
+    issues: SceneGenerationValidationIssue[],
+    context: { sceneId?: string; nodeId?: string },
+  ) {
+    if (replayValue === undefined) {
+      return;
+    }
+
+    if (!isRecord(replayValue) || typeof replayValue.enabled !== 'boolean') {
+      issues.push({
+        code: 'invalidReplayConfig',
+        message: `Replay config at "${replayPath}" must be an object with a boolean enabled flag.`,
+        path: replayPath,
+        ...context,
+      });
+
+      return;
+    }
+
+    if (
+      replayValue.unlockOnStart !== undefined &&
+      typeof replayValue.unlockOnStart !== 'boolean'
+    ) {
+      issues.push({
+        code: 'invalidReplayConfig',
+        message: `Replay config at "${replayPath}" must use a boolean unlockOnStart flag when provided.`,
+        path: `${replayPath}.unlockOnStart`,
+        ...context,
       });
     }
   }

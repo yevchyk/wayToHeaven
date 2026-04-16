@@ -8,7 +8,7 @@ interface LibraryArtworkCardProps {
   title: string;
   subtitle: string;
   imageAssetId: string | null;
-  imageSourcePath?: string;
+  imageSourcePath?: string | undefined;
 }
 
 function buildFallbackBackground(title: string) {

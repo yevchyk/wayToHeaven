@@ -1,7 +1,7 @@
 import { hasNarrativeAssetOfKind } from '@content/registries/assetRegistry';
 import { narrativeCharacterRegistry } from '@content/registries/npcRegistry';
+import { chapter1IntroSceneGenerationDocument } from '@content/scene-generation';
 import allFeaturesSceneGenerationExample from '../../domain-logic/scene-generation/scene-generation-all-features.example.json';
-import sceneGenerationExample from '../../domain-logic/scene-generation/chapter1-prologue.scenes.json';
 import { GameRootStore } from '@engine/stores/GameRootStore';
 import { SceneGenerationValidator } from '@engine/validators/SceneGenerationValidator';
 import { itemContentRegistry } from '@content/items';
@@ -26,7 +26,7 @@ describe('SceneGenerationValidator', () => {
       hasItemId: (itemId) => itemId in itemContentRegistry,
     });
 
-    expect(validator.validate(sceneGenerationExample)).toEqual([]);
+    expect(validator.validate(chapter1IntroSceneGenerationDocument)).toEqual([]);
   });
 
   it('detects the structural problems from the draft scene JSON', () => {

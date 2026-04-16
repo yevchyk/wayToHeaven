@@ -53,8 +53,9 @@ function PortraitWorkbenchGuide() {
       <Stack spacing={0.5}>
         <Typography variant="h4">Portrait Workflow</Typography>
         <Typography color="text.secondary" variant="body2">
-          This workbench is for flat VN portraits used by dialogue and scene-generation staging. Character notes and
-          scene notes still define intent first; Storybook only helps verify the actual runtime-facing portrait slots.
+          This workbench is for flat VN portraits used by dialogue and scene-generation staging. It is the primary
+          portrait workflow for NPCs and supporting cast. The story heroine still appears here for fallback and
+          one-off beat art, but her main layered rig now lives in the Character Composite workbench.
         </Typography>
       </Stack>
 
@@ -78,8 +79,8 @@ function PortraitWorkbenchGuide() {
             1. Reusable portraits
           </Typography>
           <Typography variant="body2">
-            If the same emotion should be reusable across many beats, add it to <CodeInline>{'portraitRefs.<emotion>'}</CodeInline>
-            .
+            For NPCs and common cast, reusable emotion portraits belong in{' '}
+            <CodeInline>{'portraitRefs.<emotion>'}</CodeInline>.
           </Typography>
           <Typography variant="body2">
             Scene nodes can then request the emotion without hardcoding a file every time.
@@ -129,6 +130,32 @@ function PortraitWorkbenchGuide() {
           <Typography variant="body2">
             Do not rename a portrait file root in Storybook terms only; change the content asset id if the root is
             being migrated intentionally.
+          </Typography>
+        </Stack>
+
+        <Stack
+          spacing={1}
+          sx={{
+            p: 1.5,
+            borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.08)',
+            backgroundColor: 'rgba(255,255,255,0.02)',
+          }}
+        >
+          <Typography sx={{ fontWeight: 700 }} variant="body2">
+            4. Heroine exception
+          </Typography>
+          <Typography variant="body2">
+            Mirella keeps flat portrait entries here for fallback states, scene-specific overrides, and archive
+            continuity.
+          </Typography>
+          <Typography variant="body2">
+            Her default moment-to-moment dialogue presentation now comes from the layered heroine rig, not from turning
+            every emotion into a new full-body composite for the whole cast.
+          </Typography>
+          <Typography variant="body2">
+            Use the `Narrative Portrait/Character Prompt Composer` story when you need a production-ready prompt for a
+            specific flat portrait target.
           </Typography>
         </Stack>
       </Box>

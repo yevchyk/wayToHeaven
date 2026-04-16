@@ -16,8 +16,10 @@ import type {
 } from '@engine/types/sceneFlow';
 import type { PartyUnitRuntime } from '@engine/types/unit';
 import type { WorldVisit } from '@engine/types/world';
+import type { ProgressionSnapshot } from '@engine/types/progression';
+import type { TimeSnapshot } from '@engine/types/time';
 
-export const GAME_SAVE_SCHEMA_VERSION = 5;
+export const GAME_SAVE_SCHEMA_VERSION = 8;
 
 export type GameSaveSlotKind = 'manual' | 'quick' | 'auto';
 
@@ -79,6 +81,7 @@ export interface SeenContentSnapshot {
   nodeKeys: string[];
   discoveredCharacterIds: string[];
   discoveredLocationEntryIds: string[];
+  discoveredSceneEntryIds?: string[];
 }
 
 export interface BacklogSnapshot {
@@ -113,6 +116,7 @@ export interface GameSaveRuntimeSnapshot {
   ui: UISnapshot;
   world: WorldSnapshot;
   meta: MetaSnapshot;
+  time?: TimeSnapshot;
   profile: NarrativeProfileSnapshot;
   profileUnlocks: NarrativeProfileUnlockSnapshot;
   relationships: RelationshipSnapshot;
@@ -125,6 +129,7 @@ export interface GameSaveRuntimeSnapshot {
   sceneFlow: SceneFlowSnapshot;
   dialogue: DialogueRuntimeSnapshot;
   battle: BattleStoreSnapshot;
+  progression?: ProgressionSnapshot;
   miniGame?: MiniGameStoreSnapshot;
   quests?: QuestStoreSnapshot;
   backlog: BacklogSnapshot;

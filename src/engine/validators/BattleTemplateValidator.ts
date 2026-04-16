@@ -12,6 +12,7 @@ export type BattleTemplateValidationIssueCode =
   | 'missingCharacterInstanceReference'
   | 'missingDialogueReference'
   | 'missingSceneFlowReference'
+  | 'missingLootTableReference'
   | EffectReferenceValidationIssueCode;
 
 export interface BattleTemplateValidationIssue {
@@ -73,6 +74,15 @@ export class BattleTemplateValidator {
         message: `Battle template references missing intro dialogue "${template.introDialogueId}".`,
         path: 'introDialogueId',
         targetId: template.introDialogueId,
+      });
+    }
+
+    if (template.rewardTableId && !this.lookup.hasLootTable(template.rewardTableId)) {
+      issues.push({
+        code: 'missingLootTableReference',
+        message: `Battle template references missing loot table "${template.rewardTableId}".`,
+        path: 'rewardTableId',
+        targetId: template.rewardTableId,
       });
     }
 

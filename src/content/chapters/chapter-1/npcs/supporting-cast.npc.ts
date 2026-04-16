@@ -10,6 +10,7 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     chapterId,
     displayName: 'Мірелла',
     role: 'heroine',
+    portraitPresentation: 'composite',
     defaultEmotion: 'neutral',
     defaultPortraitId: 'chapter-1/portraits/mirella/neutral.webp',
     defaultSide: 'left',
@@ -47,10 +48,10 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     chapterId,
     displayName: 'Батько',
     defaultEmotion: 'cold',
-    defaultPortraitId: 'prologue/portraits/father/cold.webp',
+    defaultPortraitId: 'chapter-1/portraits/lord-guy/cold.png',
     defaultSide: 'left',
     portraitRefs: {
-      cold: 'prologue/portraits/father/cold.webp',
+      cold: 'chapter-1/portraits/lord-guy/cold.png',
     },
   },
   mother: {
@@ -58,10 +59,10 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     chapterId,
     displayName: 'Мати',
     defaultEmotion: 'tired',
-    defaultPortraitId: 'prologue/portraits/mother/tired.webp',
+    defaultPortraitId: 'chapter-1/portraits/lady-sera/tired.png',
     defaultSide: 'left',
     portraitRefs: {
-      tired: 'prologue/portraits/mother/tired.webp',
+      tired: 'chapter-1/portraits/lady-sera/tired.png',
     },
   },
   aren: {
@@ -69,10 +70,11 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     chapterId,
     displayName: 'Арен',
     defaultEmotion: 'sharp',
-    defaultPortraitId: 'prologue/portraits/aren/sharp.webp',
+    defaultPortraitId: 'chapter-1/portraits/aren/sharp.png',
     defaultSide: 'right',
     portraitRefs: {
-      sharp: 'prologue/portraits/aren/sharp.webp',
+      sharp: 'chapter-1/portraits/aren/sharp.png',
+      amused: 'chapter-1/portraits/aren/amused.png',
     },
   },
   edran: {
@@ -84,6 +86,7 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     defaultSide: 'left',
     portraitRefs: {
       neutral: 'prologue/portraits/edran/neutral.webp',
+      stern: 'chapter-1/portraits/edran/stern.webp',
     },
   },
   servant_girl: {
@@ -95,6 +98,17 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     defaultSide: 'left',
     portraitRefs: {
       careful: 'prologue/portraits/servant_girl/careful.webp',
+    },
+  },
+  tanya: {
+    id: 'tanya',
+    chapterId,
+    displayName: 'Таня',
+    defaultEmotion: 'careful',
+    defaultPortraitId: 'chapter-1/portraits/tanya/careful.webp',
+    defaultSide: 'left',
+    portraitRefs: {
+      careful: 'chapter-1/portraits/tanya/careful.webp',
     },
   },
   grandmother: {
@@ -113,11 +127,14 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     chapterId,
     displayName: 'Леді Сера',
     defaultEmotion: 'soft',
-    defaultPortraitId: 'chapter-1/portraits/lady-sera/soft.webp',
+    defaultPortraitId: 'chapter-1/portraits/lady-sera/composed.png',
     defaultSide: 'left',
     portraitRefs: {
-      soft: 'chapter-1/portraits/lady-sera/soft.webp',
-      tired: 'chapter-1/portraits/lady-sera/tired.webp',
+      soft: 'chapter-1/portraits/lady-sera/composed.png',
+      composed: 'chapter-1/portraits/lady-sera/composed.png',
+      calm: 'chapter-1/portraits/lady-sera/calm.webp',
+      hard: 'chapter-1/portraits/lady-sera/hard.webp',
+      tired: 'chapter-1/portraits/lady-sera/tired.png',
       resigned: 'chapter-1/portraits/lady-sera/resigned.webp',
       fragile: 'chapter-1/portraits/lady-sera/fragile.webp',
       sad: 'chapter-1/portraits/lady-sera/sad.webp',
@@ -129,11 +146,11 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
     chapterId,
     displayName: 'Лорд Гай',
     defaultEmotion: 'composed',
-    defaultPortraitId: 'chapter-1/portraits/lord-guy/composed.webp',
+    defaultPortraitId: 'chapter-1/portraits/lord-guy/composed.png',
     defaultSide: 'right',
     portraitRefs: {
-      composed: 'chapter-1/portraits/lord-guy/composed.webp',
-      cold: 'chapter-1/portraits/lord-guy/cold.webp',
+      composed: 'chapter-1/portraits/lord-guy/composed.png',
+      cold: 'chapter-1/portraits/lord-guy/cold.png',
       commanding: 'chapter-1/portraits/lord-guy/commanding.webp',
       cruel: 'chapter-1/portraits/lord-guy/cruel.webp',
       amused: 'chapter-1/portraits/lord-guy/amused.webp',
@@ -353,6 +370,17 @@ export const chapter1SupportingCastRegistry: Record<string, NarrativeCharacterDa
       cocky: 'chapter-1/portraits/tris/cocky.webp',
       sharp: 'chapter-1/portraits/tris/sharp.webp',
       nervous: 'chapter-1/portraits/tris/nervous.webp',
+    },
+  },
+  galen: {
+    id: 'galen',
+    chapterId,
+    displayName: 'Гален',
+    defaultEmotion: 'serious',
+    defaultPortraitId: 'chapter-1/portraits/galen/serious.png',
+    defaultSide: 'left',
+    portraitRefs: {
+      serious: 'chapter-1/portraits/galen/serious.png',
     },
   },
   derun: {

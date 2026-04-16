@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 
 import { observer } from 'mobx-react-lite';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
@@ -13,8 +13,14 @@ import {
   sliceNarrativeHtml,
 } from '@engine/utils/narrativeHtml';
 import { formatSpeakerLabel } from '@ui/components/dialogue/dialoguePresentation';
+import { ChoiceCard } from '@ui/components/primitives/ChoiceCard';
+import { NarrativeAction } from '@ui/components/primitives/NarrativeAction';
+import { ScreenFrame } from '@ui/components/primitives/ScreenFrame';
+import { StatusStrip } from '@ui/components/primitives/StatusStrip';
+import { SystemAction } from '@ui/components/primitives/SystemAction';
 import { NarrativeRichText } from '@ui/components/rich-text/NarrativeRichText';
 import { PanelSection } from '@ui/components/shell/PanelSection';
+import { resolveCorruptionSkin } from '@ui/components/shell/corruptionSkins';
 import { shellTokens } from '@ui/components/shell/shellTokens';
 import { SceneFlowPresentationShell } from '@ui/components/scene-flow/SceneFlowPresentationShell';
 
@@ -55,13 +61,13 @@ function findLastSentenceBreak(plainText: string, pageStart: number, pageEnd: nu
   for (let index = pageEnd - 1; index > pageStart; index -= 1) {
     const character = plainText[index];
 
-    if (!character || !'.!?…'.includes(character)) {
+    if (!character || !'.!?\u2026'.includes(character)) {
       continue;
     }
 
     let breakpoint = index + 1;
 
-    while (breakpoint < pageEnd && /["'»”)\]]/.test(plainText[breakpoint] ?? '')) {
+    while (breakpoint < pageEnd && /["'\u00bb\u201d)\]]/.test(plainText[breakpoint] ?? '')) {
       breakpoint += 1;
     }
 
@@ -137,7 +143,11 @@ export function getPreferredDialoguePageBreak(
   return whitespaceBreak > pageStart ? whitespaceBreak : candidatePageEnd;
 }
 
-function measureDialoguePageBreaks(sourceHtml: string, sourceElement: HTMLElement) {
+function measureDialoguePageBreaks(
+  sourceHtml: string,
+  sourceElement: HTMLElement,
+  maxPageHeightOverride?: number,
+) {
   const visibleCharacterCount = countNarrativeVisibleCharacters(sourceHtml);
 
   if (visibleCharacterCount === 0) {
@@ -153,7 +163,16 @@ function measureDialoguePageBreaks(sourceHtml: string, sourceElement: HTMLElemen
   }
 
   const plainText = getNarrativePlainText(sourceHtml);
-  const maxPageHeight = lineHeightPx * DIALOGUE_PAGE_MAX_LINES + 1;
+  const maxLineHeight = lineHeightPx * DIALOGUE_PAGE_MAX_LINES + 1;
+  const maxPageHeight = Math.max(
+    lineHeightPx * 2.4,
+    Math.min(
+      maxLineHeight,
+      Number.isFinite(maxPageHeightOverride ?? Number.NaN)
+        ? Math.floor(maxPageHeightOverride ?? maxLineHeight)
+        : maxLineHeight,
+    ),
+  );
   const measureElement = sourceElement.cloneNode(false) as HTMLElement;
   const breakpoints: number[] = [];
 
@@ -220,14 +239,43 @@ function isInteractiveAdvanceTarget(target: EventTarget | null) {
     );
 }
 
+function buildDialogueStatusItems(dialogue: ReturnType<typeof useGameRootStore>['dialogue']) {
+  const items: Array<{ label: string; value?: string }> = [];
+
+  if (dialogue.textPageCount > 1) {
+    items.push({
+      label: 'Стор.',
+      value: `${dialogue.activeTextPageIndex + 1}/${dialogue.textPageCount}`,
+    });
+  }
+
+  if (dialogue.autoModeEnabled) {
+    items.push({
+      label: 'Авто',
+      value: 'Увімк.',
+    });
+  }
+
+  if (dialogue.isCurrentNodeSeen) {
+    items.push({
+      label: 'Бачене',
+    });
+  }
+
+  return items;
+}
+
 export const DialogueScreen = observer(function DialogueScreen() {
   const rootStore = useGameRootStore();
   const { dialogue } = rootStore;
   const lineShellRef = useRef<HTMLDivElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const visibleChoices = dialogue.getVisibleChoices();
   const shouldRenderChoiceList = dialogue.shouldRenderChoiceList;
   const reserveText = dialogue.currentPageReserveText;
   const showChoiceGrid = shouldRenderChoiceList && visibleChoices.length > 0;
+  const corruptionSkin = resolveCorruptionSkin(rootStore.profile.getProfileValue('corruption'));
+  const dialogueStatusItems = buildDialogueStatusItems(dialogue);
 
   const handlePanelAdvanceClick = (event: ReactMouseEvent<HTMLElement>) => {
     if (shouldRenderChoiceList || isInteractiveAdvanceTarget(event.target)) {
@@ -240,14 +288,24 @@ export const DialogueScreen = observer(function DialogueScreen() {
   useEffect(() => {
     const measurePages = () => {
       const lineShellElement = lineShellRef.current;
+      const bodyElement = bodyRef.current;
       const lineContentElement = lineShellElement?.querySelector<HTMLElement>('.dialogue-screen__line-content');
 
       if (!lineContentElement) {
         return;
       }
 
+      const bodyRect = bodyElement?.getBoundingClientRect();
+      const availableBodyHeight = bodyRect?.height
+        ? Math.max(0, bodyRect.height - 6)
+        : undefined;
+
       dialogue.setTextPageBreakCharacterCounts(
-        measureDialoguePageBreaks(dialogue.currentPreparedTextHtml, lineContentElement),
+        measureDialoguePageBreaks(
+          dialogue.currentPreparedTextHtml,
+          lineContentElement,
+          availableBodyHeight,
+        ),
       );
     };
 
@@ -262,6 +320,9 @@ export const DialogueScreen = observer(function DialogueScreen() {
     });
 
     resizeObserver.observe(lineShellRef.current);
+    if (bodyRef.current && bodyRef.current !== lineShellRef.current) {
+      resizeObserver.observe(bodyRef.current);
+    }
 
     return () => {
       window.cancelAnimationFrame(frameId);
@@ -271,7 +332,7 @@ export const DialogueScreen = observer(function DialogueScreen() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || !dialogue.isActive) {
+      if (event.defaultPrevented || !dialogue.isActive || rootStore.ui.isModalOpen) {
         return;
       }
 
@@ -318,9 +379,9 @@ export const DialogueScreen = observer(function DialogueScreen() {
 
   if (!dialogue.currentNodeId) {
     return (
-      <PanelSection title="Немає активного діалогу" tone="sunken">
+      <PanelSection title="\u041d\u0435\u043c\u0430\u0454 \u0430\u043a\u0442\u0438\u0432\u043d\u043e\u0433\u043e \u0434\u0456\u0430\u043b\u043e\u0433\u0443" tone="sunken">
         <Typography color="text.secondary" variant="body2">
-          Діалоговий runtime зараз неактивний.
+          \u0414\u0456\u0430\u043b\u043e\u0433\u043e\u0432\u0438\u0439 runtime \u0437\u0430\u0440\u0430\u0437 \u043d\u0435\u0430\u043a\u0442\u0438\u0432\u043d\u0438\u0439.
         </Typography>
       </PanelSection>
     );
@@ -330,10 +391,10 @@ export const DialogueScreen = observer(function DialogueScreen() {
   const speakerName =
     dialogue.currentSpeakerName ??
     formatSpeakerLabel(dialogue.currentSpeakerId) ??
-    'Оповідь';
+    '\u041e\u043f\u043e\u0432\u0456\u0434\u044c';
   const fontScale = dialogue.currentFontScale;
   const dialogueLineTextSx = {
-    color: '#f5f8fb',
+    color: corruptionSkin.text.primary,
     fontSize: { xs: `${1 * fontScale}rem`, md: `${1.1 * fontScale}rem` },
     lineHeight: { xs: 1.72, md: 1.8 },
     textWrap: 'pretty',
@@ -346,20 +407,38 @@ export const DialogueScreen = observer(function DialogueScreen() {
       contentSx={{ isolation: 'isolate' }}
       header={
         sceneTitle ? (
-          <Typography
+          <Stack
             className="dialogue-screen__scene-title"
-            component="h1"
             sx={{
-              color: '#f6f9fc',
-              fontFamily: '"Spectral", Georgia, serif',
-              fontSize: { xs: `${1.46 * fontScale}rem`, md: `${2.05 * fontScale}rem` },
-              lineHeight: 1.06,
-              textShadow: '0 10px 24px rgba(0, 0, 0, 0.34)',
+              alignItems: 'flex-start',
+              gap: 0.2,
             }}
-            variant="h4"
           >
-            {sceneTitle}
-          </Typography>
+            <Typography
+              sx={{
+                color: alpha(corruptionSkin.text.secondary, 0.8),
+                fontSize: '0.72rem',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
+                    >
+                      Сцена
+            </Typography>
+            <Typography
+              component="h1"
+              sx={{
+                color: corruptionSkin.text.primary,
+                fontFamily: '"Spectral", Georgia, serif',
+                fontSize: { xs: `${1.42 * fontScale}rem`, md: `${1.95 * fontScale}rem` },
+                lineHeight: 1.06,
+                textShadow: `0 10px 24px ${alpha('#000000', 0.34)}`,
+              }}
+              variant="h4"
+            >
+              {sceneTitle}
+            </Typography>
+          </Stack>
         ) : null
       }
       stageSx={{
@@ -395,14 +474,14 @@ export const DialogueScreen = observer(function DialogueScreen() {
                 px: 1.1,
                 py: 0.55,
                 borderRadius: shellTokens.radius.pill,
-                border: `1px solid ${alpha('#ffffff', 0.12)}`,
-                backgroundColor: alpha('#070b10', 0.42),
-                color: alpha('#f7f9fc', 0.82),
+                border: `1px solid ${corruptionSkin.frame.border}`,
+                backgroundColor: alpha('#070b10', 0.46),
+                color: alpha(corruptionSkin.text.primary, 0.86),
                 backdropFilter: shellTokens.blur.soft,
               }}
             >
               <Typography className="dialogue-screen__ui-hidden-label" sx={{ fontSize: '0.78rem' }}>
-                Натисни, щоб повернути UI
+                \u041d\u0430\u0442\u0438\u0441\u043d\u0438, \u0449\u043e\u0431 \u043f\u043e\u0432\u0435\u0440\u043d\u0443\u0442\u0438 UI
               </Typography>
             </Box>
           </Box>
@@ -436,75 +515,36 @@ export const DialogueScreen = observer(function DialogueScreen() {
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: { xs: 0.7, md: 0.9 },
-                  width: { xs: '100%', md: '60%' },
-                  ml: { xs: 0, md: 'auto' },
+                  gap: { xs: 0.7, md: 0.85 },
+                  width: '100%',
+                  maxWidth: 760,
+                  mx: 'auto',
                 }}
               >
                 {visibleChoices.map((choice) => (
-                  <Button
+                  <ChoiceCard
                     key={choice.id}
                     className="dialogue-screen__choice-card"
-                    fullWidth
+                    html={choice.text}
                     onClick={() => dialogue.chooseChoice(choice.id)}
+                    skin={corruptionSkin}
                     sx={{
-                      justifyContent: 'flex-start',
-                      alignItems: 'center',
-                      px: 1.5,
-                      py: 1.5,
-                      borderRadius: shellTokens.radius.sm,
-                      border: `1px solid ${alpha('#eef4fb', 0.22)}`,
-                      background:
-                        'linear-gradient(180deg, rgba(14, 20, 28, 0.34) 0%, rgba(9, 13, 18, 0.54) 100%)',
-                      color: '#f7fbff',
-                      textAlign: 'left',
                       backdropFilter: shellTokens.blur.strong,
-                      boxShadow: '0 14px 34px rgba(0, 0, 0, 0.22)',
                     }}
-                    variant="outlined"
-                  >
-                    <Stack alignItems="flex-start" spacing={0.3} sx={{ width: '100%' }}>
-                      <NarrativeRichText
-                        component="div"
-                        html={choice.text}
-                        sx={{
-                          color: 'inherit',
-                          fontSize: { xs: `${0.95 * fontScale}rem`, md: `${1.02 * fontScale}rem` },
-                          lineHeight: 1.56,
-                          textAlign: 'left',
-                          width: '100%',
-                        }}
-                      />
-                    </Stack>
-                  </Button>
+                  />
                 ))}
               </Box>
             ) : null}
 
-            <Box
+            <ScreenFrame
               className="dialogue-screen__panel"
+              mode="cinematic"
               onClick={handlePanelAdvanceClick}
+              skin={corruptionSkin}
               sx={{
                 position: 'relative',
                 width: '100%',
-                p: { xs: '0.85rem', sm: '1rem', md: '1.1rem' },
                 height: { xs: 'clamp(248px, 36svh, 340px)', md: 'clamp(264px, 28svh, 356px)' },
-                border: `1px solid ${shellTokens.border.strong}`,
-                borderRadius: shellTokens.radius.md,
-                background:
-                  'linear-gradient(180deg, rgba(12, 17, 23, 0.28) 0%, rgba(9, 13, 18, 0.52) 24%, rgba(7, 10, 15, 0.74) 100%)',
-                backdropFilter: shellTokens.blur.strong,
-                boxShadow: '0 18px 46px rgba(0, 0, 0, 0.28)',
-                overflow: 'hidden',
-                cursor: showChoiceGrid ? 'default' : 'pointer',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  inset: '0 0 auto 0',
-                  height: 1,
-                  background:
-                    'linear-gradient(90deg, rgba(240, 246, 252, 0) 0%, rgba(240, 246, 252, 0.4) 50%, rgba(240, 246, 252, 0) 100%)',
-                },
               }}
             >
               <Box
@@ -515,24 +555,37 @@ export const DialogueScreen = observer(function DialogueScreen() {
                   display: 'grid',
                   gridTemplateRows: 'auto minmax(0, 1fr) auto',
                   height: '100%',
+                  p: { xs: '0.9rem', sm: '1.05rem', md: '1.15rem' },
                   rowGap: { xs: 0.8, md: 0.95 },
+                  cursor: showChoiceGrid ? 'default' : 'pointer',
                 }}
               >
                 <Stack
                   className="dialogue-screen__panel-header"
                   direction={{ xs: 'column', md: 'row' }}
-                  justifyContent="flex-start"
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'flex-start', md: 'center' }}
                   spacing={1}
-                  sx={{ mb: 3 }}
+                  sx={{ mb: 1.6 }}
                 >
-                  <Stack className="dialogue-screen__speaker-meta" spacing={0.25} sx={{ mb: 1 }}>
+                  <Stack className="dialogue-screen__speaker-meta" spacing={0.3}>
+                    <Typography
+                      sx={{
+                        color: alpha(corruptionSkin.text.muted, 0.95),
+                        fontSize: '0.72rem',
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Голос
+                    </Typography>
                     <Typography
                       className="dialogue-screen__speaker-name"
                       component="h2"
                       sx={{
-                        color: alpha('#eef4fb', 0.84),
+                        color: corruptionSkin.text.primary,
                         fontFamily: '"Spectral", Georgia, serif',
-                        fontSize: { xs: `${1.3 * fontScale}rem`, md: `${1.7 * fontScale}rem` },
+                        fontSize: { xs: `${1.24 * fontScale}rem`, md: `${1.58 * fontScale}rem` },
                         lineHeight: 1.04,
                       }}
                       variant="h4"
@@ -540,18 +593,16 @@ export const DialogueScreen = observer(function DialogueScreen() {
                       {speakerName}
                     </Typography>
                   </Stack>
+                  <StatusStrip items={dialogueStatusItems} skin={corruptionSkin} />
                 </Stack>
 
                 <Stack
                   className="dialogue-screen__body"
+                  ref={bodyRef}
                   spacing={0.85}
                   sx={{
                     minHeight: 0,
-                    overflowY: 'auto',
-                    overflowAnchor: 'none',
-                    pr: 0.25,
-                    mr: -0.25,
-                    scrollbarGutter: 'stable',
+                    overflow: 'hidden',
                   }}
                 >
                   <Box
@@ -560,7 +611,7 @@ export const DialogueScreen = observer(function DialogueScreen() {
                     ref={lineShellRef}
                     sx={{
                       position: 'relative',
-                      minHeight: '5lh',
+                      minHeight: 0,
                       '&::before': {
                         content: 'attr(data-reserve-text)',
                         display: 'block',
@@ -594,44 +645,137 @@ export const DialogueScreen = observer(function DialogueScreen() {
                 <Stack
                   className="dialogue-screen__footer"
                   direction={{ xs: 'column', md: 'row' }}
-                  justifyContent="flex-start"
+                  justifyContent="space-between"
                   alignItems={{ xs: 'stretch', md: 'center' }}
-                  spacing={0.9}
+                  spacing={{ xs: 0.75, md: 1.1 }}
                 >
-                  <Stack className="dialogue-screen__runtime-meta dialogue-screen__controls" direction="row" flexWrap="wrap" gap={0.75}>
-                    <Button
+                  <Stack
+                    className="dialogue-screen__runtime-meta dialogue-screen__controls"
+                    direction="row"
+                    flexWrap="wrap"
+                    gap={0.65}
+                  >
+                    <NarrativeAction
                       className="dialogue-screen__advance"
+                      emphasis="primary"
                       onClick={() => dialogue.advanceOrReveal()}
-                      size="small"
-                      variant="outlined"
+                      skin={corruptionSkin}
+                      sx={{
+                        minHeight: 32,
+                      }}
                     >
                       {dialogue.advanceActionLabel}
-                    </Button>
-                    <Button onClick={() => dialogue.toggleAutoMode()} size="small" variant={dialogue.autoModeEnabled ? 'contained' : 'outlined'}>
-                      Auto
-                    </Button>
-                    <Button onClick={() => rootStore.ui.openModal('backlog')} size="small" variant="outlined">
-                      Backlog
-                    </Button>
-                    <Button onClick={() => rootStore.ui.openModal('preferences')} size="small" variant="outlined">
-                      Shell
-                    </Button>
-                    <Button onClick={() => rootStore.ui.openModal('saves')} size="small" variant="outlined">
-                      Saves
-                    </Button>
-                    <Button onClick={() => rootStore.preferences.setHideUi(true)} size="small" variant="outlined">
-                      Hide UI
-                    </Button>
-                    <Button onClick={() => rootStore.openLibrary('characters')} size="small" variant="outlined">
-                      Library
-                    </Button>
-                    <Button onClick={() => rootStore.ui.openModal('stats-debug')} size="small" variant="outlined">
-                      Stats
-                    </Button>
+                    </NarrativeAction>
+                    <NarrativeAction
+                      active={dialogue.autoModeEnabled}
+                      onClick={() => dialogue.toggleAutoMode()}
+                      skin={corruptionSkin}
+                      sx={{
+                        minHeight: 32,
+                      }}
+                    >
+                      Авто
+                    </NarrativeAction>
+                    <SystemAction
+                      onClick={() => rootStore.ui.openModal('backlog')}
+                      skin={corruptionSkin}
+                      sx={{
+                        minHeight: 28,
+                        px: 0.82,
+                        py: 0.45,
+                        '& .MuiTypography-root': {
+                          fontSize: '0.68rem',
+                        },
+                      }}
+                    >
+                      Лог
+                    </SystemAction>
+                  </Stack>
+                  <Stack
+                    direction="row"
+                    flexWrap="wrap"
+                    justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
+                    gap={0.5}
+                  >
+                    <SystemAction
+                      onClick={() => rootStore.ui.openModal('saves')}
+                      skin={corruptionSkin}
+                      tone="quiet"
+                      sx={{
+                        minHeight: 26,
+                        px: 0.76,
+                        py: 0.42,
+                        '& .MuiTypography-root': {
+                          fontSize: '0.66rem',
+                        },
+                      }}
+                    >
+                      Сейви
+                    </SystemAction>
+                    <SystemAction
+                      onClick={() => rootStore.openLibrary('characters')}
+                      skin={corruptionSkin}
+                      tone="quiet"
+                      sx={{
+                        minHeight: 26,
+                        px: 0.76,
+                        py: 0.42,
+                        '& .MuiTypography-root': {
+                          fontSize: '0.66rem',
+                        },
+                      }}
+                    >
+                      Кодекс
+                    </SystemAction>
+                    <SystemAction
+                      onClick={() => rootStore.ui.openModal('preferences')}
+                      skin={corruptionSkin}
+                      tone="quiet"
+                      sx={{
+                        minHeight: 26,
+                        px: 0.76,
+                        py: 0.42,
+                        '& .MuiTypography-root': {
+                          fontSize: '0.66rem',
+                        },
+                      }}
+                    >
+                      Налашт.
+                    </SystemAction>
+                    <SystemAction
+                      onClick={() => rootStore.preferences.setHideUi(true)}
+                      skin={corruptionSkin}
+                      tone="quiet"
+                      sx={{
+                        minHeight: 26,
+                        px: 0.76,
+                        py: 0.42,
+                        '& .MuiTypography-root': {
+                          fontSize: '0.66rem',
+                        },
+                      }}
+                    >
+                      Сховати
+                    </SystemAction>
+                    <SystemAction
+                      onClick={() => rootStore.ui.openModal('stats-debug')}
+                      skin={corruptionSkin}
+                      tone="quiet"
+                      sx={{
+                        minHeight: 26,
+                        px: 0.76,
+                        py: 0.42,
+                        '& .MuiTypography-root': {
+                          fontSize: '0.66rem',
+                        },
+                      }}
+                    >
+                      Стати
+                    </SystemAction>
                   </Stack>
                 </Stack>
               </Box>
-            </Box>
+            </ScreenFrame>
           </Stack>
         </Box>
       </Box>

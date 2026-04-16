@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+
 import { Box } from '@mui/material';
 
 function uniqueValues(values: readonly string[]) {
@@ -9,13 +11,14 @@ export function parseNarrativeBackdropStyleTokens(style: string | readonly strin
     return [];
   }
 
-  const rawTokens = Array.isArray(style)
-    ? style
-    : style
+  const rawTokens =
+    typeof style === 'string'
+      ? style
         .split(/[+,]/)
-        .flatMap((entry) => entry.trim().split(/\s+/));
+        .flatMap((entry: string) => entry.trim().split(/\s+/))
+      : [...style];
 
-  return uniqueValues(rawTokens.map((entry) => entry.trim()).filter(Boolean));
+  return uniqueValues(rawTokens.map((entry: string) => entry.trim()).filter(Boolean));
 }
 
 export function buildNarrativeBackdropStyleToken(effectIds: readonly string[]) {
@@ -141,7 +144,7 @@ function renderAshHazeEffect(key: string) {
   });
 }
 
-const NARRATIVE_BACKDROP_EFFECT_RENDERERS: Record<string, (key: string) => JSX.Element> = {
+const NARRATIVE_BACKDROP_EFFECT_RENDERERS: Record<string, (key: string) => ReactElement> = {
   'ash-haze': renderAshHazeEffect,
   'blood-border': renderBloodBorderEffect,
   'cold-morning-spill': renderColdMorningSpillEffect,
@@ -160,15 +163,15 @@ export function renderNarrativeBackdropEffectLayers(style: string | readonly str
     return null;
   }
 
-  return tokens
-    .map((token, index) => {
-      const renderer = NARRATIVE_BACKDROP_EFFECT_RENDERERS[token];
+  const layers: ReactElement[] = [];
 
-      if (!renderer) {
-        return null;
-      }
+  tokens.forEach((token, index) => {
+    const renderer = NARRATIVE_BACKDROP_EFFECT_RENDERERS[token];
 
-      return renderer(`${token}-${index}`);
-    })
-    .filter(Boolean);
+    if (renderer) {
+      layers.push(renderer(`${token}-${index}`));
+    }
+  });
+
+  return layers;
 }

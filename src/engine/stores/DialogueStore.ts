@@ -369,7 +369,7 @@ export class DialogueStore {
   }
 
   get advanceActionLabel() {
-    return 'Далі';
+    return '\u0414\u0430\u043b\u0456';
   }
 
   get snapshot(): DialogueRuntimeSnapshot {
@@ -386,6 +386,14 @@ export class DialogueStore {
     this.resetPlaybackState();
 
     return this.rootStore.sceneFlowController.startScene(sceneId);
+  }
+
+  startScenePreview(sceneId: string) {
+    this.resetPlaybackState();
+
+    return this.rootStore.sceneFlowController.startScene(sceneId, {
+      playbackMode: 'preview',
+    });
   }
 
   startDialogue(dialogueId: string, options: { sceneId?: string } = {}) {
@@ -618,6 +626,9 @@ export class DialogueStore {
 
     this.clearRevealTimer();
     this.clearAdvanceTimer();
+    if (this.rootStore.ui.isModalOpen) {
+      return;
+    }
 
     if (!this.isTextFullyRevealed && !this.shouldSkipCurrentNodeInstantly()) {
       this.scheduleRevealTick();
@@ -704,15 +715,18 @@ export class DialogueStore {
       return;
     }
 
+    const plainText = getNarrativePlainText(this.currentPreparedTextHtml);
     const nextRevealCharacterCount = getNextDialogueRevealCharacterCount(
-      getNarrativePlainText(this.currentPreparedTextHtml),
+      plainText,
       this.revealedCharacterCount,
       this.currentTextPageEnd,
     );
     const revealedCharacterDelta = Math.max(1, nextRevealCharacterCount - this.revealedCharacterCount);
+    const revealedChunk = plainText.slice(this.revealedCharacterCount, nextRevealCharacterCount);
     const stepDelayMs = getDialogueRevealDelayMs(
       this.rootStore.preferences.textSpeed,
       revealedCharacterDelta,
+      revealedChunk,
     );
 
     this.revealTimerId = globalThis.setTimeout(() => {

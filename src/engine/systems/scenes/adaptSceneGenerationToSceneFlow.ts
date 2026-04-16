@@ -13,6 +13,7 @@ import type {
   SceneGenerationEncounter,
   SceneGenerationFallbackTarget,
   SceneGenerationNode,
+  SceneGenerationReplayConfig,
   SceneGenerationRouteLayout,
   SceneGenerationRouteRules,
   SceneGenerationScene,
@@ -139,6 +140,18 @@ function normalizeRouteRules(routeRules: SceneGenerationRouteRules | undefined) 
     ...(routeRules.revealNonHiddenAtStart !== undefined
       ? { revealNonHiddenAtStart: routeRules.revealNonHiddenAtStart }
       : {}),
+    ...(routeRules.stepTimeCost ? { stepTimeCost: { ...routeRules.stepTimeCost } } : {}),
+  };
+}
+
+function normalizeReplayConfig(replay: SceneGenerationReplayConfig | undefined) {
+  if (!replay) {
+    return undefined;
+  }
+
+  return {
+    enabled: replay.enabled,
+    ...(replay.unlockOnStart !== undefined ? { unlockOnStart: replay.unlockOnStart } : {}),
   };
 }
 
@@ -187,6 +200,7 @@ function buildNodeTransitions(node: SceneGenerationNode): SceneFlowTransition[] 
       label: choice.text,
       ...(choice.description ? { description: choice.description } : {}),
       ...(choice.tone ? { tone: choice.tone } : {}),
+      ...(choice.timeCost ? { timeCost: { ...choice.timeCost } } : {}),
       ...(choice.conditions ? { conditions: [...choice.conditions] } : {}),
       ...(choice.effects ? { effects: [...choice.effects] } : {}),
       ...(choice.nextNodeId ? { nextNodeId: choice.nextNodeId } : {}),
@@ -278,6 +292,7 @@ export function adaptSceneGenerationToSceneFlow(
       const onConditionFail = normalizeFallbackTarget(scene.onConditionFail);
       const defaultTransition = cloneSceneTransition(scene.transition);
       const routeRules = normalizeRouteRules(scene.routeRules);
+      const replay = normalizeReplayConfig(scene.replay);
 
       return [
         scene.id,
@@ -327,6 +342,7 @@ export function adaptSceneGenerationToSceneFlow(
               }
             : {}),
           ...(routeRules ? { routeRules } : {}),
+          ...(replay ? { replay } : {}),
         },
       ];
     }),

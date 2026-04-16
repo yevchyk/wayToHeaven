@@ -3,6 +3,7 @@ import { dialogueContentRegistry } from '@content/dialogues';
 import { itemContentRegistry } from '@content/items';
 import { locationContentRegistry } from '@content/registries/locationRegistry';
 import { citySceneRegistry } from '@content/registries/citySceneRegistry';
+import { lootTableContentRegistry } from '@content/lootTables';
 import { questRegistry } from '@content/registries/questRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
 import {
@@ -50,6 +51,7 @@ describe('TravelBoardValidator', () => {
       dialogues: dialogueContentRegistry,
       sceneFlows: {},
       items: itemContentRegistry,
+      lootTables: lootTableContentRegistry,
       quests: questRegistry,
       locations: locationContentRegistry,
       characterTemplates: characterTemplateRegistry,

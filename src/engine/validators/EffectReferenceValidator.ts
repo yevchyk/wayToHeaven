@@ -3,6 +3,7 @@ import type { NarrativeAssetKind } from '@engine/types/narrative';
 import type { ContentReferenceLookup } from '@engine/validators/contentReferenceLookup';
 
 export type EffectReferenceValidationIssueCode =
+  | 'missingSceneReference'
   | 'missingBattleReference'
   | 'missingTravelBoardReference'
   | 'missingItemReference'
@@ -25,15 +26,18 @@ export interface EffectReferenceValidationIssue {
 
 interface EffectReferenceValidatorOptions {
   hasAssetOfKind?: (assetId: string, kind: NarrativeAssetKind) => boolean;
+  hasSceneId?: (sceneId: string) => boolean;
 }
 
 export class EffectReferenceValidator {
   private readonly lookup: ContentReferenceLookup | undefined;
   private readonly hasAssetOfKind: EffectReferenceValidatorOptions['hasAssetOfKind'];
+  private readonly hasSceneId: EffectReferenceValidatorOptions['hasSceneId'];
 
   constructor(lookup?: ContentReferenceLookup, options: EffectReferenceValidatorOptions = {}) {
     this.lookup = lookup;
     this.hasAssetOfKind = options.hasAssetOfKind;
+    this.hasSceneId = options.hasSceneId;
   }
 
   validateEffects(effects: readonly GameEffect[] | undefined, path: string) {
@@ -130,6 +134,17 @@ export class EffectReferenceValidator {
                 message: `Effect references missing script "${effect.scriptId}".`,
                 path,
                 targetId: effect.scriptId,
+              },
+            ]
+          : [];
+      case 'unlockSceneReplay':
+        return this.hasSceneId && !this.hasSceneId(effect.sceneId)
+          ? [
+              {
+                code: 'missingSceneReference',
+                message: `Effect references missing scene "${effect.sceneId}".`,
+                path,
+                targetId: effect.sceneId,
               },
             ]
           : [];

@@ -1,5 +1,6 @@
 import type { GameEffect } from '@engine/types/effects';
 import type { CharacterVisualConfig, EquippedItemIds } from '@engine/types/appearance';
+import type { LootTableData } from '@engine/types/loot';
 import type { StatusEffectInstance, StatusType } from '@engine/types/status';
 import type { TagId } from '@engine/types/tags';
 
@@ -29,12 +30,21 @@ export interface DerivedStats {
   initiative: number;
 }
 
+export type BattleAuraPreset = 'fire' | 'holy' | 'violet';
+
+export interface BattleVisualConfig {
+  portraitAssetId?: string;
+  portraitSourcePath?: string;
+  defaultAuraPreset?: BattleAuraPreset;
+}
+
 export interface CharacterTemplate {
   id: string;
   kind: 'character';
   name: string;
   description?: string;
   portraitId?: string;
+  battleVisual?: BattleVisualConfig;
   faction: 'player' | 'ally' | 'neutral';
   baseStats: BaseStats;
   startingTags: UnitTag[];
@@ -49,11 +59,15 @@ export interface CharacterInstance {
   id: string;
   templateId: string;
   level: number;
+  experience?: number;
   displayName?: string;
   currentHp?: number;
   currentMana?: number;
   tags?: UnitTag[];
   statusEffects?: StatusEffectInstance[];
+  skillRanks?: Record<string, number>;
+  bonusMaxHp?: number;
+  bonusMaxMana?: number;
   equippedItemIds?: EquippedItemIds;
   previewOverrides?: CharacterVisualConfig;
 }
@@ -64,6 +78,7 @@ export interface EnemyTemplate {
   name: string;
   description?: string;
   portraitId?: string;
+  battleVisual?: BattleVisualConfig;
   faction: 'enemy';
   aiProfile: 'random';
   level?: number;
@@ -71,7 +86,9 @@ export interface EnemyTemplate {
   startingTags: UnitTag[];
   startingStatuses?: StatusType[];
   skillIds: string[];
+  experienceReward?: number;
   rewardItemIds?: string[];
+  rewardTableId?: LootTableData['id'];
   rewardEffects?: GameEffect[];
 }
 
@@ -80,6 +97,7 @@ export interface PartyUnitRuntime {
   templateId: string;
   name: string;
   level: number;
+  experience: number;
   currentHp: number;
   currentMana: number;
   baseStats: BaseStats;
@@ -87,6 +105,10 @@ export interface PartyUnitRuntime {
   tags: UnitTag[];
   statuses: StatusEffectInstance[];
   skillIds: string[];
+  skillRanks: Record<string, number>;
+  bonusMaxHp: number;
+  bonusMaxMana: number;
+  battleVisual?: BattleVisualConfig;
   isDefending: boolean;
 }
 

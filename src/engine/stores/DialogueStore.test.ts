@@ -265,6 +265,28 @@ describe('DialogueStore runtime', () => {
     expect(rootStore.dialogue.hasChoices).toBe(true);
   });
 
+  it('pauses reveal and auto-advance timers while a modal is open', () => {
+    vi.useFakeTimers();
+
+    const rootStore = new GameRootStore();
+
+    rootStore.dialogue.startScene('chapter-1/scene/intro');
+    rootStore.dialogue.setAutoMode(true);
+
+    const initialNodeId = rootStore.dialogue.currentNodeId;
+
+    rootStore.ui.openModal('preferences');
+    vi.advanceTimersByTime(rootStore.preferences.autoDelayMs + 400);
+
+    expect(rootStore.dialogue.displayedText).toBe('');
+    expect(rootStore.dialogue.currentNodeId).toBe(initialNodeId);
+
+    rootStore.ui.closeModal();
+    vi.advanceTimersByTime(200);
+
+    expect(rootStore.dialogue.displayedText.length).toBeGreaterThan(0);
+  });
+
   it('reveals authored text on choice nodes instead of rendering only the choices', () => {
     vi.useFakeTimers();
 
@@ -298,7 +320,7 @@ describe('DialogueStore runtime', () => {
           id: 'end',
           kind: 'line',
           sourceNodeType: 'dialogue',
-          text: 'Фінальний вузол.',
+          text: 'Р В Р’В¤Р РЋРІР‚вЂњР В Р вЂ¦Р В Р’В°Р В Р’В»Р РЋР Р‰Р В Р вЂ¦Р В РЎвЂР В РІвЂћвЂ“ Р В Р вЂ Р РЋРЎвЂњР В Р’В·Р В РЎвЂўР В Р’В».',
           transitions: [],
         },
       },
@@ -311,7 +333,7 @@ describe('DialogueStore runtime', () => {
     rootStore.sceneFlowController.startSceneFlow('tests/scene-flow/terminal-label');
     rootStore.dialogue.revealCurrentLine();
 
-    expect(rootStore.dialogue.advanceActionLabel).toBe('Далі');
+    expect(rootStore.dialogue.advanceActionLabel).toBe('\u0414\u0430\u043b\u0456');
   });
 
   it('tracks seen nodes persistently and records backlog lines and selected choices', () => {
@@ -352,7 +374,7 @@ describe('DialogueStore runtime', () => {
     expect(secondStore.dialogue.isCurrentNodeSeen).toBe(true);
   });
 
-  it('reveals html-authored text in word-safe chunks instead of raw markup length', () => {
+  it('reveals html-authored text in smooth grapheme beats instead of raw markup length', () => {
     vi.useFakeTimers();
 
     const rootStore = new GameRootStore();
@@ -382,9 +404,13 @@ describe('DialogueStore runtime', () => {
 
     expect(rootStore.dialogue.displayedText).toBe('');
 
-    vi.advanceTimersByTime(80);
-    expect(rootStore.dialogue.displayedText).toBe('ABC\n');
-    expect(rootStore.dialogue.displayedTextHtml).toBe('A<strong>BC</strong><br>');
+    vi.advanceTimersByTime(48);
+    expect(rootStore.dialogue.displayedText).toBe('AB');
+    expect(rootStore.dialogue.displayedTextHtml).toBe('A<strong>B</strong>');
+
+    vi.advanceTimersByTime(120);
+    expect(rootStore.dialogue.displayedText.startsWith('ABC\n')).toBe(true);
+    expect(rootStore.dialogue.displayedTextHtml).toContain('A<strong>BC</strong><br>');
 
     rootStore.dialogue.revealCurrentLine();
 
@@ -393,12 +419,12 @@ describe('DialogueStore runtime', () => {
     expect(rootStore.dialogue.isTextFullyRevealed).toBe(true);
   });
 
-  it('reveals the next dialogue page from whole words instead of partial word fragments', () => {
+  it('reveals the next dialogue page in partial beats instead of waiting for a full word', () => {
     vi.useFakeTimers();
 
     const rootStore = new GameRootStore();
-    const firstPageText = 'Перша сторінка вже завершилась.';
-    const secondPageText = 'Служниця відкрила шафу.';
+    const firstPageText = 'Р В РЎСџР В Р’ВµР РЋР вЂљР РЋРІвЂљВ¬Р В Р’В° Р РЋР С“Р РЋРІР‚С™Р В РЎвЂўР РЋР вЂљР РЋРІР‚вЂњР В Р вЂ¦Р В РЎвЂќР В Р’В° Р В Р вЂ Р В Р’В¶Р В Р’Вµ Р В Р’В·Р В Р’В°Р В Р вЂ Р В Р’ВµР РЋР вЂљР РЋРІвЂљВ¬Р В РЎвЂР В Р’В»Р В Р’В°Р РЋР С“Р РЋР Р‰.';
+    const secondPageText = 'Р В Р Р‹Р В Р’В»Р РЋРЎвЂњР В Р’В¶Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р РЋР РЏ Р В Р вЂ Р РЋРІР‚вЂњР В РўвЂР В РЎвЂќР РЋР вЂљР В РЎвЂР В Р’В»Р В Р’В° Р РЋРІвЂљВ¬Р В Р’В°Р РЋРІР‚С›Р РЋРЎвЂњ.';
 
     rootStore.sceneFlowRegistry['tests/scene-flow/word-safe-page-reveal'] = {
       id: 'tests/scene-flow/word-safe-page-reveal',
@@ -433,12 +459,14 @@ describe('DialogueStore runtime', () => {
 
     vi.advanceTimersByTime(200);
 
-    expect(rootStore.dialogue.displayedPageText).toBe('Служниця ');
+    expect(rootStore.dialogue.displayedPageText.length).toBeGreaterThan(0);
+    expect(rootStore.dialogue.displayedPageText.length).toBeLessThan(secondPageText.length);
+    expect(secondPageText.startsWith(rootStore.dialogue.displayedPageText)).toBe(true);
   });
 
   it('paginates long dialogue text before advancing to the next node', () => {
     const rootStore = new GameRootStore();
-    const firstPageText = 'Перша лінія.\nДруга лінія.\nТретя лінія.';
+    const firstPageText = 'Р В РЎСџР В Р’ВµР РЋР вЂљР РЋРІвЂљВ¬Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.\nР В РІР‚СњР РЋР вЂљР РЋРЎвЂњР В РЎвЂ“Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.\nР В РЎС›Р РЋР вЂљР В Р’ВµР РЋРІР‚С™Р РЋР РЏ Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.';
 
     rootStore.sceneFlowRegistry['tests/scene-flow/paged-dialogue'] = {
       id: 'tests/scene-flow/paged-dialogue',
@@ -451,7 +479,7 @@ describe('DialogueStore runtime', () => {
           kind: 'line',
           sourceNodeType: 'dialogue',
           speakerId: 'mirella',
-          text: `${firstPageText}\nЧетверта лінія.\nП’ята лінія.`,
+          text: `${firstPageText}\nР В Р’В§Р В Р’ВµР РЋРІР‚С™Р В Р вЂ Р В Р’ВµР РЋР вЂљР РЋРІР‚С™Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.\nР В РЎСџР Р†Р вЂљРІвЂћСћР РЋР РЏР РЋРІР‚С™Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.`,
           transitions: [
             {
               id: 'next',
@@ -464,7 +492,7 @@ describe('DialogueStore runtime', () => {
           kind: 'line',
           sourceNodeType: 'dialogue',
           speakerId: 'mirella',
-          text: 'Кінець.',
+          text: 'Р В РЎв„ўР РЋРІР‚вЂњР В Р вЂ¦Р В Р’ВµР РЋРІР‚В Р РЋР Р‰.',
           transitions: [],
         },
       },
@@ -480,9 +508,9 @@ describe('DialogueStore runtime', () => {
     ]);
     rootStore.dialogue.revealCurrentPage();
 
-    expect(rootStore.dialogue.displayedPageText).toContain('Перша лінія.');
-    expect(rootStore.dialogue.displayedPageText).toContain('Третя лінія.');
-    expect(rootStore.dialogue.displayedPageText).not.toContain('Четверта лінія.');
+    expect(rootStore.dialogue.displayedPageText).toContain('Р В РЎСџР В Р’ВµР РЋР вЂљР РЋРІвЂљВ¬Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.');
+    expect(rootStore.dialogue.displayedPageText).toContain('Р В РЎС›Р РЋР вЂљР В Р’ВµР РЋРІР‚С™Р РЋР РЏ Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.');
+    expect(rootStore.dialogue.displayedPageText).not.toContain('Р В Р’В§Р В Р’ВµР РЋРІР‚С™Р В Р вЂ Р В Р’ВµР РЋР вЂљР РЋРІР‚С™Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.');
 
     rootStore.dialogue.advanceOrReveal();
 
@@ -491,9 +519,9 @@ describe('DialogueStore runtime', () => {
 
     rootStore.dialogue.revealCurrentPage();
 
-    expect(rootStore.dialogue.displayedPageText).toContain('Четверта лінія.');
-    expect(rootStore.dialogue.displayedPageText).toContain('П’ята лінія.');
-    expect(rootStore.dialogue.displayedPageText).not.toContain('Перша лінія.');
+    expect(rootStore.dialogue.displayedPageText).toContain('Р В Р’В§Р В Р’ВµР РЋРІР‚С™Р В Р вЂ Р В Р’ВµР РЋР вЂљР РЋРІР‚С™Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.');
+    expect(rootStore.dialogue.displayedPageText).toContain('Р В РЎСџР Р†Р вЂљРІвЂћСћР РЋР РЏР РЋРІР‚С™Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.');
+    expect(rootStore.dialogue.displayedPageText).not.toContain('Р В РЎСџР В Р’ВµР РЋР вЂљР РЋРІвЂљВ¬Р В Р’В° Р В Р’В»Р РЋРІР‚вЂњР В Р вЂ¦Р РЋРІР‚вЂњР РЋР РЏ.');
 
     rootStore.dialogue.advanceOrReveal();
 

@@ -4,12 +4,14 @@ import { observer } from 'mobx-react-lite';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import ExploreRoundedIcon from '@mui/icons-material/ExploreRounded';
 import FaceRetouchingNaturalRoundedIcon from '@mui/icons-material/FaceRetouchingNaturalRounded';
+import MovieFilterRoundedIcon from '@mui/icons-material/MovieFilterRounded';
 import { Box, Button, Chip, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 
 import { useGameRootStore } from '@app/providers/StoreProvider';
 import {
   buildCharacterLibraryEntries,
   buildLocationLibraryEntries,
+  buildSceneLibraryEntries,
   type LibraryEntry,
   type LibraryTabId,
 } from '@engine/systems/library/buildLibraryEntries';
@@ -19,7 +21,7 @@ import { PanelSection } from '@ui/components/shell/PanelSection';
 import { shellTokens } from '@ui/components/shell/shellTokens';
 
 function isLibraryTabId(value: unknown): value is LibraryTabId {
-  return value === 'characters' || value === 'locations';
+  return value === 'characters' || value === 'locations' || value === 'scenes';
 }
 
 function isString(value: unknown): value is string {
@@ -66,16 +68,22 @@ export const LibraryModal = observer(function LibraryModal() {
   const locationEntries = buildLocationLibraryEntries(rootStore).filter(
     (entry) => showAllEntries || rootStore.seenContent.hasDiscoveredLocationEntry(entry.id),
   );
+  const sceneEntries = buildSceneLibraryEntries(rootStore).filter(
+    (entry) => showAllEntries || rootStore.seenContent.hasDiscoveredSceneEntry(entry.id),
+  );
   const characterEntryIdsKey = characterEntries.map((entry) => entry.id).join('|');
   const locationEntryIdsKey = locationEntries.map((entry) => entry.id).join('|');
+  const sceneEntryIdsKey = sceneEntries.map((entry) => entry.id).join('|');
   const [activeTab, setActiveTab] = useState<LibraryTabId>('characters');
   const [selectedEntryIds, setSelectedEntryIds] = useState<Record<LibraryTabId, string | null>>({
     characters: getDefaultEntryId(characterEntries),
     locations: getDefaultEntryId(locationEntries),
+    scenes: getDefaultEntryId(sceneEntries),
   });
   const [searchByTab, setSearchByTab] = useState<Record<LibraryTabId, string>>({
     characters: '',
     locations: '',
+    scenes: '',
   });
 
   useEffect(() => {
@@ -94,10 +102,17 @@ export const LibraryModal = observer(function LibraryModal() {
         locations: locationEntries.some((entry) => entry.id === current.locations)
           ? current.locations
           : getDefaultEntryId(locationEntries),
+        scenes: sceneEntries.some((entry) => entry.id === current.scenes)
+          ? current.scenes
+          : getDefaultEntryId(sceneEntries),
       };
 
       if (payloadEntryId) {
-        const payloadEntries = nextActiveTab === 'characters' ? characterEntries : locationEntries;
+        const payloadEntries = nextActiveTab === 'characters'
+          ? characterEntries
+          : nextActiveTab === 'locations'
+            ? locationEntries
+            : sceneEntries;
 
         if (payloadEntries.some((entry) => entry.id === payloadEntryId)) {
           nextSelection[nextActiveTab] = payloadEntryId;
@@ -106,16 +121,21 @@ export const LibraryModal = observer(function LibraryModal() {
 
       if (
         nextSelection.characters === current.characters &&
-        nextSelection.locations === current.locations
+        nextSelection.locations === current.locations &&
+        nextSelection.scenes === current.scenes
       ) {
         return current;
       }
 
       return nextSelection;
     });
-  }, [characterEntryIdsKey, isOpen, locationEntryIdsKey, payloadEntryId, payloadTab]);
+  }, [characterEntryIdsKey, isOpen, locationEntryIdsKey, payloadEntryId, payloadTab, sceneEntryIdsKey]);
 
-  const activeEntries = activeTab === 'characters' ? characterEntries : locationEntries;
+  const activeEntries = activeTab === 'characters'
+    ? characterEntries
+    : activeTab === 'locations'
+      ? locationEntries
+      : sceneEntries;
   const activeSearchQuery = searchByTab[activeTab];
   const visibleEntries = filterLibraryEntries(activeEntries, activeSearchQuery);
   const selectedEntry = resolveSelectedEntry(visibleEntries, selectedEntryIds[activeTab]);
@@ -126,7 +146,9 @@ export const LibraryModal = observer(function LibraryModal() {
     ? 'Жоден відкритий запис не відповідає поточному фільтру.'
     : activeTab === 'characters'
       ? 'У бібліотеці поки немає відкритих персонажів. Записи додаються після реальної зустрічі в сцені або на stage.'
-      : 'У бібліотеці поки немає відкритих локацій. Записи додаються, коли ти реально входиш у сцену, місто, маршрут або світову локацію.';
+      : activeTab === 'locations'
+        ? 'У бібліотеці поки немає відкритих локацій. Записи додаються, коли ти реально входиш у сцену, місто, маршрут або світову локацію.'
+        : 'No replay scenes are unlocked yet. Replay entries appear here after the live story reaches a replay-enabled scene.';
 
   return (
     <ModalShell
@@ -164,6 +186,12 @@ export const LibraryModal = observer(function LibraryModal() {
               label={`Локації · ${locationEntries.length}`}
               value="locations"
             />
+            <Tab
+              icon={<MovieFilterRoundedIcon fontSize="small" />}
+              iconPosition="start"
+              label={`Scene Replay · ${sceneEntries.length}`}
+              value="scenes"
+            />
           </Tabs>
         </Box>
 
@@ -186,17 +214,33 @@ export const LibraryModal = observer(function LibraryModal() {
                   ? showAllEntries
                     ? 'Workbench bypass: selector показує весь narrative character registry.'
                     : 'Selector показує тільки відкритих персонажів із runtime discovery.'
-                  : showAllEntries
-                    ? 'Workbench bypass: selector показує всі world, city, travel і scene-level entries.'
-                    : 'Локаційна вкладка показує тільки відкриті записи з world, city, travel і scene-level entries.'
+                  : activeTab === 'locations'
+                    ? showAllEntries
+                      ? 'Workbench bypass: selector показує всі world, city, travel і scene-level entries.'
+                      : 'Локаційна вкладка показує тільки відкриті записи з world, city, travel і scene-level entries.'
+                    : showAllEntries
+                      ? 'Workbench bypass: selector shows every replay-enabled scene.'
+                      : 'Replay tab lists only scenes unlocked through the live story runtime.'
               }
-              title={activeTab === 'characters' ? 'Каталог персонажів' : 'Каталог локацій'}
+              title={
+                activeTab === 'characters'
+                  ? 'Каталог персонажів'
+                  : activeTab === 'locations'
+                    ? 'Каталог локацій'
+                    : 'Replay сцени'
+              }
               tone="overlay"
             >
               <Stack spacing={1}>
                 <TextField
                   fullWidth
-                  label={activeTab === 'characters' ? 'Пошук персонажа' : 'Пошук локації'}
+                  label={
+                    activeTab === 'characters'
+                      ? 'Пошук персонажа'
+                      : activeTab === 'locations'
+                        ? 'Пошук локації'
+                        : 'Search replay scene'
+                  }
                   onChange={(event) =>
                     setSearchByTab((current) => ({
                       ...current,
@@ -206,7 +250,9 @@ export const LibraryModal = observer(function LibraryModal() {
                   placeholder={
                     activeTab === 'characters'
                       ? 'Імʼя, глава, емоція, тег...'
-                      : 'Назва, chapter, тип сцени, тег...'
+                      : activeTab === 'locations'
+                        ? 'Назва, chapter, тип сцени, тег...'
+                        : 'Scene title, chapter, replay tag...'
                   }
                   size="small"
                   value={activeSearchQuery}
@@ -279,7 +325,13 @@ export const LibraryModal = observer(function LibraryModal() {
                   action={
                     <Chip
                       icon={<AutoStoriesRoundedIcon fontSize="small" />}
-                      label={activeTab === 'characters' ? 'Codex персонажа' : 'Codex локації'}
+                      label={
+                        activeTab === 'characters'
+                          ? 'Codex персонажа'
+                          : activeTab === 'locations'
+                            ? 'Codex локації'
+                            : 'Scene replay entry'
+                      }
                       size="small"
                       variant="outlined"
                     />
@@ -293,6 +345,19 @@ export const LibraryModal = observer(function LibraryModal() {
                       <Chip key={tag} label={tag} size="small" variant="outlined" />
                     ))}
                   </Stack>
+                  {selectedEntry.action ? (
+                    <Button
+                      onClick={() => {
+                        if (selectedEntry.action?.type === 'previewScene') {
+                          rootStore.startScenePreview(selectedEntry.action.targetId);
+                        }
+                      }}
+                      sx={{ mt: 1 }}
+                      variant="contained"
+                    >
+                      {selectedEntry.action.label}
+                    </Button>
+                  ) : null}
                 </PanelSection>
               </Stack>
 
@@ -301,7 +366,9 @@ export const LibraryModal = observer(function LibraryModal() {
                   description={
                     activeTab === 'characters'
                       ? 'Правий блок лишається окремим scroll-region, щоб довгі описи не ламали layout.'
-                      : 'Для локацій тут зберігається атмосферний опис і короткий системний контекст.'
+                      : activeTab === 'locations'
+                        ? 'Для локацій тут зберігається атмосферний опис і короткий системний контекст.'
+                        : 'Replay entries describe the archived scene and launch an isolated preview runtime.'
                   }
                   title="Опис"
                 >

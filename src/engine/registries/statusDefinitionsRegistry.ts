@@ -56,10 +56,10 @@ const statusDefinitions = [
   {
     type: 'bleed',
     name: 'Bleed',
-    description: 'Deals wound damage at turn end.',
+    description: 'Deals wound damage at the start of the unit turn.',
     category: 'damage',
     defaultDuration: 2,
-    tickTiming: 'turnEnd',
+    tickTiming: 'turnStart',
     stackPolicy: 'stack',
     isNegative: true,
     defaultPotency: 4,

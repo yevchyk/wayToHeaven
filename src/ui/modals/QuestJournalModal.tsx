@@ -40,6 +40,25 @@ function QuestSection({ title, emptyText, states, completed = false }: QuestSect
               maxProgress && maxProgress > 0
                 ? Math.min(100, Math.round((state.progress / maxProgress) * 100))
                 : null;
+            const activeStage = state.activeStageId
+              ? definition?.stages?.find((stage) => stage.id === state.activeStageId) ?? null
+              : null;
+            const activeObjectives =
+              activeStage?.objectives.map((objective) => {
+                const objectiveState = state.objectiveStates[`${activeStage.id}:${objective.id}`];
+                const targetValue = objective.kind === 'counter' ? Math.max(1, objective.targetValue ?? 1) : 1;
+
+                return {
+                  objective,
+                  objectiveState,
+                  progressLabel:
+                    objective.kind === 'counter'
+                      ? `${objectiveState?.progress ?? 0} / ${targetValue}`
+                      : objectiveState?.completed
+                        ? 'Done'
+                        : 'Pending',
+                };
+              }) ?? [];
 
             return (
               <PanelSection
@@ -75,6 +94,50 @@ function QuestSection({ title, emptyText, states, completed = false }: QuestSect
                       value={completed ? 100 : progressValue}
                       variant="determinate"
                     />
+                  </Stack>
+                ) : null}
+                {activeStage ? (
+                  <Stack spacing={0.45}>
+                    <Typography color="text.secondary" variant="caption">
+                      Stage
+                    </Typography>
+                    <Typography variant="body2">{activeStage.title}</Typography>
+                    {activeStage.description ? (
+                      <Typography color="text.secondary" variant="caption">
+                        {activeStage.description}
+                      </Typography>
+                    ) : null}
+                    {activeObjectives.filter(({ objective }) => !objective.hidden).length > 0 ? (
+                      <Stack spacing={0.45}>
+                        {activeObjectives
+                          .filter(({ objective }) => !objective.hidden)
+                          .map(({ objective, objectiveState, progressLabel: objectiveProgressLabel }) => (
+                            <Stack
+                              key={objective.id}
+                              alignItems="center"
+                              direction="row"
+                              justifyContent="space-between"
+                              spacing={1}
+                            >
+                              <Typography
+                                color={objectiveState?.completed ? 'text.secondary' : 'text.primary'}
+                                sx={{
+                                  textDecoration: objectiveState?.completed ? 'line-through' : 'none',
+                                }}
+                                variant="caption"
+                              >
+                                {objective.label}
+                              </Typography>
+                              <Chip
+                                color={objectiveState?.completed ? 'success' : 'default'}
+                                label={objectiveProgressLabel}
+                                size="small"
+                                variant={objectiveState?.completed ? 'filled' : 'outlined'}
+                              />
+                            </Stack>
+                          ))}
+                      </Stack>
+                    ) : null}
                   </Stack>
                 ) : null}
               </PanelSection>

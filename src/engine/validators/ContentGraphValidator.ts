@@ -3,6 +3,8 @@ import { CitySceneValidator } from '@engine/validators/CitySceneValidator';
 import { DialogueValidator } from '@engine/validators/DialogueValidator';
 import { ItemContentValidator } from '@engine/validators/ItemContentValidator';
 import { LocationGraphValidator } from '@engine/validators/LocationGraphValidator';
+import { LootTableValidator } from '@engine/validators/LootTableValidator';
+import { QuestContentValidator } from '@engine/validators/QuestContentValidator';
 import { SceneFlowValidator } from '@engine/validators/SceneFlowValidator';
 import { TravelBoardValidator } from '@engine/validators/TravelBoardValidator';
 import type { ContentRegistrySnapshot } from '@engine/validators/contentReferenceLookup';
@@ -19,7 +21,10 @@ export type ContentGraphSourceType =
   | 'characterTemplate'
   | 'characterInstance'
   | 'enemyTemplate'
-  | 'party';
+  | 'lootTable'
+  | 'quest'
+  | 'party'
+  | 'sceneAuthoring';
 
 export interface ContentGraphValidationIssue {
   sourceType: ContentGraphSourceType;
@@ -39,6 +44,8 @@ export class ContentGraphValidator {
   private readonly sceneFlowValidator: SceneFlowValidator;
   private readonly battleTemplateValidator: BattleTemplateValidator;
   private readonly itemContentValidator: ItemContentValidator;
+  private readonly lootTableValidator: LootTableValidator;
+  private readonly questContentValidator: QuestContentValidator;
   private readonly unitContentValidator: UnitContentValidator;
 
   constructor(
@@ -50,6 +57,8 @@ export class ContentGraphValidator {
     sceneFlowValidator: SceneFlowValidator,
     battleTemplateValidator: BattleTemplateValidator,
     itemContentValidator: ItemContentValidator,
+    lootTableValidator: LootTableValidator,
+    questContentValidator: QuestContentValidator,
     unitContentValidator: UnitContentValidator,
   ) {
     this.snapshot = snapshot;
@@ -60,6 +69,8 @@ export class ContentGraphValidator {
     this.sceneFlowValidator = sceneFlowValidator;
     this.battleTemplateValidator = battleTemplateValidator;
     this.itemContentValidator = itemContentValidator;
+    this.lootTableValidator = lootTableValidator;
+    this.questContentValidator = questContentValidator;
     this.unitContentValidator = unitContentValidator;
   }
 
@@ -149,6 +160,32 @@ export class ContentGraphValidator {
         ...this.itemContentValidator.validate(item).map((issue) => ({
           sourceType: 'item' as const,
           sourceId: item.id,
+          code: issue.code,
+          message: issue.message,
+          ...(issue.path ? { path: issue.path } : {}),
+          ...(issue.targetId ? { targetId: issue.targetId } : {}),
+        })),
+      );
+    });
+
+    Object.values(this.snapshot.lootTables).forEach((table) => {
+      issues.push(
+        ...this.lootTableValidator.validate(table).map((issue) => ({
+          sourceType: 'lootTable' as const,
+          sourceId: table.id,
+          code: issue.code,
+          message: issue.message,
+          ...(issue.path ? { path: issue.path } : {}),
+          ...(issue.targetId ? { targetId: issue.targetId } : {}),
+        })),
+      );
+    });
+
+    Object.values(this.snapshot.quests).forEach((quest) => {
+      issues.push(
+        ...this.questContentValidator.validate(quest).map((issue) => ({
+          sourceType: 'quest' as const,
+          sourceId: quest.id,
           code: issue.code,
           message: issue.message,
           ...(issue.path ? { path: issue.path } : {}),

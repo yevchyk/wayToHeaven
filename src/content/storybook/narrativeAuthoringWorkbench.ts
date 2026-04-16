@@ -1,5 +1,6 @@
 import { narrativeCharacterRegistry } from '@content/registries/npcRegistry';
 import { sceneGenerationRegistry } from '@content/registries/sceneGenerationRegistry';
+import { getSceneGenerationSourceFile } from '@content/storybook/sceneAuthoringPaths';
 import type { BackgroundWorkbenchEntry } from '@engine/types/authoring';
 import type { NarrativeCharacterData } from '@engine/types/narrative';
 import type {
@@ -31,21 +32,6 @@ export interface NarrativePortraitWorkbenchEntry {
   improvementHints: string[];
 }
 
-const sceneGenerationSourceFileByDocumentId: Record<string, string> = {
-  'chapter-1/scene-generation/intro': 'src/content/chapters/chapter-1/scenes/intro/intro.scene-generation.ts',
-  'chapter-1/scene-generation/prison-fall':
-    'src/content/chapters/chapter-1/scenes/prison-fall/prison-fall.scene-generation.ts',
-  'chapter-1/scene-generation/awakening':
-    'src/content/chapters/chapter-1/scenes/awakening/awakening.scene-generation.ts',
-  'chapter-1/scene-generation/caravan-to-hugen-um':
-    'src/content/chapters/chapter-1/scenes/caravan-to-hugen-um/caravan-to-hugen-um.scene-generation.ts',
-  'chapter-1/scene-generation/city-gate':
-    'src/content/chapters/chapter-1/scenes/city-gate/city-gate.scene-generation.ts',
-  'chapter-1/scene-generation/city-hubs': 'src/content/chapters/chapter-1/city/city-hubs.scene-generation.ts',
-  'chapter-1/scene-generation/underground-route':
-    'src/content/chapters/chapter-1/travel/underground-route.scene-generation.ts',
-};
-
 const characterSourceFileById: Record<string, string> = {
   heroine: 'src/content/chapters/chapter-1/npcs/heroine.npc.ts',
   'gate-guard': 'src/content/chapters/chapter-1/npcs/gate-guard.npc.ts',
@@ -76,10 +62,6 @@ function summarizeText(text?: string, fallback = 'Narrative beat without extra d
   return `${compactText.slice(0, 157)}...`;
 }
 
-function getSceneGenerationSourceFile(documentId: string) {
-  return sceneGenerationSourceFileByDocumentId[documentId] ?? 'scene-generation source file not mapped yet';
-}
-
 function getCharacterSourceFile(characterId: string) {
   return (
     characterSourceFileById[characterId] ??
@@ -93,6 +75,10 @@ function getCharacterDisplayName(characterId: string) {
 
 function getSceneLabel(scene: SceneGenerationScene) {
   return scene.title ?? scene.locationName ?? scene.id;
+}
+
+function isCompositePortraitCharacter(character: NarrativeCharacterData) {
+  return character.portraitPresentation === 'composite';
 }
 
 function getNodeLabel(node: SceneGenerationNode) {
@@ -299,7 +285,9 @@ function collectCharacterRegistryPortraitEntries(character: NarrativeCharacterDa
       sectionId,
       title: `${character.displayName} · default`,
       subtitle: 'Character registry default portrait',
-      description: `Fallback portrait for ${character.displayName} when the authored node does not force a more specific emotion portrait.`,
+      description: isCompositePortraitCharacter(character)
+        ? `Fallback flat portrait for ${character.displayName}. The layered heroine rig stays primary, while this slot covers archive continuity and explicit beat overrides.`
+        : `Fallback portrait for ${character.displayName} when the authored node does not force a more specific emotion portrait.`,
       portraitId: character.defaultPortraitId,
       contentFilePath,
       assetFieldPath: 'defaultPortraitId',
@@ -316,7 +304,9 @@ function collectCharacterRegistryPortraitEntries(character: NarrativeCharacterDa
       sectionId,
       title: `${character.displayName} · ${emotion}`,
       subtitle: 'Character registry emotion portrait',
-      description: `Canonical portrait mapping for ${character.displayName}. Dialogue nodes can reference this state by emotion without hardcoding portrait asset ids.`,
+      description: isCompositePortraitCharacter(character)
+        ? `Fallback or archive portrait mapping for ${character.displayName}. Keep this usable for explicit beat art, but treat the layered heroine rig as the primary dialogue presentation.`
+        : `Canonical portrait mapping for ${character.displayName}. Dialogue nodes can reference this state by emotion without hardcoding portrait asset ids.`,
       portraitId: portraitId ?? null,
       contentFilePath,
       assetFieldPath: `portraitRefs.${emotion}`,
@@ -435,7 +425,7 @@ export const storybookPortraitSections: StorybookSection[] = [
     id: 'character-registry',
     title: 'Character Registry Portraits',
     description:
-      'Canonical portraitRefs and defaults. This is where reusable emotions should live so authored scenes can reference them by emotion instead of hardcoding assets.',
+      'Canonical flat portraitRefs and defaults. This is the main workflow for NPCs and supporting cast. The story heroine still appears here for fallback and explicit beat art, but her primary runtime presentation is composite.',
   },
   ...sceneGenerationDocuments.map((document) => ({
     id: `scene-overrides:${document.id}`,

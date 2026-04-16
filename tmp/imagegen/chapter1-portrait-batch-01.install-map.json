@@ -1,0 +1,68 @@
+[
+  {
+    "generated": "lady-sera-composed.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/lady-sera/composed.png"
+    ]
+  },
+  {
+    "generated": "lady-sera-tired.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/lady-sera/tired.png"
+    ]
+  },
+  {
+    "generated": "lady-sera-calm.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/lady-sera/calm.png"
+    ]
+  },
+  {
+    "generated": "lady-sera-hard.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/lady-sera/hard.png"
+    ]
+  },
+  {
+    "generated": "lord-guy-cold.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/lord-guy/cold.png"
+    ]
+  },
+  {
+    "generated": "aren-sharp.png",
+    "installTargets": [
+      "src/content/prologue/images/portraits/aren/sharp.png"
+    ]
+  },
+  {
+    "generated": "aren-amused.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/aren/amused.png"
+    ]
+  },
+  {
+    "generated": "edran-neutral.png",
+    "installTargets": [
+      "src/content/prologue/images/portraits/edran/neutral.png"
+    ]
+  },
+  {
+    "generated": "edran-stern.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/edran/stern.png"
+    ]
+  },
+  {
+    "generated": "tanya-careful.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/tanya/careful.png"
+    ]
+  },
+  {
+    "generated": "galen-serious.png",
+    "installTargets": [
+      "src/content/chapters/chapter-1/images/portraits/galen/serious.png"
+    ]
+  }
+]

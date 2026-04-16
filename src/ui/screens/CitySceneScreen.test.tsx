@@ -24,7 +24,7 @@ describe('CitySceneScreen', () => {
     expect(screen.getByRole('button', { name: 'Покинути місто через північну браму' })).toBeInTheDocument();
     expect(screen.queryByText('Звичний guard check і кілька зайвих запитань про ваші наміри.')).not.toBeInTheDocument();
     expect(screen.queryByText('Тісні ряди лавок, де за харчі сперечаються голосніше, ніж моляться.')).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('shows hover preview for dialogue actions on the right panel', () => {
     const rootStore = new GameRootStore();

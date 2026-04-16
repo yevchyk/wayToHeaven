@@ -5,7 +5,9 @@ import type { BackgroundWorkbenchEntry } from '@engine/types/authoring';
 
 import { chapter1AwakeningSceneMeta } from '@content/chapters/chapter-1/scenes/awakening/awakening.meta';
 import { chapter1CityGateSceneMeta } from '@content/chapters/chapter-1/scenes/city-gate/city-gate.meta';
+import { chapter1IntroBallAndAssaultSceneMeta } from '@content/chapters/chapter-1/scenes/intro/ball-and-assault.meta';
 import { chapter1IntroSceneMeta } from '@content/chapters/chapter-1/scenes/intro/intro.meta';
+import { chapter1IntroTwoOfThreeSceneMeta } from '@content/chapters/chapter-1/scenes/intro/two-of-three.meta';
 import { chapter1PrisonFallSceneMeta } from '@content/chapters/chapter-1/scenes/prison-fall/prison-fall.meta';
 import { citySceneRegistry } from '@content/registries/citySceneRegistry';
 import { travelBoardRegistry } from '@content/registries/travelBoardRegistry';
@@ -118,6 +120,16 @@ export const chapter1SceneMetaBackdropEntries: LocationBackdropWorkbenchEntry[] 
     chapter1IntroSceneMeta,
     'src/content/chapters/chapter-1/scenes/intro/intro.meta.ts',
     'src/content/chapters/chapter-1/scenes/intro/intro.scene-generation.ts',
+  ),
+  buildSceneMetaEntry(
+    chapter1IntroTwoOfThreeSceneMeta,
+    'src/content/chapters/chapter-1/scenes/intro/two-of-three.meta.ts',
+    'src/content/chapters/chapter-1/scenes/intro/two-of-three.scene-generation.ts',
+  ),
+  buildSceneMetaEntry(
+    chapter1IntroBallAndAssaultSceneMeta,
+    'src/content/chapters/chapter-1/scenes/intro/ball-and-assault.meta.ts',
+    'src/content/chapters/chapter-1/scenes/intro/ball-and-assault.scene-generation.ts',
   ),
   buildSceneMetaEntry(
     chapter1AwakeningSceneMeta,

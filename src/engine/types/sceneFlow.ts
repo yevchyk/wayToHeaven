@@ -16,10 +16,12 @@ import type {
   TravelNodeType,
 } from '@engine/types/travel';
 import type { ScreenId } from '@engine/types/ui';
+import type { TimeCost } from '@engine/types/time';
 
 export type SceneFlowSourceType = 'dialogue' | 'travelBoard' | 'cityScene' | 'sceneGeneration';
 export type SceneFlowMode = 'sequence' | 'route' | 'hub';
 export type SceneFlowNodeKind = 'line' | 'choice' | 'event' | 'route';
+export type SceneFlowPlaybackMode = 'live' | 'preview';
 export type SceneFlowEncounterKind =
   | 'battle'
   | 'dialogue'
@@ -46,6 +48,7 @@ export interface SceneFlowTransition {
   label?: string;
   tone?: ActionTone;
   description?: string;
+  timeCost?: TimeCost;
   conditions?: Condition[];
   effects?: GameEffect[];
   nextNodeId?: string;
@@ -127,6 +130,12 @@ export interface SceneFlowRouteRules {
   scoutCharges?: number;
   scoutDepth?: number;
   revealNonHiddenAtStart?: boolean;
+  stepTimeCost?: TimeCost;
+}
+
+export interface SceneFlowReplayConfig {
+  enabled: boolean;
+  unlockOnStart?: boolean;
 }
 
 export interface SceneFlowHubMeta {
@@ -159,6 +168,7 @@ export interface SceneFlowData {
   defaultTransition?: SceneTransition;
   hubMeta?: SceneFlowHubMeta;
   routeRules?: SceneFlowRouteRules;
+  replay?: SceneFlowReplayConfig;
 }
 
 export interface SceneFlowPresentationState {
@@ -188,6 +198,7 @@ export interface SceneFlowSession {
   sessionId: string;
   flowId: string;
   mode: SceneFlowMode;
+  playbackMode: SceneFlowPlaybackMode;
   sourceType: SceneFlowSourceType;
   sceneId: string | null;
   currentNodeId: string;

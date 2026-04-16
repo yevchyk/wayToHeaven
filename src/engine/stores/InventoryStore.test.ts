@@ -56,6 +56,34 @@ describe('InventoryStore runtime', () => {
     expect(rootStore.party.activeUnits[0]?.currentHp).toBe(100);
   });
 
+  it('can target a selected ally when a self-scope item is used from the character menu flow', () => {
+    const rootStore = new GameRootStore();
+
+    rootStore.party.loadParty(['main-hero', 'road-companion']);
+
+    const companion = rootStore.party.getUnit('road-companion');
+
+    if (!companion) {
+      throw new Error('Expected the party to have a road companion.');
+    }
+
+    rootStore.party.upsertUnitState({
+      ...companion,
+      currentHp: 40,
+    });
+    rootStore.party.setSelectedCharacter('road-companion');
+    rootStore.inventory.addItem('basic-potion', 1);
+
+    const result = rootStore.inventory.useItem('basic-potion', {
+      targetUnitId: 'road-companion',
+    });
+
+    expect(result.consumed).toBe(true);
+    expect(result.targetUnitId).toBe('road-companion');
+    expect(rootStore.party.getUnit('road-companion')?.currentHp).toBe(60);
+    expect(rootStore.party.getUnit('main-hero')?.currentHp).toBe(117);
+  });
+
   it('routes ration item effects into meta systems', () => {
     const rootStore = new GameRootStore();
 
